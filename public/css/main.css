@@ -43,24 +43,16 @@ body {
   padding: 0 20px;
   height: var(--header-h);
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
 .brand {
+  grid-column: 1;
   text-decoration: none;
   color: inherit;
   justify-self: start;
-}
-
-.brand-badge {
-  display: inline-flex;
-  align-items: center;
-  background: #0c0c0c;
-  border-radius: 12px;
-  padding: 4px 10px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
 }
 
 .brand-logo-img {
@@ -70,9 +62,10 @@ body {
 }
 
 .site-nav {
+  grid-column: 2;
   justify-self: center;
-  width: 100%;
-  max-width: 720px;
+  width: max-content;
+  max-width: min(720px, 92vw);
 }
 
 .nav-track {
@@ -140,6 +133,7 @@ body {
 }
 
 .header-actions {
+  grid-column: 3;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -177,6 +171,21 @@ body {
 
 .btn-primary:active {
   background: var(--pink-active);
+}
+
+.btn-signup {
+  background: #fff;
+  color: var(--text);
+  border: 2px solid var(--text);
+  box-shadow: none;
+}
+
+.btn-signup:hover {
+  background: #f5f5f5;
+}
+
+.btn-signup:active {
+  background: #ebebeb;
 }
 
 .btn-outline {
@@ -222,12 +231,13 @@ body {
 .site-main {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 48px 24px 80px;
+  padding: 32px 24px 48px;
   min-height: calc(100vh - var(--header-h));
 }
 
 .board-panel {
   animation: fade-in 0.25s ease;
+  min-height: 0;
 }
 
 .board-panel[hidden] {
@@ -243,25 +253,6 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.board-title {
-  margin: 0 0 10px;
-  font-size: 1.75rem;
-  font-weight: 900;
-}
-
-.board-lede {
-  margin: 0 0 28px;
-  color: var(--muted);
-  max-width: 52ch;
-}
-
-.board-placeholder {
-  min-height: 360px;
-  border-radius: 16px;
-  background: linear-gradient(145deg, #f7f7f7 0%, #fff 45%, #fafafa 100%);
-  border: 1px dashed var(--border);
 }
 
 /* Modal */
@@ -485,21 +476,33 @@ body {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
     gap: 14px;
+    justify-items: center;
+  }
+
+  .brand {
+    grid-column: 1;
+    justify-self: center;
+    order: 1;
   }
 
   .site-nav {
+    grid-column: 1;
+    justify-self: center;
+    width: 100%;
     max-width: none;
     order: 3;
   }
 
-  .header-actions {
-    justify-self: stretch;
-    justify-content: flex-end;
-    order: 2;
+  .nav-track {
+    justify-content: center;
   }
 
-  .brand {
-    order: 1;
+  .header-actions {
+    grid-column: 1;
+    justify-self: stretch;
+    justify-content: center;
+    flex-wrap: wrap;
+    order: 2;
   }
 
   .signup-grid {
@@ -513,7 +516,7 @@ body {
 
 @media (max-width: 640px) {
   .nav-track {
-    justify-content: flex-start;
+    justify-content: center;
   }
 
   .nav-link {

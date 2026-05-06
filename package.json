@@ -6,12 +6,16 @@
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build:logo": "node scripts/process-logo.js"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "sharp": "^0.33.5"
   }
 }

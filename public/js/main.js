@@ -40,6 +40,11 @@
     moveUnderline(activeBtn);
   });
 
+  window.addEventListener('load', () => {
+    const activeBtn = links.find((b) => b.classList.contains('is-active'));
+    requestAnimationFrame(() => moveUnderline(activeBtn));
+  });
+
   setActiveBoard('main');
 
   const modal = document.getElementById('signup-modal');
