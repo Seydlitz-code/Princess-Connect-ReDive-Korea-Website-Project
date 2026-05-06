@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>공주 연결! Re:Dive — 한국 서버 공략</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/main.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a href="/" class="brand" aria-label="메인으로">
+          <span class="brand-badge">
+            <img
+              class="brand-logo-img"
+              src="/images/logo.png"
+              width="200"
+              height="120"
+              alt="프린세스 커넥트! Re:Dive"
+              decoding="async"
+            />
+          </span>
+        </a>
+
+        <nav class="site-nav" aria-label="게시판">
+          <div class="nav-track">
+            <button type="button" class="nav-link is-active" data-board="main">
+              <span class="nav-ko">메인</span>
+              <span class="nav-ja">メイン</span>
+            </button>
+            <button type="button" class="nav-link" data-board="clan">
+              <span class="nav-ko">클랜전</span>
+              <span class="nav-ja">クランバトル</span>
+            </button>
+            <button type="button" class="nav-link" data-board="stadium">
+              <span class="nav-ko">배틀 스타디움</span>
+              <span class="nav-ja">バトルスタジアム</span>
+            </button>
+            <button type="button" class="nav-link" data-board="deep">
+              <span class="nav-ko">심역 퀘스트</span>
+              <span class="nav-ja">深域クエスト</span>
+            </button>
+            <button type="button" class="nav-link" data-board="abyss">
+              <span class="nav-ko">심역 토벌전</span>
+              <span class="nav-ja">深淵討伐戦</span>
+            </button>
+            <span class="nav-underline" aria-hidden="true"></span>
+          </div>
+        </nav>
+
+        <div class="header-actions">
+          <button type="button" class="btn btn-primary" id="open-signup">회원가입</button>
+          <button type="button" class="btn btn-primary btn-login">로그인</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="site-main" id="main-content">
+      <section class="board-panel is-visible" data-board-panel="main" aria-labelledby="board-title-main">
+        <h1 id="board-title-main" class="board-title">메인</h1>
+        <p class="board-lede">한국 서버 공략 게시판입니다. 상단 메뉴에서 다른 게시판으로 이동할 수 있습니다.</p>
+        <div class="board-placeholder"></div>
+      </section>
+      <section class="board-panel" data-board-panel="clan" hidden aria-labelledby="board-title-clan">
+        <h1 id="board-title-clan" class="board-title">클랜전</h1>
+        <p class="board-lede">클랜전 관련 공략이 이 영역에 표시됩니다.</p>
+        <div class="board-placeholder"></div>
+      </section>
+      <section class="board-panel" data-board-panel="stadium" hidden aria-labelledby="board-title-stadium">
+        <h1 id="board-title-stadium" class="board-title">배틀 스타디움</h1>
+        <p class="board-lede">배틀 스타디움 공략 영역입니다.</p>
+        <div class="board-placeholder"></div>
+      </section>
+      <section class="board-panel" data-board-panel="deep" hidden aria-labelledby="board-title-deep">
+        <h1 id="board-title-deep" class="board-title">심역 퀘스트</h1>
+        <p class="board-lede">심역 퀘스트 공략 영역입니다.</p>
+        <div class="board-placeholder"></div>
+      </section>
+      <section class="board-panel" data-board-panel="abyss" hidden aria-labelledby="board-title-abyss">
+        <h1 id="board-title-abyss" class="board-title">심역 토벌전</h1>
+        <p class="board-lede">심역 토벌전 공략 영역입니다.</p>
+        <div class="board-placeholder"></div>
+      </section>
+    </main>
+
+    <div class="modal-root" id="signup-modal" role="dialog" aria-modal="true" aria-labelledby="signup-heading" hidden>
+      <div class="modal-backdrop" data-close-modal tabindex="-1"></div>
+      <div class="modal-sheet" role="document">
+        <button type="button" class="modal-back link-back" data-close-modal>
+          <span aria-hidden="true">←</span> 뒤로 가기
+        </button>
+        <header class="modal-head">
+          <h2 id="signup-heading" class="modal-title">회원가입</h2>
+          <p class="modal-sub">새 계정을 만들어서 댓글을 남겨보세요.</p>
+        </header>
+
+        <div class="signup-grid">
+          <div class="signup-col signup-col--left">
+            <div class="profile-block">
+              <div class="profile-preview-wrap">
+                <div class="profile-preview" id="profile-preview">
+                  <span class="profile-placeholder-text">프로필</span>
+                </div>
+              </div>
+              <div class="profile-controls">
+                <label class="profile-label" for="profile-file">프로필 이미지 설정</label>
+                <input type="file" id="profile-file" accept="image/*" hidden />
+                <button type="button" class="btn btn-outline btn-sm" id="profile-file-trigger">이미지 선택</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="nickname">닉네임</label>
+              <div class="field-row">
+                <input id="nickname" type="text" class="input" placeholder="닉네임을 입력하세요" autocomplete="nickname" />
+                <button type="button" class="btn btn-secondary btn-compact">중복 확인</button>
+              </div>
+              <p class="field-hint">서버 연동 전까지 UI만 제공됩니다.</p>
+            </div>
+          </div>
+
+          <div class="signup-col signup-col--right">
+            <div class="field-group">
+              <label class="field-label" for="userid">아이디</label>
+              <div class="field-row">
+                <input id="userid" type="text" class="input" placeholder="아이디" autocomplete="username" />
+                <button type="button" class="btn btn-secondary btn-compact">중복 확인</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="password">비밀번호</label>
+              <input id="password" type="password" class="input" placeholder="비밀번호" autocomplete="new-password" />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="password2">비밀번호 확인</label>
+              <input id="password2" type="password" class="input" placeholder="비밀번호 재입력" autocomplete="new-password" />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="captcha-input">보안 문자</label>
+              <div class="captcha-row">
+                <div class="captcha-box" aria-hidden="true">
+                  <span class="captcha-fake">A8K4</span>
+                </div>
+                <input id="captcha-input" type="text" class="input captcha-input" placeholder="보안 문자 입력" autocomplete="off" />
+              </div>
+              <p class="field-hint">실제 검증은 다음 단계에서 연결할 수 있습니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn btn-primary btn-block btn-lg" id="signup-submit">회원가입</button>
+        </footer>
+      </div>
+    </div>
+
+    <script src="/js/main.js" defer></script>
+  </body>
+</html>

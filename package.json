@@ -1,0 +1,17 @@
+{
+  "name": "priconne-kr-strategy-site",
+  "version": "1.0.0",
+  "description": "프린세스 커넥트! Re:Dive 한국 서버 공략 웹사이트",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
