@@ -99,8 +99,114 @@
     }
   });
 
-  document.getElementById('signup-submit')?.addEventListener('click', () => {
-    window.alert('회원가입 처리는 다음 단계에서 서버·데이터베이스와 연동할 수 있습니다.');
+  const nicknameInput = document.getElementById('nickname');
+  const useridInput = document.getElementById('userid');
+  const passwordInput = document.getElementById('password');
+  const password2Input = document.getElementById('password2');
+  const captchaInput = document.getElementById('captcha-input');
+  const signupSubmit = document.getElementById('signup-submit');
+  const EXPECTED_CAPTCHA = 'A8K4';
+  const MAX_PROFILE_BYTES = 512 * 1024;
+
+  async function apiJson(url, options = {}) {
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = data && data.error ? data.error : `요청 실패 (${res.status})`;
+      throw new Error(msg);
+    }
+    return data;
+  }
+
+  document.getElementById('check-userid')?.addEventListener('click', async () => {
+    const username = useridInput?.value.trim();
+    if (!username) {
+      window.alert('아이디를 입력한 뒤 중복 확인을 눌러 주세요.');
+      return;
+    }
+    try {
+      const data = await apiJson(`/api/users/check?${new URLSearchParams({ username })}`);
+      window.alert(data.usernameAvailable ? '사용 가능한 아이디입니다.' : '이미 사용 중인 아이디입니다.');
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : String(e));
+    }
+  });
+
+  document.getElementById('check-nickname')?.addEventListener('click', async () => {
+    const nickname = nicknameInput?.value.trim();
+    if (!nickname) {
+      window.alert('닉네임을 입력한 뒤 중복 확인을 눌러 주세요.');
+      return;
+    }
+    try {
+      const data = await apiJson(`/api/users/check?${new URLSearchParams({ nickname })}`);
+      window.alert(data.nicknameAvailable ? '사용 가능한 닉네임입니다.' : '이미 사용 중인 닉네임입니다.');
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : String(e));
+    }
+  });
+
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('이미지를 읽을 수 없습니다.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  signupSubmit?.addEventListener('click', async () => {
+    const nickname = nicknameInput?.value.trim() || '';
+    const username = useridInput?.value.trim() || '';
+    const password = passwordInput?.value || '';
+    const password2 = password2Input?.value || '';
+    const captcha = captchaInput?.value.trim() || '';
+
+    if (captcha.toUpperCase() !== EXPECTED_CAPTCHA) {
+      window.alert('보안 문자가 일치하지 않습니다.');
+      return;
+    }
+    if (password !== password2) {
+      window.alert('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+      return;
+    }
+
+    let profileImage = null;
+    const file = profileFile?.files?.[0];
+    if (file) {
+      if (file.size > MAX_PROFILE_BYTES) {
+        window.alert('프로필 이미지는 약 512KB 이하로 올려 주세요.');
+        return;
+      }
+      try {
+        profileImage = await fileToDataUrl(file);
+      } catch (e) {
+        window.alert(e instanceof Error ? e.message : String(e));
+        return;
+      }
+    }
+
+    signupSubmit.disabled = true;
+    try {
+      const data = await apiJson('/api/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          username,
+          nickname,
+          password,
+          profileImage,
+        }),
+      });
+      window.alert(`회원가입이 완료되었습니다.\n닉네임: ${data.user.nickname}\n아이디: ${data.user.username}`);
+      closeModal();
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : String(e));
+    } finally {
+      signupSubmit.disabled = false;
+    }
   });
 
   document.querySelector('.btn-login')?.addEventListener('click', () => {

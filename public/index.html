@@ -98,9 +98,9 @@
               <label class="field-label" for="nickname">닉네임</label>
               <div class="field-row">
                 <input id="nickname" type="text" class="input" placeholder="닉네임을 입력하세요" autocomplete="nickname" />
-                <button type="button" class="btn btn-secondary btn-compact">중복 확인</button>
+                <button type="button" class="btn btn-secondary btn-compact" id="check-nickname">중복 확인</button>
               </div>
-              <p class="field-hint">서버 연동 전까지 UI만 제공됩니다.</p>
+              <p class="field-hint">닉네임은 2~32자, 중복되지 않아야 합니다.</p>
             </div>
           </div>
 
@@ -109,7 +109,7 @@
               <label class="field-label" for="userid">아이디</label>
               <div class="field-row">
                 <input id="userid" type="text" class="input" placeholder="아이디" autocomplete="username" />
-                <button type="button" class="btn btn-secondary btn-compact">중복 확인</button>
+                <button type="button" class="btn btn-secondary btn-compact" id="check-userid">중복 확인</button>
               </div>
             </div>
 
