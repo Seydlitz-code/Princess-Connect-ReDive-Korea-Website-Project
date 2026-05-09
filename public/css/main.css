@@ -132,28 +132,30 @@ body {
   pointer-events: none;
 }
 
-/* 우측 헤더 한 칸 안에서 게스트 ↔ 로그인 UI 전환 (개별 grid-column 지정 시 줄바꿈으로 둘 다 보이던 문제 수정) */
+/* 우측 헤더: 같은 슬롯에서 is-guest / is-user 중 하나만 display:flex 로 노출 */
 .header-actions-slot {
   grid-column: 3;
   justify-self: end;
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  flex-wrap: nowrap;
   min-width: 0;
 }
 
-.header-actions-slot > [hidden] {
+.header-actions-slot > .header-actions {
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
   display: none !important;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.header-actions-slot.is-guest > #header-actions-guest {
+  display: flex !important;
 }
 
-.header-actions-slot > .header-actions {
-  justify-content: flex-end;
+.header-actions-slot.is-user > #header-actions-logged {
+  display: flex !important;
 }
 
 .header-actions .btn {

@@ -191,6 +191,7 @@
   const loginPasswordEl = document.getElementById('login-password');
   const loginSubmitBtn = document.getElementById('login-submit-btn');
   const loginFormErrorEl = document.getElementById('login-form-error');
+  const headerActionsSlot = document.getElementById('header-actions-slot');
   const headerGuest = document.getElementById('header-actions-guest');
   const headerLogged = document.getElementById('header-actions-logged');
   const headerUserAvatarImg = document.getElementById('header-user-avatar');
@@ -210,7 +211,20 @@
     loginFormErrorEl.hidden = true;
   }
 
+  function isSessionUser(obj) {
+    return !!(obj && typeof obj === 'object' && typeof obj.id === 'string' && obj.id.length > 0);
+  }
+
+  /** CSS 뮤텍스: 게스트·로그인 UI가 동시에 flex 로 잡히지 않도록 */
+  function setHeaderActionsSlotMode(loggedIn) {
+    if (!headerActionsSlot) return;
+    headerActionsSlot.classList.toggle('is-guest', !loggedIn);
+    headerActionsSlot.classList.toggle('is-user', loggedIn);
+    headerActionsSlot.dataset.authSlot = loggedIn ? 'user' : 'guest';
+  }
+
   function renderLoggedOutHeader() {
+    setHeaderActionsSlotMode(false);
     if (headerGuest) {
       headerGuest.hidden = false;
       headerGuest.removeAttribute('aria-hidden');
@@ -228,10 +242,11 @@
   }
 
   function renderLoggedInHeader(user) {
-    if (!user) {
+    if (!isSessionUser(user)) {
       renderLoggedOutHeader();
       return;
     }
+    setHeaderActionsSlotMode(true);
     if (headerGuest) {
       headerGuest.hidden = true;
       headerGuest.setAttribute('aria-hidden', 'true');
@@ -264,7 +279,7 @@
     try {
       const res = await fetch('/api/me', { credentials: 'include' });
       const data = await res.json().catch(() => ({}));
-      if (data && data.ok && data.user) renderLoggedInHeader(data.user);
+      if (data && data.ok && isSessionUser(data.user)) renderLoggedInHeader(data.user);
       else renderLoggedOutHeader();
     } catch {
       renderLoggedOutHeader();
@@ -324,7 +339,7 @@
         showLoginFormError(data.error || `로그인 실패 (${res.status})`);
         return;
       }
-      if (data.user) renderLoggedInHeader(data.user);
+      if (isSessionUser(data.user)) renderLoggedInHeader(data.user);
       else await refreshSessionHeader();
       loginForm.reset();
       closeLoginModal();
