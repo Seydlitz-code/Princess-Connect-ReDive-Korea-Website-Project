@@ -1,0 +1,2671 @@
+{
+  "version": 1,
+  "generatedAt": "2026-05-09T13:35:01.767Z",
+  "sourceDir": "C:\\Users\\dongh\\Documents\\프리코네 캐릭터 데이터베이스",
+  "characters": [
+    {
+      "id": "da214907-6db3-55b8-96d8-3a4900443943",
+      "name": "그레이스",
+      "file": "그레이스.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EA%B7%B8%EB%A0%88%EC%9D%B4%EC%8A%A4.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a501ffc4-d33a-5255-8c61-5fb41311808b",
+      "name": "그레이스(바니)",
+      "file": "그레이스(바니).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EA%B7%B8%EB%A0%88%EC%9D%B4%EC%8A%A4(%EB%B0%94%EB%8B%88).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "fafc9408-c080-59c9-839a-83d933e75bec",
+      "name": "글레어",
+      "file": "글레어.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EA%B8%80%EB%A0%88%EC%96%B4.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "7fb451e2-5777-5454-9933-2d909e7bed87",
+      "name": "나나",
+      "file": "나나.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%82%98%EB%82%98.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "b0aefc03-735a-5547-9a54-d5647585e739",
+      "name": "나나카",
+      "file": "나나카.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%82%98%EB%82%98%EC%B9%B4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "13cec4b7-cb1b-5531-a5e5-d35681ae5c8a",
+      "name": "나나카(여름)",
+      "file": "나나카(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%82%98%EB%82%98%EC%B9%B4(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "b96e69cc-08ec-5ad0-84f3-8a974dcee7f7",
+      "name": "나나카(할로윈)",
+      "file": "나나카(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%82%98%EB%82%98%EC%B9%B4(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "882cc5ce-aefc-5888-971a-5dde650e089b",
+      "name": "네네카",
+      "file": "네네카.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%84%A4%EB%84%A4%EC%B9%B4.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "91532602-03c9-58c5-8d01-cc158f143a13",
+      "name": "네네카(새해)",
+      "file": "네네카(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%84%A4%EB%84%A4%EC%B9%B4(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "12446fe1-1cad-57b2-84f1-58b0935a743a",
+      "name": "네네카(알파)",
+      "file": "네네카(알파).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%84%A4%EB%84%A4%EC%B9%B4(%EC%95%8C%ED%8C%8C).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "da24ecb8-b7be-5f64-9cdd-bc70e9d74ff8",
+      "name": "네네카(여름)",
+      "file": "네네카(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%84%A4%EB%84%A4%EC%B9%B4(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "9150d369-5c9f-581b-b780-4609a0dcc3c9",
+      "name": "네비아",
+      "file": "네비아.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%84%A4%EB%B9%84%EC%95%84.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "1011a9c8-86ab-5b5b-b712-082999786c92",
+      "name": "네아",
+      "file": "네아.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%84%A4%EC%95%84.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "400a09ef-f63a-5c8d-8a85-d9cf48f761d3",
+      "name": "네아(여름)",
+      "file": "네아(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%84%A4%EC%95%84(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e79574b0-8dd9-53ac-84d6-54bcd1cae668",
+      "name": "네피네라",
+      "file": "네피네라.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%84%A4%ED%94%BC%EB%84%A4%EB%9D%BC.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "30e61af4-65ad-506a-9ea3-a61bed546702",
+      "name": "네피네라(귀면불심)",
+      "file": "네피네라(귀면불심).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%84%A4%ED%94%BC%EB%84%A4%EB%9D%BC(%EA%B7%80%EB%A9%B4%EB%B6%88%EC%8B%AC).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "671cf638-096d-5ee1-add4-d9fcbfeeb8d0",
+      "name": "노조미",
+      "file": "노조미.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%85%B8%EC%A1%B0%EB%AF%B8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a08429c6-a56b-59a0-826a-2318c2c07206",
+      "name": "노조미(리버레이터)",
+      "file": "노조미(리버레이터).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%85%B8%EC%A1%B0%EB%AF%B8(%EB%A6%AC%EB%B2%84%EB%A0%88%EC%9D%B4%ED%84%B0).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "24fa715d-6c2b-5843-b03e-6c41e5e65c1d",
+      "name": "노조미(알케미스트)",
+      "file": "노조미(알케미스트).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%85%B8%EC%A1%B0%EB%AF%B8(%EC%95%8C%EC%BC%80%EB%AF%B8%EC%8A%A4%ED%8A%B8).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "b681d7ef-e36e-5a8b-bac6-eb8799ba1824",
+      "name": "노조미(여름)",
+      "file": "노조미(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%85%B8%EC%A1%B0%EB%AF%B8(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "f6b212ca-a149-5cb1-a4ce-bcd0c288e612",
+      "name": "노조미(크리스마스)",
+      "file": "노조미(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%85%B8%EC%A1%B0%EB%AF%B8(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "ec0751d6-a69c-5a4e-95a3-2f0303c4cf2c",
+      "name": "니논",
+      "file": "니논.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%8B%88%EB%85%BC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "f4d215cc-ff3d-506f-b5b6-145854c453aa",
+      "name": "니논(여름)",
+      "file": "니논(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%8B%88%EB%85%BC(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "59a6226d-4c0b-533d-bdeb-0aace4d59031",
+      "name": "니논(오에도)",
+      "file": "니논(오에도).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%8B%88%EB%85%BC(%EC%98%A4%EC%97%90%EB%8F%84).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "5792e1de-af62-5a7a-9bc8-4bd918bbcc75",
+      "name": "니논(할로윈)",
+      "file": "니논(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%8B%88%EB%85%BC(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "2f26f0ee-2b98-5f0d-b36b-67af08a446f8",
+      "name": "라비리스타",
+      "file": "라비리스타.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%9D%BC%EB%B9%84%EB%A6%AC%EC%8A%A4%ED%83%80.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "5c7b40f1-e657-52ea-b46e-e96faf02d026",
+      "name": "라비리스타(알파)",
+      "file": "라비리스타(알파).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%9D%BC%EB%B9%84%EB%A6%AC%EC%8A%A4%ED%83%80(%EC%95%8C%ED%8C%8C).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e2455b46-560f-5f83-9961-d88e2a4bdec4",
+      "name": "라비리스타(오버로드)",
+      "file": "라비리스타(오버로드).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%9D%BC%EB%B9%84%EB%A6%AC%EC%8A%A4%ED%83%80(%EC%98%A4%EB%B2%84%EB%A1%9C%EB%93%9C).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "169449d9-c842-5eac-927d-d62d382de949",
+      "name": "라이라엘",
+      "file": "라이라엘.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%9D%BC%EC%9D%B4%EB%9D%BC%EC%97%98.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "739282a1-c057-5422-802d-4e5594131fad",
+      "name": "라이라엘(크리스마스)",
+      "file": "라이라엘(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%9D%BC%EC%9D%B4%EB%9D%BC%EC%97%98(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "8d41e2ca-cae8-572f-b0b1-7db40900ed7b",
+      "name": "라이라엘(파르펙트)",
+      "file": "라이라엘(파르펙트).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%9D%BC%EC%9D%B4%EB%9D%BC%EC%97%98(%ED%8C%8C%EB%A5%B4%ED%8E%99%ED%8A%B8).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "bed94150-4531-5de4-8274-a930325115b3",
+      "name": "란파",
+      "file": "란파.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%9E%80%ED%8C%8C.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "45c84ee6-8d16-5ae4-9eee-2dcc7e986366",
+      "name": "란파(여름)",
+      "file": "란파(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%9E%80%ED%8C%8C(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "94b0913b-34b8-541a-94f5-c405e793f9bb",
+      "name": "란파(의장복)",
+      "file": "란파(의장복).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%9E%80%ED%8C%8C(%EC%9D%98%EC%9E%A5%EB%B3%B5).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "14eeb648-01eb-54f8-8445-611d248541db",
+      "name": "람",
+      "file": "람.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%9E%8C.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "4ce07594-d687-562f-97e8-b4ad480c5d12",
+      "name": "레이",
+      "file": "레이.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A0%88%EC%9D%B4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "72fc9fca-ea2b-5d0d-83b1-1037ef861369",
+      "name": "레이(새해)",
+      "file": "레이(새해).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A0%88%EC%9D%B4(%EC%83%88%ED%95%B4).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "39aab2d0-576f-5483-a8a4-514846ac2fd2",
+      "name": "레이(아스트랄)",
+      "file": "레이(아스트랄).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A0%88%EC%9D%B4(%EC%95%84%EC%8A%A4%ED%8A%B8%EB%9E%84).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "8386d57a-17c2-5c50-aed1-cac8574d973f",
+      "name": "레이(여름)",
+      "file": "레이(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A0%88%EC%9D%B4(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "997c3d04-a02f-5451-a142-ce064bb7b9ef",
+      "name": "레이(프린세스)",
+      "file": "레이(프린세스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A0%88%EC%9D%B4(%ED%94%84%EB%A6%B0%EC%84%B8%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "18771ef1-c246-5b84-86a7-cf536d574781",
+      "name": "레이(할로윈)",
+      "file": "레이(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A0%88%EC%9D%B4(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "70e42c27-1ad9-52d6-aa9b-c2126b1ec1a1",
+      "name": "렘",
+      "file": "렘.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A0%98.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "dd380c7a-b2bd-5fab-a27b-2fc517c577e3",
+      "name": "렘(여름)",
+      "file": "렘(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A0%98(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "d37fbd6c-97ef-5321-bc7b-aa34d55c3d8b",
+      "name": "루",
+      "file": "루.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A3%A8.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "0800292d-14e4-5ba7-8b8f-80cc05071be1",
+      "name": "루나",
+      "file": "루나.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A3%A8%EB%82%98.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "9f3eea38-f6b4-5d0c-a701-30758be7569b",
+      "name": "루이즈마리",
+      "file": "루이즈마리.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A3%A8%EC%9D%B4%EC%A6%88%EB%A7%88%EB%A6%AC.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e809e908-bbee-5125-8958-32d016748e91",
+      "name": "루카",
+      "file": "루카.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A3%A8%EC%B9%B4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "53f056cb-dfd9-5789-92eb-005f84d1c1ee",
+      "name": "루카(사라사리아)",
+      "file": "루카(사라사리아).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A3%A8%EC%B9%B4(%EC%82%AC%EB%9D%BC%EC%82%AC%EB%A6%AC%EC%95%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "5f171e18-3e85-505a-8b42-16d0a04c4388",
+      "name": "루카(새해)",
+      "file": "루카(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A3%A8%EC%B9%B4(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "7eb1ba27-6d01-5c32-b0d5-8b3fbfa103ef",
+      "name": "루카(여름)",
+      "file": "루카(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A3%A8%EC%B9%B4(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "f197fb14-34c2-570f-918a-c467b1ccd7be",
+      "name": "리노",
+      "file": "리노.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A6%AC%EB%85%B8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "c9f0e5a2-29b4-5eb2-affa-268654fe4e9a",
+      "name": "리노(새해)",
+      "file": "리노(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A6%AC%EB%85%B8(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "4d95486d-0528-5004-9f8e-537fb037300a",
+      "name": "리노(원더)",
+      "file": "리노(원더).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A6%AC%EB%85%B8(%EC%9B%90%EB%8D%94).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "6486fcfd-7e82-5796-8dce-d12b8d4d14de",
+      "name": "리노(크리스마스)",
+      "file": "리노(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A6%AC%EB%85%B8(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "cf28e2f5-9628-5c97-8699-1400ae24561e",
+      "name": "리리",
+      "file": "리리.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A6%AC%EB%A6%AC.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "3821033b-152e-5b54-bb07-6eaa1a86fe09",
+      "name": "리리(여름)",
+      "file": "리리(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A6%AC%EB%A6%AC(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "7fb3f7e7-24ae-538e-bcf3-22be53974e6a",
+      "name": "리마",
+      "file": "리마.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A6%AC%EB%A7%88.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "cf38ac4f-38a9-5f4d-aa9c-280c68f3b4ce",
+      "name": "리마(신데렐라)",
+      "file": "리마(신데렐라).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A6%AC%EB%A7%88(%EC%8B%A0%EB%8D%B0%EB%A0%90%EB%9D%BC).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "fff13f14-9fe0-5829-b93e-cd1bc7dc64b1",
+      "name": "린",
+      "file": "린.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A6%B0.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "4bc88d60-d830-5939-a308-5cfb7f414472",
+      "name": "린(데레마스)",
+      "file": "린(데레마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A6%B0(%EB%8D%B0%EB%A0%88%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "85562787-abaf-51fe-8f11-a789d0d6c5b5",
+      "name": "린(레인저)",
+      "file": "린(레인저).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A6%B0(%EB%A0%88%EC%9D%B8%EC%A0%80).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "79d6ec3f-315a-50d5-b0d8-bb9518373b9e",
+      "name": "린(할로윈)",
+      "file": "린(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A6%B0(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e61c8962-f96d-5861-bd3f-8f24c57a1e21",
+      "name": "린드",
+      "file": "린드.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A6%B0%EB%93%9C.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "ec797560-25ce-5b27-835c-28422759f032",
+      "name": "마츠리",
+      "file": "마츠리.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A7%88%EC%B8%A0%EB%A6%AC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "f1fdddf9-cca8-5b64-adb0-b26c14333234",
+      "name": "마츠리(와일드)",
+      "file": "마츠리(와일드).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A7%88%EC%B8%A0%EB%A6%AC(%EC%99%80%EC%9D%BC%EB%93%9C).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "3f90c35a-c0d0-509a-9bcd-b56e08bbe963",
+      "name": "마츠리(할로윈)",
+      "file": "마츠리(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A7%88%EC%B8%A0%EB%A6%AC(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "0e045da6-5708-5e1d-87a4-75d0b391a5b8",
+      "name": "마코토",
+      "file": "마코토.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A7%88%EC%BD%94%ED%86%A0.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "1b5fd0c7-e263-540f-9ca0-ff420f815dea",
+      "name": "마코토(신데렐라)",
+      "file": "마코토(신데렐라).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A7%88%EC%BD%94%ED%86%A0(%EC%8B%A0%EB%8D%B0%EB%A0%90%EB%9D%BC).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a8de9627-9639-5e08-aae6-d8c6cababfe1",
+      "name": "마코토(여름)",
+      "file": "마코토(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A7%88%EC%BD%94%ED%86%A0(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "2c67ae5a-c578-546a-b13a-e7df64470cec",
+      "name": "마코토(커맨더)",
+      "file": "마코토(커맨더).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A7%88%EC%BD%94%ED%86%A0(%EC%BB%A4%EB%A7%A8%EB%8D%94).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "16b5c144-597a-560a-a63a-20e93803a4b9",
+      "name": "마호",
+      "file": "마호.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A7%88%ED%98%B8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "ed1ae405-3033-5526-a8fe-5e534fdc20cd",
+      "name": "마호(드림파크)",
+      "file": "마호(드림파크).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A7%88%ED%98%B8(%EB%93%9C%EB%A6%BC%ED%8C%8C%ED%81%AC).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "182ab41f-9b9a-5236-a487-e4054af36ba5",
+      "name": "마호(신데렐라)",
+      "file": "마호(신데렐라).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A7%88%ED%98%B8(%EC%8B%A0%EB%8D%B0%EB%A0%90%EB%9D%BC).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "b1cc6b60-25bc-5920-8fb8-7f6c135f7578",
+      "name": "마호(여름)",
+      "file": "마호(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A7%88%ED%98%B8(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "5a4fd8c0-bff2-57b7-8315-274d9e280af2",
+      "name": "마호(탐험가)",
+      "file": "마호(탐험가).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A7%88%ED%98%B8(%ED%83%90%ED%97%98%EA%B0%80).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "1463dfea-757e-5490-9df7-316b81dda8dd",
+      "name": "마히루",
+      "file": "마히루.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%A7%88%ED%9E%88%EB%A3%A8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "f82b598e-a44f-5cfe-a2c4-831ace5cf1b5",
+      "name": "마히루(레인저)",
+      "file": "마히루(레인저).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A7%88%ED%9E%88%EB%A3%A8(%EB%A0%88%EC%9D%B8%EC%A0%80).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "5c3aa83d-f01d-5a7a-bbf5-e7a7e4c50c87",
+      "name": "마히루(크리스마스)",
+      "file": "마히루(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A7%88%ED%9E%88%EB%A3%A8(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "1bb4a848-dde8-58e2-aca3-4c62e261526d",
+      "name": "메두사",
+      "file": "메두사.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%A9%94%EB%91%90%EC%82%AC.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "293f2ccf-88ca-5d9a-9e8b-c8804ca583f1",
+      "name": "모니카",
+      "file": "모니카.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AA%A8%EB%8B%88%EC%B9%B4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "f37a4f78-7793-5aa7-affe-9c2685af81ac",
+      "name": "모니카(매지컬)",
+      "file": "모니카(매지컬).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AA%A8%EB%8B%88%EC%B9%B4(%EB%A7%A4%EC%A7%80%EC%BB%AC).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "63cc55f6-8052-59bd-a096-0bbc036a18ff",
+      "name": "모니카(새해)",
+      "file": "모니카(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AA%A8%EB%8B%88%EC%B9%B4(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "6cc6485b-412b-576e-914b-dc9ebd4e0264",
+      "name": "모니카(카페)",
+      "file": "모니카(카페).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AA%A8%EB%8B%88%EC%B9%B4(%EC%B9%B4%ED%8E%98).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "17f0e824-d3ae-546b-b565-1d242dd6a9df",
+      "name": "무이미",
+      "file": "무이미.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AC%B4%EC%9D%B4%EB%AF%B8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "382e7391-dc0f-54bc-b445-7524b55a9649",
+      "name": "무이미(리버레이터)",
+      "file": "무이미(리버레이터).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AC%B4%EC%9D%B4%EB%AF%B8(%EB%A6%AC%EB%B2%84%EB%A0%88%EC%9D%B4%ED%84%B0).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "eeb7b970-0257-545b-be7f-e0a7dd9c8b81",
+      "name": "무이미(새해)",
+      "file": "무이미(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AC%B4%EC%9D%B4%EB%AF%B8(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "424bd631-5e7b-5168-b7ab-8ae6df56e1a8",
+      "name": "미미",
+      "file": "미미.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AF%B8%EB%AF%B8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "3e51b319-9499-531a-be24-4df5a4020aa6",
+      "name": "미미(여름)",
+      "file": "미미(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AF%B8%EB%AF%B8(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "6d923fb6-da7a-532f-8b0f-764e35d6c977",
+      "name": "미미(할로윈)",
+      "file": "미미(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AF%B8%EB%AF%B8(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "31470d88-f3c1-5b9f-8c2b-b858cbd688e8",
+      "name": "미사키",
+      "file": "미사키.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AF%B8%EC%82%AC%ED%82%A4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "d258d6c9-cafe-5852-93f7-515541903a42",
+      "name": "미사키(무대)",
+      "file": "미사키(무대).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AF%B8%EC%82%AC%ED%82%A4(%EB%AC%B4%EB%8C%80).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "6b102aba-9de9-515e-a5b5-ac832415425e",
+      "name": "미사키(할로윈)",
+      "file": "미사키(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AF%B8%EC%82%AC%ED%82%A4(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "95f0d4e7-ce50-5e8e-a092-91d1aa0256c4",
+      "name": "미사토",
+      "file": "미사토.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AF%B8%EC%82%AC%ED%86%A0.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "52f2e9aa-e883-5959-bac1-7b7c2b4b6aaf",
+      "name": "미사토(새해)",
+      "file": "미사토(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AF%B8%EC%82%AC%ED%86%A0(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "73189b9a-b9af-588b-b2ee-9f5f9d22a2a9",
+      "name": "미사토(여름)",
+      "file": "미사토(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AF%B8%EC%82%AC%ED%86%A0(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "38c0125d-f377-5e53-a18a-e85dc9d35157",
+      "name": "미소기",
+      "file": "미소기.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AF%B8%EC%86%8C%EA%B8%B0.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "9d70de3a-d68e-540f-b776-cb2e35514b94",
+      "name": "미소기",
+      "file": "미소기.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AF%B8%EC%86%8C%EA%B8%B0.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "7689a3c4-e3ec-5420-84cf-2dfec999f220",
+      "name": "미소기(여름)",
+      "file": "미소기(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AF%B8%EC%86%8C%EA%B8%B0(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "aa062c02-f2bf-5ba4-b794-dbfc5feec3bd",
+      "name": "미소기(할로윈)",
+      "file": "미소기(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AF%B8%EC%86%8C%EA%B8%B0(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "f2df8eb3-0d85-5b76-98d1-3d206bb3143f",
+      "name": "미소기&미미&쿄우카",
+      "file": "미소기&미미&쿄우카.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AF%B8%EC%86%8C%EA%B8%B0%26%EB%AF%B8%EB%AF%B8%26%EC%BF%84%EC%9A%B0%EC%B9%B4.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "9b167b74-ae53-5156-a297-2a0b2b9de7bc",
+      "name": "미소라",
+      "file": "미소라.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AF%B8%EC%86%8C%EB%9D%BC.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "958f4a53-398f-540c-b76e-ec7d718c2e71",
+      "name": "미소라(여름)",
+      "file": "미소라(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AF%B8%EC%86%8C%EB%9D%BC(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "22983a35-a76f-5a13-9de4-0689d829c76f",
+      "name": "미소라(크리스마스)",
+      "file": "미소라(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AF%B8%EC%86%8C%EB%9D%BC(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "79eb215c-d82c-58d2-b81a-4d2a65f64c95",
+      "name": "미야코",
+      "file": "미야코.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AF%B8%EC%95%BC%EC%BD%94.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "b5680f47-4e26-53df-b0b0-70af0c2c3782",
+      "name": "미야코(크리스마스)",
+      "file": "미야코(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AF%B8%EC%95%BC%EC%BD%94(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "18cbdd7b-bfb5-55eb-a876-5d36f706d146",
+      "name": "미야코(할로윈)",
+      "file": "미야코(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AF%B8%EC%95%BC%EC%BD%94(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "7559acb0-b6aa-5821-b172-c5a16dea2bd6",
+      "name": "미오",
+      "file": "미오.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AF%B8%EC%98%A4.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "4c526d6b-0373-5083-bf24-5b360f1d8cb1",
+      "name": "미츠키",
+      "file": "미츠키.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AF%B8%EC%B8%A0%ED%82%A4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e3db4922-d894-5304-99f8-3770a6222481",
+      "name": "미츠키(새해)",
+      "file": "미츠키(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AF%B8%EC%B8%A0%ED%82%A4(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "4d277d59-c2dc-5c03-ab14-09dd2ae44e0b",
+      "name": "미츠키(오에도)",
+      "file": "미츠키(오에도).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AF%B8%EC%B8%A0%ED%82%A4(%EC%98%A4%EC%97%90%EB%8F%84).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "2b28edfa-b422-56d9-b43b-281160233f7f",
+      "name": "미후유",
+      "file": "미후유.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AF%B8%ED%9B%84%EC%9C%A0.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a90b9932-a624-5885-9d04-47c241fd596e",
+      "name": "미후유(여름)",
+      "file": "미후유(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%AF%B8%ED%9B%84%EC%9C%A0(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "6f9d1f22-273a-5507-8356-740fcfdc4703",
+      "name": "미후유(작업복)",
+      "file": "미후유(작업복).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%AF%B8%ED%9B%84%EC%9C%A0(%EC%9E%91%EC%97%85%EB%B3%B5).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "b319a1f1-f77f-5da3-bdd2-9c369db9a037",
+      "name": "바이올렛",
+      "file": "바이올렛.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%B0%94%EC%9D%B4%EC%98%AC%EB%A0%9B.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "1f71a792-2c85-5bd5-a7fc-bbe315fb9f44",
+      "name": "바이올렛(이사나미)",
+      "file": "바이올렛(이사나미).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%B0%94%EC%9D%B4%EC%98%AC%EB%A0%9B(%EC%9D%B4%EC%82%AC%EB%82%98%EB%AF%B8).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "63fbb04c-e4ad-55fb-af12-02b87662c674",
+      "name": "밤피",
+      "file": "밤피.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EB%B0%A4%ED%94%BC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "5dfa4830-3942-51e7-9d9a-d733615bbd04",
+      "name": "봉황",
+      "file": "봉황.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%B4%89%ED%99%A9.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "06de7a54-0d6e-5bb8-a9d3-60b98a510e65",
+      "name": "블룸",
+      "file": "블룸.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%B8%94%EB%A3%B8.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "c0d3b7fb-8a76-5ba1-aa6c-0b3afbcff5b3",
+      "name": "비카라",
+      "file": "비카라.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EB%B9%84%EC%B9%B4%EB%9D%BC.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a3b5858b-9d35-56ba-be56-9fc3f854b223",
+      "name": "사렌",
+      "file": "사렌.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%82%AC%EB%A0%8C.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "2381b055-6987-5299-9d90-ea199ab13662",
+      "name": "사렌(사라사리아)",
+      "file": "사렌(사라사리아).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%82%AC%EB%A0%8C(%EC%82%AC%EB%9D%BC%EC%82%AC%EB%A6%AC%EC%95%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "d1d8884e-10ec-5449-9194-167cc34aec75",
+      "name": "사렌(새해)",
+      "file": "사렌(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%82%AC%EB%A0%8C(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "26c3a888-b1ef-5c07-8d39-bbc5c3d56c63",
+      "name": "사렌(여름)",
+      "file": "사렌(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%82%AC%EB%A0%8C(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a5a9297a-fe14-563e-8e0f-27a9b55321bc",
+      "name": "사렌(크리스마스)",
+      "file": "사렌(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%82%AC%EB%A0%8C(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "3d8d5e82-66f5-5784-8c69-8ec3fe6309d6",
+      "name": "사츠키",
+      "file": "사츠키.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%82%AC%EC%B8%A0%ED%82%A4.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "90b690eb-c99f-5c6a-ae5d-8a652e858052",
+      "name": "사쿠라",
+      "file": "사쿠라.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%82%AC%EC%BF%A0%EB%9D%BC.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "38bf7dfd-2d9e-5698-b1c6-fd2516794e1b",
+      "name": "셰피",
+      "file": "셰피.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%85%B0%ED%94%BC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a7580b3c-7b97-5be0-8237-512743e1acb1",
+      "name": "셰피(새해)",
+      "file": "셰피(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%85%B0%ED%94%BC(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "d9febf70-bfc9-57be-9869-fd29ef1bf23c",
+      "name": "셰피(여름)",
+      "file": "셰피(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%85%B0%ED%94%BC(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "deea5cb7-17b7-5a41-a46f-0b9b971ff17f",
+      "name": "셰피(프린세스)",
+      "file": "셰피(프린세스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%85%B0%ED%94%BC(%ED%94%84%EB%A6%B0%EC%84%B8%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "d3f60e77-e247-5235-8a1d-6509939d8693",
+      "name": "소노",
+      "file": "소노.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%86%8C%EB%85%B8.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "419298ad-b48d-5686-b742-635c6617ab55",
+      "name": "스즈나",
+      "file": "스즈나.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%8A%A4%EC%A6%88%EB%82%98.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "44b710e8-1518-5aa2-aa52-36e11c7de678",
+      "name": "스즈나(수영복)",
+      "file": "스즈나(수영복).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%8A%A4%EC%A6%88%EB%82%98(%EC%88%98%EC%98%81%EB%B3%B5).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "4466c428-fae6-567a-9768-98ce95e2b50b",
+      "name": "스즈나(편입생)",
+      "file": "스즈나(편입생).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%8A%A4%EC%A6%88%EB%82%98(%ED%8E%B8%EC%9E%85%EC%83%9D).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "c8f45662-3386-5fb6-b62b-4cf1e2659aed",
+      "name": "스즈나(할로윈)",
+      "file": "스즈나(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%8A%A4%EC%A6%88%EB%82%98(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "85d6f858-f94f-5be0-8b79-90f58c05455e",
+      "name": "스즈메",
+      "file": "스즈메.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%8A%A4%EC%A6%88%EB%A9%94.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a8bd5576-ea03-5b5d-ac57-f1b15d42740e",
+      "name": "스즈메(봄)",
+      "file": "스즈메(봄).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%8A%A4%EC%A6%88%EB%A9%94(%EB%B4%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "b37a6ca8-15c7-5d78-b95b-3a4581b8d9c8",
+      "name": "스즈메(새해)",
+      "file": "스즈메(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%8A%A4%EC%A6%88%EB%A9%94(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "d317226f-f6af-5867-8259-4b9864c9a1ff",
+      "name": "스즈메(여름)",
+      "file": "스즈메(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%8A%A4%EC%A6%88%EB%A9%94(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "7967a547-37d2-50b7-9de0-ed33a7fd94f6",
+      "name": "시나츠",
+      "file": "시나츠.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%8B%9C%EB%82%98%EC%B8%A0.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "8c821eb2-f357-5acb-bfec-9fe98b8f1172",
+      "name": "시노부",
+      "file": "시노부.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%8B%9C%EB%85%B8%EB%B6%80.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "10b547d9-95d9-5408-b1ed-9080add83f7b",
+      "name": "시노부(여름)",
+      "file": "시노부(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%8B%9C%EB%85%B8%EB%B6%80(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e88ceb60-c6bb-518a-85db-59c37f3f361a",
+      "name": "시노부(할로윈)",
+      "file": "시노부(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%8B%9C%EB%85%B8%EB%B6%80(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "38d4f750-dee7-5ea6-a447-6c301d99f5ad",
+      "name": "시노부(해적)",
+      "file": "시노부(해적).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%8B%9C%EB%85%B8%EB%B6%80(%ED%95%B4%EC%A0%81).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "c797b54b-4f58-54c4-b8e9-3cb698916fb0",
+      "name": "시오리",
+      "file": "시오리.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%8B%9C%EC%98%A4%EB%A6%AC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "9394f46c-c957-5b5c-8675-c4749ebe8d8f",
+      "name": "시오리(레인저)",
+      "file": "시오리(레인저).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%8B%9C%EC%98%A4%EB%A6%AC(%EB%A0%88%EC%9D%B8%EC%A0%80).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "0cdfd85a-6eb1-57ea-b1ee-ddd78c669fd5",
+      "name": "시오리(매지컬)",
+      "file": "시오리(매지컬).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%8B%9C%EC%98%A4%EB%A6%AC(%EB%A7%A4%EC%A7%80%EC%BB%AC).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "888cee0d-c278-53bb-bcfa-25c4c34ffa1f",
+      "name": "시오리(윈터)",
+      "file": "시오리(윈터).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%8B%9C%EC%98%A4%EB%A6%AC(%EC%9C%88%ED%84%B0).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "8818260c-5dcd-5276-a81b-48d2ea2f1827",
+      "name": "시즈루",
+      "file": "시즈루.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%8B%9C%EC%A6%88%EB%A3%A8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "18ef127b-a947-5778-951f-c510b936acb0",
+      "name": "시즈루(느와르)",
+      "file": "시즈루(느와르).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%8B%9C%EC%A6%88%EB%A3%A8(%EB%8A%90%EC%99%80%EB%A5%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "fdcf497a-7510-5242-a576-519b20009b57",
+      "name": "시즈루(발렌타인)",
+      "file": "시즈루(발렌타인).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%8B%9C%EC%A6%88%EB%A3%A8(%EB%B0%9C%EB%A0%8C%ED%83%80%EC%9D%B8).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "2c6f3d12-f269-5d27-b2ff-ac8669a4dfe3",
+      "name": "시즈루(새해)",
+      "file": "시즈루(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%8B%9C%EC%A6%88%EB%A3%A8(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "cd0f417b-d0e6-5f62-9308-deadaffe57cb",
+      "name": "시즈루(여름)",
+      "file": "시즈루(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%8B%9C%EC%A6%88%EB%A3%A8(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "50ef17f0-9344-51b2-8a7d-faaa6c35b3ce",
+      "name": "시즈루&리노",
+      "file": "시즈루&리노.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%8B%9C%EC%A6%88%EB%A3%A8%26%EB%A6%AC%EB%85%B8.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "2edbc557-00de-5167-afaf-7ea412fbdac7",
+      "name": "아네모네",
+      "file": "아네모네.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%84%EB%84%A4%EB%AA%A8%EB%84%A4.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "722e8634-96b2-5af1-9412-e9417d65bf41",
+      "name": "아네모네(여름)",
+      "file": "아네모네(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%84%EB%84%A4%EB%AA%A8%EB%84%A4(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a7db6a11-f88d-5d1f-b5c5-6f2201494ae9",
+      "name": "아라크네",
+      "file": "아라크네.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%84%EB%9D%BC%ED%81%AC%EB%84%A4.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "b6fa1faa-3af2-5684-b6e6-ec807e8e64f6",
+      "name": "아리사",
+      "file": "아리사.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%84%EB%A6%AC%EC%82%AC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "142debbd-956c-57b3-8b61-5d8365c06c19",
+      "name": "아메스",
+      "file": "아메스.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%84%EB%A9%94%EC%8A%A4.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "41f95a50-2005-59a5-a7ae-1ee0a7fb2262",
+      "name": "아메스(여름)",
+      "file": "아메스(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%84%EB%A9%94%EC%8A%A4(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "35c48023-6daf-5f86-83d0-9e12adf8a1af",
+      "name": "아메스(피오)",
+      "file": "아메스(피오).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%84%EB%A9%94%EC%8A%A4(%ED%94%BC%EC%98%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "899b2307-811e-5b80-a836-e25025470163",
+      "name": "아야네",
+      "file": "아야네.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%84%EC%95%BC%EB%84%A4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "6aecfa02-e92a-5e15-89d6-cecc56417afa",
+      "name": "아야네(크리스마스)",
+      "file": "아야네(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%84%EC%95%BC%EB%84%A4(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "6f6e7a5c-aa13-515d-a9de-94dd1a134cdc",
+      "name": "아야네(탐험가)",
+      "file": "아야네(탐험가).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%84%EC%95%BC%EB%84%A4(%ED%83%90%ED%97%98%EA%B0%80).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "ad3c7194-4658-5551-a5aa-16be07fb84f4",
+      "name": "아오이",
+      "file": "아오이.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%84%EC%98%A4%EC%9D%B4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "12f58046-cffd-5cc5-94dd-7392633dc75b",
+      "name": "아오이(작업복)",
+      "file": "아오이(작업복).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%84%EC%98%A4%EC%9D%B4(%EC%9E%91%EC%97%85%EB%B3%B5).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "9491ef9f-46fb-5072-8bc9-2dca2a31a18f",
+      "name": "아오이(캠프)",
+      "file": "아오이(캠프).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%84%EC%98%A4%EC%9D%B4(%EC%BA%A0%ED%94%84).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e946d520-b539-524f-9e89-b1463bcb81db",
+      "name": "아오이(파일럿)",
+      "file": "아오이(파일럿).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%84%EC%98%A4%EC%9D%B4(%ED%8C%8C%EC%9D%BC%EB%9F%BF).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "3d407d5e-0fa3-5de3-a9f1-280c715c30fa",
+      "name": "아오이(편입생)",
+      "file": "아오이(편입생).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%84%EC%98%A4%EC%9D%B4(%ED%8E%B8%EC%9E%85%EC%83%9D).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e597fde4-b76e-5113-8e0d-899fb184cd2c",
+      "name": "아유미",
+      "file": "아유미.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%84%EC%9C%A0%EB%AF%B8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "aecab37e-e5ce-5797-b8c5-a5108f2c7b68",
+      "name": "아유미(괴도)",
+      "file": "아유미(괴도).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%84%EC%9C%A0%EB%AF%B8(%EA%B4%B4%EB%8F%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "aaf5320d-1a1f-5961-b1f1-c2e1fa69cb19",
+      "name": "아유미(원더)",
+      "file": "아유미(원더).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%84%EC%9C%A0%EB%AF%B8(%EC%9B%90%EB%8D%94).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "2e677adc-a967-54a2-ade5-15404132cfae",
+      "name": "아이라",
+      "file": "아이라.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%84%EC%9D%B4%EB%9D%BC.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "99c19920-1f44-5bca-9e81-2488381486e4",
+      "name": "아카리",
+      "file": "아카리.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%84%EC%B9%B4%EB%A6%AC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "11778e52-f4c6-5094-86b4-b46145c61d1d",
+      "name": "아카리(엔젤)",
+      "file": "아카리(엔젤).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%84%EC%B9%B4%EB%A6%AC(%EC%97%94%EC%A0%A4).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "382438c3-0e49-5556-abc2-96f72fed5bc1",
+      "name": "아카리(크리스마스)",
+      "file": "아카리(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%84%EC%B9%B4%EB%A6%AC(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "f9418cfd-c392-555f-b063-b537ba7bd2bc",
+      "name": "아키노",
+      "file": "아키노.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%84%ED%82%A4%EB%85%B8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "473e7f4e-b54d-5df7-bed9-2e39e8891610",
+      "name": "아키노(여름)",
+      "file": "아키노(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%84%ED%82%A4%EB%85%B8(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "d7725280-267b-55e9-979b-a3e5bbc8373c",
+      "name": "아키노(크리스마스)",
+      "file": "아키노(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%84%ED%82%A4%EB%85%B8(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "acc27aff-f23b-560e-8320-b48f855d3e0f",
+      "name": "아키노&사렌",
+      "file": "아키노&사렌.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%84%ED%82%A4%EB%85%B8%26%EC%82%AC%EB%A0%8C.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "7871ea53-5780-52df-b98d-968a13fd8b25",
+      "name": "안나",
+      "file": "안나.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%88%EB%82%98.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "c2f0e97f-78c5-5cee-9ab4-41221ed3bc5f",
+      "name": "안나(여름)",
+      "file": "안나(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%88%EB%82%98(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "aff5688d-0742-5913-86dc-cbaedec79fb0",
+      "name": "안나(해적)",
+      "file": "안나(해적).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%88%EB%82%98(%ED%95%B4%EC%A0%81).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "fa6e4915-89c0-570a-95a9-5e12f60a29dc",
+      "name": "앤",
+      "file": "앤.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%A4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "5e08425d-4b11-5224-a203-c92f17361b43",
+      "name": "앤&글레어",
+      "file": "앤&글레어.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%95%A4%26%EA%B8%80%EB%A0%88%EC%96%B4.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "16b4c320-3250-50ce-91bb-585731c0f16e",
+      "name": "야마토",
+      "file": "야마토.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%95%BC%EB%A7%88%ED%86%A0.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "c4d79c7b-6f4a-54c8-847d-26fbedbccdb8",
+      "name": "에리스",
+      "file": "에리스.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%97%90%EB%A6%AC%EC%8A%A4.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "1e8d204e-8f83-57e1-8e11-97c311bcbed5",
+      "name": "에리스(여름)",
+      "file": "에리스(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%97%90%EB%A6%AC%EC%8A%A4(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "895aa5f3-0e0f-5913-944c-6e0dc705d81c",
+      "name": "에리코",
+      "file": "에리코.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%97%90%EB%A6%AC%EC%BD%94.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "facdf104-161f-5b57-883d-f149a45f590a",
+      "name": "에리코(발렌타인)",
+      "file": "에리코(발렌타인).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%97%90%EB%A6%AC%EC%BD%94(%EB%B0%9C%EB%A0%8C%ED%83%80%EC%9D%B8).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "d5ad2cfa-8858-57a0-8fe7-1095f6857eed",
+      "name": "에리코(여름)",
+      "file": "에리코(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%97%90%EB%A6%AC%EC%BD%94(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "9115b79a-6222-5106-b600-cb94cd189492",
+      "name": "에리코(커맨더)",
+      "file": "에리코(커맨더).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%97%90%EB%A6%AC%EC%BD%94(%EC%BB%A4%EB%A7%A8%EB%8D%94).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "f39219a2-bfa9-5155-9022-a1024ac74dda",
+      "name": "에밀리아",
+      "file": "에밀리아.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%97%90%EB%B0%80%EB%A6%AC%EC%95%84.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "607e6173-f2b3-5a87-90fc-20738d40a2ed",
+      "name": "에밀리아(여름)",
+      "file": "에밀리아(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%97%90%EB%B0%80%EB%A6%AC%EC%95%84(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "5efd0147-acac-58e8-a9aa-21cedd964217",
+      "name": "에키드나",
+      "file": "에키드나.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%97%90%ED%82%A4%EB%93%9C%EB%82%98.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "4059b6fb-f4b1-59e2-9b2a-9b46b917eda6",
+      "name": "와카나",
+      "file": "와카나.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%99%80%EC%B9%B4%EB%82%98.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "7630efb2-0df4-521c-a98f-999ce47b4388",
+      "name": "와카나(윈터)",
+      "file": "와카나(윈터).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%99%80%EC%B9%B4%EB%82%98(%EC%9C%88%ED%84%B0).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "5b59ab8e-1fcc-55b1-9fba-e0c8ee275f6d",
+      "name": "요리",
+      "file": "요리.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9A%94%EB%A6%AC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "0cd3433b-caef-5385-87a8-0f1ce058f028",
+      "name": "요리(엔젤)",
+      "file": "요리(엔젤).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9A%94%EB%A6%AC(%EC%97%94%EC%A0%A4).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "85c30e3e-b11f-5497-89af-9c7edbfd983f",
+      "name": "요리(크리스마스)",
+      "file": "요리(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9A%94%EB%A6%AC(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "58bafa8f-3efe-5f57-b019-e0fdaeaad132",
+      "name": "우즈키",
+      "file": "우즈키.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9A%B0%EC%A6%88%ED%82%A4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "0cd9ed24-231d-5c4e-9d73-e5a267e72bc3",
+      "name": "유니",
+      "file": "유니.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9C%A0%EB%8B%88.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "83f86ae1-a49a-5601-a584-bd147bea3db9",
+      "name": "유니(겨울)",
+      "file": "유니(겨울).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9C%A0%EB%8B%88(%EA%B2%A8%EC%9A%B8).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "ef2654d7-b42f-58ad-9182-25c017cbde60",
+      "name": "유니(성학제)",
+      "file": "유니(성학제).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9C%A0%EB%8B%88(%EC%84%B1%ED%95%99%EC%A0%9C).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a9c2c9f9-3e57-5e11-a0a3-fc7e85c2758e",
+      "name": "유이",
+      "file": "유이.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9C%A0%EC%9D%B4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "79276815-c987-5be4-a452-9d49c3377d7e",
+      "name": "유이(새해)",
+      "file": "유이(새해).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9C%A0%EC%9D%B4(%EC%83%88%ED%95%B4).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e3fcd60f-27ee-521e-9402-f09571ebdae6",
+      "name": "유이(아스트랄)",
+      "file": "유이(아스트랄).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9C%A0%EC%9D%B4(%EC%95%84%EC%8A%A4%ED%8A%B8%EB%9E%84).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "46004cac-e303-585e-b1f8-9254ac7122a0",
+      "name": "유이(여름)",
+      "file": "유이(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9C%A0%EC%9D%B4(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "8b0b4fb2-b72a-547d-bbfc-c74fe57482ee",
+      "name": "유이(의장복)",
+      "file": "유이(의장복).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9C%A0%EC%9D%B4(%EC%9D%98%EC%9E%A5%EB%B3%B5).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "59b92d7d-f5c1-53c2-8e2d-bcd4df75787d",
+      "name": "유이(크리스마스)",
+      "file": "유이(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9C%A0%EC%9D%B4(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "09119f64-c48d-55b5-973d-7a7baaa57a82",
+      "name": "유이(프린세스)",
+      "file": "유이(프린세스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9C%A0%EC%9D%B4(%ED%94%84%EB%A6%B0%EC%84%B8%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "4d4f06b7-7471-56e6-ab06-bf88a0e2a3a9",
+      "name": "유카리",
+      "file": "유카리.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9C%A0%EC%B9%B4%EB%A6%AC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "daa72ab0-6757-51f7-9c64-bfafd6013f87",
+      "name": "유카리(여름)",
+      "file": "유카리(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9C%A0%EC%B9%B4%EB%A6%AC(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "8f325174-b659-5d5a-a335-20182a227dc9",
+      "name": "유카리(캠프)",
+      "file": "유카리(캠프).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9C%A0%EC%B9%B4%EB%A6%AC(%EC%BA%A0%ED%94%84).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "9ef55b4a-129a-5087-bb32-e1bc9ddad6d7",
+      "name": "유카리(크리스마스)",
+      "file": "유카리(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9C%A0%EC%B9%B4%EB%A6%AC(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "ee425add-1273-5120-8184-d657234d9314",
+      "name": "유키",
+      "file": "유키.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9C%A0%ED%82%A4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "ad5f25b7-36a9-544b-8e91-0ca64cadb3d0",
+      "name": "유키(오에도)",
+      "file": "유키(오에도).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9C%A0%ED%82%A4(%EC%98%A4%EC%97%90%EB%8F%84).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "ae571469-c9a3-591b-895a-f2b24c77394f",
+      "name": "유키(의장복)",
+      "file": "유키(의장복).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9C%A0%ED%82%A4(%EC%9D%98%EC%9E%A5%EB%B3%B5).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "160c182f-a24e-541f-8392-2d5bfb7edb3f",
+      "name": "유키노",
+      "file": "유키노.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9C%A0%ED%82%A4%EB%85%B8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "08341d8f-5f8a-5edf-9764-6a0686e03503",
+      "name": "이노리",
+      "file": "이노리.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9D%B4%EB%85%B8%EB%A6%AC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "ca794dcc-6a79-5e66-b3c4-b75625bdeff1",
+      "name": "이노리(괴도)",
+      "file": "이노리(괴도).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9D%B4%EB%85%B8%EB%A6%AC(%EA%B4%B4%EB%8F%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "1e22c11f-0ef8-5657-aae4-805cf3845c76",
+      "name": "이노리(새해)",
+      "file": "이노리(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9D%B4%EB%85%B8%EB%A6%AC(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "004746da-57e4-5926-a3eb-fce053663ec3",
+      "name": "이노리(시간여행)",
+      "file": "이노리(시간여행).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9D%B4%EB%85%B8%EB%A6%AC(%EC%8B%9C%EA%B0%84%EC%97%AC%ED%96%89).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "0248a417-af9f-57c3-93f5-98e1320ddc32",
+      "name": "이로하",
+      "file": "이로하.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9D%B4%EB%A1%9C%ED%95%98.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "94810997-75d2-5b48-84b6-94383e5a5a2e",
+      "name": "이리야",
+      "file": "이리야.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9D%B4%EB%A6%AC%EC%95%BC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "5fb54e88-11df-5272-84a0-8b1adf37b5fa",
+      "name": "이리야(새해)",
+      "file": "이리야(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9D%B4%EB%A6%AC%EC%95%BC(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "c860fca6-c6c0-5647-81a4-a534719345cb",
+      "name": "이리야(의장복)",
+      "file": "이리야(의장복).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9D%B4%EB%A6%AC%EC%95%BC(%EC%9D%98%EC%9E%A5%EB%B3%B5).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "f1926b27-4f97-50ab-bdce-32ec7269a6bb",
+      "name": "이리야(크리스마스)",
+      "file": "이리야(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9D%B4%EB%A6%AC%EC%95%BC(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "45c5c880-679d-525d-be45-dce43ec69bca",
+      "name": "이오",
+      "file": "이오.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%9D%B4%EC%98%A4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "579e80d1-66e1-5fa5-916e-3f75ea268aaa",
+      "name": "이오(느와르)",
+      "file": "이오(느와르).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9D%B4%EC%98%A4(%EB%8A%90%EC%99%80%EB%A5%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "6dc00963-55e3-5c74-a572-42af653c4e29",
+      "name": "이오(여름)",
+      "file": "이오(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9D%B4%EC%98%A4(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a6d625b5-9dfb-5483-b3d6-f7de625bf9fe",
+      "name": "이오(크리스마스)",
+      "file": "이오(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%9D%B4%EC%98%A4(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "1136f2b3-d993-5ab6-9d11-4c7828e200b9",
+      "name": "쥰",
+      "file": "쥰.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%A5%B0.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "ed042750-1803-520a-a824-fb9ece5610e9",
+      "name": "쥰(여름)",
+      "file": "쥰(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%A5%B0(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "f374d106-c9dd-50f5-a2f2-a3673cc5f494",
+      "name": "쥰(크리스마스)",
+      "file": "쥰(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%A5%B0(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "1021b0ea-c83a-51aa-8b68-245387fb72ab",
+      "name": "지타",
+      "file": "지타.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%A7%80%ED%83%80.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "385c389d-ca9c-507d-a8e7-33b764a719aa",
+      "name": "지타(워록)",
+      "file": "지타(워록).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%A7%80%ED%83%80(%EC%9B%8C%EB%A1%9D).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "21446aec-557f-5396-94f7-036d00ce474e",
+      "name": "츠무기",
+      "file": "츠무기.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%B8%A0%EB%AC%B4%EA%B8%B0.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "339faf34-3822-5ae3-8ad5-ffacd841364d",
+      "name": "츠무기(여름)",
+      "file": "츠무기(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%B8%A0%EB%AC%B4%EA%B8%B0(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "328e67e5-7432-58a2-b59a-cd23aa3e973f",
+      "name": "츠무기(지오게헤나)",
+      "file": "츠무기(지오게헤나).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%B8%A0%EB%AC%B4%EA%B8%B0(%EC%A7%80%EC%98%A4%EA%B2%8C%ED%97%A4%EB%82%98).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "971c1379-9734-5335-9392-285a88505fdd",
+      "name": "츠무기(할로윈)",
+      "file": "츠무기(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%B8%A0%EB%AC%B4%EA%B8%B0(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "865a5756-aaaa-52be-a181-a386e7015167",
+      "name": "치에루",
+      "file": "치에루.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%B9%98%EC%97%90%EB%A3%A8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "3afa7435-35c8-5e53-938f-c57543e29f0b",
+      "name": "치에루(겨울)",
+      "file": "치에루(겨울).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%B9%98%EC%97%90%EB%A3%A8(%EA%B2%A8%EC%9A%B8).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "45246e40-6107-5f30-9965-1c584d3edd70",
+      "name": "치에루(성학제)",
+      "file": "치에루(성학제).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%B9%98%EC%97%90%EB%A3%A8(%EC%84%B1%ED%95%99%EC%A0%9C).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "5d4db3e0-71dd-5691-94b7-d9713987d593",
+      "name": "치카",
+      "file": "치카.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%B9%98%EC%B9%B4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "2c0a646a-9470-5bb1-b366-56f320ced570",
+      "name": "치카(여름)",
+      "file": "치카(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%B9%98%EC%B9%B4(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "6e0d21e0-d7b7-5d75-8f2a-a4445914baa1",
+      "name": "치카(의장복)",
+      "file": "치카(의장복).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%B9%98%EC%B9%B4(%EC%9D%98%EC%9E%A5%EB%B3%B5).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a91fd894-d899-587a-bc72-2009fe07dd0d",
+      "name": "치카(크리스마스)",
+      "file": "치카(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%B9%98%EC%B9%B4(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e5bc2152-38bf-5570-86c4-5fed9faac4ac",
+      "name": "카논",
+      "file": "카논.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%B9%B4%EB%85%BC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "9d870891-7b01-55d5-83e4-cc1e07551c7b",
+      "name": "카린",
+      "file": "카린.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%B9%B4%EB%A6%B0.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "5c26633a-7a2d-5e90-aae5-fb85ceef5264",
+      "name": "카린(알케미스트)",
+      "file": "카린(알케미스트).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%B9%B4%EB%A6%B0(%EC%95%8C%EC%BC%80%EB%AF%B8%EC%8A%A4%ED%8A%B8).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "fb536589-74cb-5b5f-a18c-18a33341169f",
+      "name": "카스미",
+      "file": "카스미.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%B9%B4%EC%8A%A4%EB%AF%B8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "1c0ab440-aec6-5bfc-9733-3509c5237932",
+      "name": "카스미(매지컬)",
+      "file": "카스미(매지컬).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%B9%B4%EC%8A%A4%EB%AF%B8(%EB%A7%A4%EC%A7%80%EC%BB%AC).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "c01864f7-e53e-57af-b36f-061ac463a2dc",
+      "name": "카스미(새해)",
+      "file": "카스미(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%B9%B4%EC%8A%A4%EB%AF%B8(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "0b20df63-a161-504e-b98e-fe32bf6ef297",
+      "name": "카스미(시스터)",
+      "file": "카스미(시스터).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%B9%B4%EC%8A%A4%EB%AF%B8(%EC%8B%9C%EC%8A%A4%ED%84%B0).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "3cc3dff9-56d3-5b5f-a6bd-87ec4c06bf73",
+      "name": "카스미(여름)",
+      "file": "카스미(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%B9%B4%EC%8A%A4%EB%AF%B8(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "ebbaa911-231b-55c4-9565-24376e1b1adc",
+      "name": "카야",
+      "file": "카야.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%B9%B4%EC%95%BC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "40ac6f75-f995-5366-b9c1-46fe6786d2e6",
+      "name": "카야(리버레이터)",
+      "file": "카야(리버레이터).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%B9%B4%EC%95%BC(%EB%A6%AC%EB%B2%84%EB%A0%88%EC%9D%B4%ED%84%B0).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "b8b2454d-8713-57d8-9cb7-27f4890a0d3b",
+      "name": "카야(시간여행)",
+      "file": "카야(시간여행).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%B9%B4%EC%95%BC(%EC%8B%9C%EA%B0%84%EC%97%AC%ED%96%89).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "2b5aa602-eecc-5533-9326-00ed2c24338f",
+      "name": "카오리",
+      "file": "카오리.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%B9%B4%EC%98%A4%EB%A6%AC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "304193a0-dc7d-5249-b429-73144fda99eb",
+      "name": "카오리(여름)",
+      "file": "카오리(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%B9%B4%EC%98%A4%EB%A6%AC(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "c580b8f6-1bee-5d87-b2e0-3be3e17d5b93",
+      "name": "카오리(할로윈)",
+      "file": "카오리(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%B9%B4%EC%98%A4%EB%A6%AC(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "cf41dee8-9c9a-5e68-a297-7ed702c7b84b",
+      "name": "카이저 인사이트",
+      "file": "카이저 인사이트.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%B9%B4%EC%9D%B4%EC%A0%80%20%EC%9D%B8%EC%82%AC%EC%9D%B4%ED%8A%B8.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "483a9435-71dd-58b4-93a4-3e32819b127e",
+      "name": "캬루",
+      "file": "캬루.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%BA%AC%EB%A3%A8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "75975e6c-7fed-5422-bd1e-4195baec4934",
+      "name": "캬루(새해)",
+      "file": "캬루(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%BA%AC%EB%A3%A8(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "7456bd05-0294-5f7a-baae-37c8312d5a5d",
+      "name": "캬루(여름)",
+      "file": "캬루(여름).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%BA%AC%EB%A3%A8(%EC%97%AC%EB%A6%84).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "9a8f7a79-06fb-5e2e-bab2-19f89e2252e6",
+      "name": "캬루(오버로드)",
+      "file": "캬루(오버로드).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%BA%AC%EB%A3%A8(%EC%98%A4%EB%B2%84%EB%A1%9C%EB%93%9C).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "8a825a84-a596-598a-8f15-20c75a3b4606",
+      "name": "캬루(패동천성)",
+      "file": "캬루(패동천성).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%BA%AC%EB%A3%A8(%ED%8C%A8%EB%8F%99%EC%B2%9C%EC%84%B1).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "809161a7-a0bc-5e4b-9c67-cc889f8721fc",
+      "name": "캬루(편입생)",
+      "file": "캬루(편입생).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%BA%AC%EB%A3%A8(%ED%8E%B8%EC%9E%85%EC%83%9D).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "9146d053-0bb0-55c4-aca4-28414f0039d9",
+      "name": "캬루(프린세스)",
+      "file": "캬루(프린세스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%BA%AC%EB%A3%A8(%ED%94%84%EB%A6%B0%EC%84%B8%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e44cb44c-1a1a-5c02-ba84-33edd3eaa22b",
+      "name": "콧코로",
+      "file": "콧코로.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%BD%A7%EC%BD%94%EB%A1%9C.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e3bdc284-c4ca-5c7e-a4c3-db6d8d0ad46d",
+      "name": "콧코로(레인저)",
+      "file": "콧코로(레인저).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%BD%A7%EC%BD%94%EB%A1%9C(%EB%A0%88%EC%9D%B8%EC%A0%80).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "1eea664d-91ab-5fa5-b9c8-568ae75f458b",
+      "name": "콧코로(새해)",
+      "file": "콧코로(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%BD%A7%EC%BD%94%EB%A1%9C(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "20f30737-dd06-5b71-a41e-0cea5317b16a",
+      "name": "콧코로(여름)",
+      "file": "콧코로(여름).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%BD%A7%EC%BD%94%EB%A1%9C(%EC%97%AC%EB%A6%84).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "b2d3dda5-cf0c-55ab-8b6b-fd8a5e172e94",
+      "name": "콧코로(의장복)",
+      "file": "콧코로(의장복).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%BD%A7%EC%BD%94%EB%A1%9C(%EC%9D%98%EC%9E%A5%EB%B3%B5).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "b34ab0d5-898f-516f-8282-dcc3448fbefd",
+      "name": "콧코로(프린세스)",
+      "file": "콧코로(프린세스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%BD%A7%EC%BD%94%EB%A1%9C(%ED%94%84%EB%A6%B0%EC%84%B8%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a85b44ed-7f32-53b0-8ae5-5709281b0b58",
+      "name": "콧코로(향도유군)",
+      "file": "콧코로(향도유군).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%BD%A7%EC%BD%94%EB%A1%9C(%ED%96%A5%EB%8F%84%EC%9C%A0%EA%B5%B0).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "49d24c9d-b593-589e-8141-e5b75d4df4f8",
+      "name": "쿄우카",
+      "file": "쿄우카.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%BF%84%EC%9A%B0%EC%B9%B4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "62290aed-8c47-528b-894d-fcc6f74a7123",
+      "name": "쿄우카(고딕)",
+      "file": "쿄우카(고딕).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%BF%84%EC%9A%B0%EC%B9%B4(%EA%B3%A0%EB%94%95).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "2109b883-71a9-5d7d-8a8d-e7fe6c4775e2",
+      "name": "쿄우카(봄)",
+      "file": "쿄우카(봄).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%BF%84%EC%9A%B0%EC%B9%B4(%EB%B4%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "b6fa41b5-17f3-5d44-899f-4572ad33e6c5",
+      "name": "쿄우카(여름)",
+      "file": "쿄우카(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%BF%84%EC%9A%B0%EC%B9%B4(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "9c6d6f62-0e40-59d2-b4b0-4dbef647a57f",
+      "name": "쿄우카(할로윈)",
+      "file": "쿄우카(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%BF%84%EC%9A%B0%EC%B9%B4(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "779c437e-2a34-53c7-8d69-ddf806de1352",
+      "name": "쿠루루",
+      "file": "쿠루루.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%BF%A0%EB%A3%A8%EB%A3%A8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "96b2608c-5a95-5aa8-9af2-a454f1dfbf0a",
+      "name": "쿠루미",
+      "file": "쿠루미.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%BF%A0%EB%A3%A8%EB%AF%B8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "d0df4a8f-9a62-5e18-97cf-7cd766ce5f4d",
+      "name": "쿠루미(무대)",
+      "file": "쿠루미(무대).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%BF%A0%EB%A3%A8%EB%AF%B8(%EB%AC%B4%EB%8C%80).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "65e3d9f0-f770-5567-bba4-ce6c42877299",
+      "name": "쿠루미(크리스마스)",
+      "file": "쿠루미(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%BF%A0%EB%A3%A8%EB%AF%B8(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "8ac8ba5a-de98-5074-b021-aabeaaa6a476",
+      "name": "쿠우카",
+      "file": "쿠우카.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%BF%A0%EC%9A%B0%EC%B9%B4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "d8825162-de9d-5c06-b4f8-422d600ce360",
+      "name": "쿠우카(느와르)",
+      "file": "쿠우카(느와르).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%BF%A0%EC%9A%B0%EC%B9%B4(%EB%8A%90%EC%99%80%EB%A5%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "701c1574-d168-5d13-b49e-ee9be6743829",
+      "name": "쿠우카(여름)",
+      "file": "쿠우카(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%EC%BF%A0%EC%9A%B0%EC%B9%B4(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "52acc366-6056-5481-94df-991090faa656",
+      "name": "쿠우카(오에도)",
+      "file": "쿠우카(오에도).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%EC%BF%A0%EC%9A%B0%EC%B9%B4(%EC%98%A4%EC%97%90%EB%8F%84).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "f6dbd213-ed4f-5c1f-a8e8-8bf2af61657a",
+      "name": "크레짓타",
+      "file": "크레짓타.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%81%AC%EB%A0%88%EC%A7%93%ED%83%80.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a1239e7d-0064-564e-9486-619e1d93d6f6",
+      "name": "크레짓타(크리스마스)",
+      "file": "크레짓타(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%81%AC%EB%A0%88%EC%A7%93%ED%83%80(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "bd8fbce7-78b7-5821-ac5a-924419af97dc",
+      "name": "크리스티나",
+      "file": "크리스티나.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%81%AC%EB%A6%AC%EC%8A%A4%ED%8B%B0%EB%82%98.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "7829e019-a59f-5f98-872e-bb239e455191",
+      "name": "크리스티나(알파)",
+      "file": "크리스티나(알파).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%81%AC%EB%A6%AC%EC%8A%A4%ED%8B%B0%EB%82%98(%EC%95%8C%ED%8C%8C).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "47db77d1-7be7-5cb4-be2a-6b3f951865c1",
+      "name": "크리스티나(와일드)",
+      "file": "크리스티나(와일드).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%81%AC%EB%A6%AC%EC%8A%A4%ED%8B%B0%EB%82%98(%EC%99%80%EC%9D%BC%EB%93%9C).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "280e24b0-1391-5cce-b1a4-8b2de7ccd2bc",
+      "name": "크리스티나(크리스마스)",
+      "file": "크리스티나(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%81%AC%EB%A6%AC%EC%8A%A4%ED%8B%B0%EB%82%98(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e99061f6-b376-542c-baf9-fa1b6ea4826f",
+      "name": "크리아",
+      "file": "크리아.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%81%AC%EB%A6%AC%EC%95%84.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "a0bfb457-a047-5b3a-b468-47881f1fe4d1",
+      "name": "크리아(여름)",
+      "file": "크리아(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%81%AC%EB%A6%AC%EC%95%84(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "b5949dfb-04a4-56c8-a45b-f7026e9f13d0",
+      "name": "클로에",
+      "file": "클로에.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%81%B4%EB%A1%9C%EC%97%90.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "db96dffd-5b25-5ea1-9ab5-6e768a86f31c",
+      "name": "클로에(성학제)",
+      "file": "클로에(성학제).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%81%B4%EB%A1%9C%EC%97%90(%EC%84%B1%ED%95%99%EC%A0%9C).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "34f04633-ddec-5ded-b826-49ba6d66e6d9",
+      "name": "클로에(여름)",
+      "file": "클로에(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%81%B4%EB%A1%9C%EC%97%90(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "dceb3ade-d66c-5a9c-b945-95b9231944a7",
+      "name": "클로체",
+      "file": "클로체.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%81%B4%EB%A1%9C%EC%B2%B4.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "2e5abb11-e4fd-5db4-9b92-8630a8cc40f0",
+      "name": "클로체(에어리얼)",
+      "file": "클로체(에어리얼).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%81%B4%EB%A1%9C%EC%B2%B4(%EC%97%90%EC%96%B4%EB%A6%AC%EC%96%BC).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "9234d04c-c3d5-5d50-9063-f5098f3ad588",
+      "name": "타마키",
+      "file": "타마키.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%83%80%EB%A7%88%ED%82%A4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "15564e56-6c75-58c5-9449-433acfa70f56",
+      "name": "타마키(여름)",
+      "file": "타마키(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%83%80%EB%A7%88%ED%82%A4(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "2b6033f8-5dfe-507a-bdb7-42a1587265bc",
+      "name": "타마키(작업복)",
+      "file": "타마키(작업복).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%83%80%EB%A7%88%ED%82%A4(%EC%9E%91%EC%97%85%EB%B3%B5).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "3d3c9b46-75ce-51e0-a77f-2130ce6f47db",
+      "name": "타마키(카페)",
+      "file": "타마키(카페).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%83%80%EB%A7%88%ED%82%A4(%EC%B9%B4%ED%8E%98).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "4476ae66-766a-54a3-9542-1a1669c93c27",
+      "name": "토모",
+      "file": "토모.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%86%A0%EB%AA%A8.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "6efaf24b-250d-530c-b580-9f3b70d23cfa",
+      "name": "토모(매지컬)",
+      "file": "토모(매지컬).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%86%A0%EB%AA%A8(%EB%A7%A4%EC%A7%80%EC%BB%AC).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "28041faf-013e-59ef-8374-f24cc6e03242",
+      "name": "토모(할로윈)",
+      "file": "토모(할로윈).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%86%A0%EB%AA%A8(%ED%95%A0%EB%A1%9C%EC%9C%88).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "556cf7ee-7e45-5ce4-95b8-6d96180967e1",
+      "name": "페코린느",
+      "file": "페코린느.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%8E%98%EC%BD%94%EB%A6%B0%EB%8A%90.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "3fc542ce-6afe-51da-b31c-37479aa926c6",
+      "name": "페코린느(새해)",
+      "file": "페코린느(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%8E%98%EC%BD%94%EB%A6%B0%EB%8A%90(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "637d726c-8884-5911-ae9d-ec5057c49864",
+      "name": "페코린느(아스트라이아)",
+      "file": "페코린느(아스트라이아).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%8E%98%EC%BD%94%EB%A6%B0%EB%8A%90(%EC%95%84%EC%8A%A4%ED%8A%B8%EB%9D%BC%EC%9D%B4%EC%95%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "38b76641-4ddc-582f-b5ab-d67fd4e097f7",
+      "name": "페코린느(여름)",
+      "file": "페코린느(여름).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%8E%98%EC%BD%94%EB%A6%B0%EB%8A%90(%EC%97%AC%EB%A6%84).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "cfb90bff-9e9e-58ed-8f89-8306a0ba2d11",
+      "name": "페코린느(오버로드)",
+      "file": "페코린느(오버로드).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%8E%98%EC%BD%94%EB%A6%B0%EB%8A%90(%EC%98%A4%EB%B2%84%EB%A1%9C%EB%93%9C).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "33f046f1-5196-5334-8277-6ecd9c5cd487",
+      "name": "페코린느(크리스마스)",
+      "file": "페코린느(크리스마스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%8E%98%EC%BD%94%EB%A6%B0%EB%8A%90(%ED%81%AC%EB%A6%AC%EC%8A%A4%EB%A7%88%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "86524d01-fd5d-52b5-bf3f-17b25dd7fd54",
+      "name": "페코린느(프린세스)",
+      "file": "페코린느(프린세스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%8E%98%EC%BD%94%EB%A6%B0%EB%8A%90(%ED%94%84%EB%A6%B0%EC%84%B8%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "537791c0-14de-5fe2-9c9c-96a08cbf4909",
+      "name": "프레시아",
+      "file": "프레시아.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%94%84%EB%A0%88%EC%8B%9C%EC%95%84.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "83d3b197-fba9-5b4a-adbe-69eda41eccd9",
+      "name": "프레시아(여름)",
+      "file": "프레시아(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%94%84%EB%A0%88%EC%8B%9C%EC%95%84(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "ede54972-3470-5d60-bfd1-1d7084a39320",
+      "name": "하츠네",
+      "file": "하츠네.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%95%98%EC%B8%A0%EB%84%A4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "6180fcc6-0306-54b3-95f3-361afe47c6a3",
+      "name": "하츠네(새해)",
+      "file": "하츠네(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%95%98%EC%B8%A0%EB%84%A4(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "922127b6-f177-543b-bfd7-b5f4e005a14f",
+      "name": "하츠네(여름)",
+      "file": "하츠네(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%95%98%EC%B8%A0%EB%84%A4(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "79733da1-9d5e-5773-8f32-56e179f90fb6",
+      "name": "하츠네&시오리",
+      "file": "하츠네&시오리.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%95%98%EC%B8%A0%EB%84%A4%26%EC%8B%9C%EC%98%A4%EB%A6%AC.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "0f75887d-419b-513f-834d-e30d5c1145ee",
+      "name": "호마레",
+      "file": "호마레.png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%98%B8%EB%A7%88%EB%A0%88.png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "41cd0557-7b07-5fd4-b44e-65fcddd51761",
+      "name": "호마레(새해)",
+      "file": "호마레(새해).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%98%B8%EB%A7%88%EB%A0%88(%EC%83%88%ED%95%B4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "dc6e2b07-7eef-5cfa-9fb5-669c69702b09",
+      "name": "호마레(여름)",
+      "file": "호마레(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%98%B8%EB%A7%88%EB%A0%88(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "b43d99c3-1123-56cf-94ec-4171a0fe744d",
+      "name": "후부키",
+      "file": "후부키.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%9B%84%EB%B6%80%ED%82%A4.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "3427d6ae-42ff-5604-a574-ddae4a1a7217",
+      "name": "히요리",
+      "file": "히요리.jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%9E%88%EC%9A%94%EB%A6%AC.jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e672bdb4-44af-575c-8264-dbcaab3f845d",
+      "name": "히요리(사라사리아)",
+      "file": "히요리(사라사리아).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%9E%88%EC%9A%94%EB%A6%AC(%EC%82%AC%EB%9D%BC%EC%82%AC%EB%A6%AC%EC%95%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "200f943e-9b83-5379-a9e3-644e9f4f6c15",
+      "name": "히요리(새해)",
+      "file": "히요리(새해).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%9E%88%EC%9A%94%EB%A6%AC(%EC%83%88%ED%95%B4).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "e21d245a-7d81-5efa-923e-b6e1f1446ef7",
+      "name": "히요리(아스트랄)",
+      "file": "히요리(아스트랄).jpg",
+      "imageMime": "image/jpeg",
+      "imageUrl": "/characters/%ED%9E%88%EC%9A%94%EB%A6%AC(%EC%95%84%EC%8A%A4%ED%8A%B8%EB%9E%84).jpg",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "d9f92eec-03b3-5c5e-90a1-e1c789b1b35e",
+      "name": "히요리(여름)",
+      "file": "히요리(여름).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%9E%88%EC%9A%94%EB%A6%AC(%EC%97%AC%EB%A6%84).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    },
+    {
+      "id": "23b35afd-5dac-58a9-a342-67794da105f3",
+      "name": "히요리(프린세스)",
+      "file": "히요리(프린세스).png",
+      "imageMime": "image/png",
+      "imageUrl": "/characters/%ED%9E%88%EC%9A%94%EB%A6%AC(%ED%94%84%EB%A6%B0%EC%84%B8%EC%8A%A4).png",
+      "updatedAt": "2026-05-09T13:35:01.767Z"
+    }
+  ]
+}

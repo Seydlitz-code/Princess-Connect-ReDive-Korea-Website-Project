@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "build:logo": "node scripts/process-logo.js"
+    "build:logo": "node scripts/process-logo.js",
+    "import:characters": "node scripts/import-characters.js",
+    "build:characters": "node scripts/build-character-library.js"
   },
   "engines": {
     "node": ">=18"
