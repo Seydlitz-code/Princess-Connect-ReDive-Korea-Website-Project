@@ -15,6 +15,9 @@ const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 72;
 const MAX_PROFILE_DATA_URL_LENGTH = 600_000;
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function createPoolConfig() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) return null;
@@ -34,6 +37,28 @@ let pool = null;
 
 /** null 이면 캐릭터 메타만 DB 사용 */
 let characterLibrary = null;
+
+const MAX_OWNED_CHARACTERS_PER_REGISTER = 500;
+
+function normalizeCharacterIds(value) {
+  if (!Array.isArray(value)) return [];
+  const out = [];
+  const seen = new Set();
+  for (const raw of value) {
+    const id = String(raw || '').trim();
+    if (!UUID_RE.test(id) || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+    if (out.length >= MAX_OWNED_CHARACTERS_PER_REGISTER) break;
+  }
+  return out;
+}
+
+async function loadValidCharacterIdSet(pgPool) {
+  if (characterLibrary) return new Set(characterLibrary.byId.keys());
+  const r = await pgPool.query('SELECT id FROM characters');
+  return new Set(r.rows.map((row) => String(row.id)));
+}
 
 async function ensureSchema(client) {
   await client.query(`
@@ -55,6 +80,14 @@ async function ensureSchema(client) {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS user_owned_characters (
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      character_id UUID NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, character_id)
+    );
+  `);
 }
 
 async function initDb() {
@@ -67,7 +100,7 @@ async function initDb() {
   const client = await pool.connect();
   try {
     await ensureSchema(client);
-    console.log('PostgreSQL 연결 및 users·characters 테이블 준비 완료');
+    console.log('PostgreSQL 연결 및 users·characters·user_owned_characters 테이블 준비 완료');
   } finally {
     client.release();
   }
@@ -150,23 +183,83 @@ app.post('/api/register', async (req, res) => {
     return;
   }
 
+  const deferOwnedCharacters = Boolean(body.deferOwnedCharacters);
+  const requestedCharacterIds = normalizeCharacterIds(body.characterIds);
+
+  if (!deferOwnedCharacters && requestedCharacterIds.length === 0) {
+    res.status(400).json({
+      ok: false,
+      error: '보유 캐릭터를 한 명 이상 선택하거나, ‘보유 캐릭터 추후 등록’을 체크해 주세요.',
+    });
+    return;
+  }
+
+  const pg = pool;
+  const client = await pg.connect();
   try {
+    const validIds = await loadValidCharacterIdSet(pg);
+    if (requestedCharacterIds.length > 0 && validIds.size === 0) {
+      res.status(503).json({
+        ok: false,
+        error: '캐릭터 데이터가 준비되지 않았습니다. 관리자에게 문의해 주세요.',
+      });
+      return;
+    }
+    if (!deferOwnedCharacters && validIds.size === 0) {
+      res.status(503).json({
+        ok: false,
+        error: '캐릭터 데이터가 준비되지 않았습니다. 관리자에게 문의해 주세요.',
+      });
+      return;
+    }
+
+    const ownedFiltered = [];
+    for (const id of requestedCharacterIds) {
+      if (validIds.has(id)) ownedFiltered.push(id);
+    }
+
+    if (ownedFiltered.length < requestedCharacterIds.length) {
+      res.status(400).json({
+        ok: false,
+        error: '목록에 없는 캐릭터가 포함되어 있습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.',
+      });
+      return;
+    }
+
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-    const result = await pool.query(
-      `INSERT INTO users (username, nickname, password_hash, profile_image)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, username, nickname, created_at AS "createdAt"`,
-      [username, nickname, passwordHash, profileImage || null]
-    );
-    const row = result.rows[0];
+    await client.query('BEGIN');
+    let userRow;
+    try {
+      const ins = await client.query(
+        `INSERT INTO users (username, nickname, password_hash, profile_image)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, username, nickname, created_at AS "createdAt"`,
+        [username, nickname, passwordHash, profileImage || null]
+      );
+      userRow = ins.rows[0];
+
+      for (const cid of ownedFiltered) {
+        await client.query(
+          `INSERT INTO user_owned_characters (user_id, character_id) VALUES ($1, $2::uuid)`,
+          [userRow.id, cid]
+        );
+      }
+      await client.query('COMMIT');
+    } catch (txErr) {
+      await client.query('ROLLBACK');
+      throw txErr;
+    }
+
     res.status(201).json({
       ok: true,
       user: {
-        id: row.id,
-        username: row.username,
-        nickname: row.nickname,
-        createdAt: row.createdAt,
+        id: userRow.id,
+        username: userRow.username,
+        nickname: userRow.nickname,
+        createdAt: userRow.createdAt,
       },
+      ownedCharacterCount: ownedFiltered.length,
+      deferOwnedCharacters,
     });
   } catch (err) {
     if (err.code === '23505') {
@@ -175,11 +268,10 @@ app.post('/api/register', async (req, res) => {
     }
     console.error(err);
     res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  } finally {
+    client.release();
   }
 });
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 app.get('/api/characters', async (req, res) => {
   if (characterLibrary) {
@@ -202,7 +294,14 @@ app.get('/api/characters', async (req, res) => {
        FROM characters
        ORDER BY name ASC`
     );
-    res.json({ ok: true, source: 'postgres', characters: result.rows });
+    const characters = result.rows.map((row) => {
+      const id = String(row.id);
+      return {
+        ...row,
+        imageUrl: `/api/characters/${id}/image`,
+      };
+    });
+    res.json({ ok: true, source: 'postgres', characters });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
