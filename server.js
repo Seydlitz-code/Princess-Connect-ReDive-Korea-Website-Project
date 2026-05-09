@@ -18,17 +18,52 @@ const MAX_PROFILE_DATA_URL_LENGTH = 600_000;
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+/** Railway 등: 웹 서비스에 DATABASE_URL 참조가 없어도 흔한 변수명으로 연결 시도 */
+function resolvePostgresConnectionString() {
+  const t = (v) => (typeof v === 'string' ? v.trim() : '');
+  const fromUrl =
+    t(process.env.DATABASE_URL) ||
+    t(process.env.DATABASE_PRIVATE_URL) ||
+    t(process.env.POSTGRES_URL) ||
+    t(process.env.DATABASE_PUBLIC_URL);
+  if (fromUrl) return fromUrl;
+
+  const host = t(process.env.PGHOST || process.env.POSTGRES_HOSTNAME || process.env.POSTGRES_HOST);
+  const port = t(process.env.PGPORT || process.env.POSTGRES_PORT) || '5432';
+  const user = t(process.env.PGUSER || process.env.POSTGRES_USER);
+  const password = process.env.PGPASSWORD != null ? String(process.env.PGPASSWORD) : '';
+  const database = t(
+    process.env.PGDATABASE || process.env.POSTGRES_DB || process.env.POSTGRES_DATABASE
+  );
+  if (!host || !user || !database) return '';
+
+  const sslMode = t(process.env.PGSSLMODE);
+  const useSsl =
+    sslMode === 'require' ||
+    (sslMode !== 'disable' && host !== 'localhost' && host !== '127.0.0.1');
+  const query = useSsl ? '?sslmode=require' : '';
+
+  const u = encodeURIComponent(user);
+  const p = encodeURIComponent(password);
+  const db = encodeURIComponent(database);
+  return `postgresql://${u}:${p}@${host}:${port}/${db}${query}`;
+}
+
 function createPoolConfig() {
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString = resolvePostgresConnectionString();
   if (!connectionString) return null;
   const cfg = { connectionString };
   try {
-    const u = new URL(connectionString);
-    if (u.searchParams.get('sslmode') === 'require') {
+    const normalized = connectionString.replace(/^postgres:\/\//i, 'postgresql://');
+    const u = new URL(normalized);
+    const host = u.hostname || '';
+    const railwayHost =
+      host.includes('railway') || /\.rlwy\.net$/i.test(host) || /\.railway\.app$/i.test(host);
+    if (u.searchParams.get('sslmode') === 'require' || (railwayHost && u.searchParams.get('sslmode') !== 'disable')) {
       cfg.ssl = { rejectUnauthorized: false };
     }
   } catch {
-    /* ignore invalid URL */
+    /* ignore invalid URL — Pool may still parse the string */
   }
   return cfg;
 }
@@ -93,7 +128,9 @@ async function ensureSchema(client) {
 async function initDb() {
   const cfg = createPoolConfig();
   if (!cfg) {
-    console.warn('DATABASE_URL이 없습니다. 회원가입 API는 동작하지 않습니다.');
+    console.warn(
+      'PostgreSQL 연결 문자열이 없습니다. Railway 웹 서비스에 Postgres의 DATABASE_URL(또는 DATABASE_PRIVATE_URL) 변수 참조를 추가하거나, PGHOST·PGUSER·PGPASSWORD·PGDATABASE 를 설정하세요.'
+    );
     return;
   }
   pool = new Pool(cfg);
@@ -110,7 +147,8 @@ function requirePool(res) {
   if (!pool) {
     res.status(503).json({
       ok: false,
-      error: '데이터베이스가 구성되지 않았습니다. Railway에서 Postgres와 웹 서비스를 연결해 DATABASE_URL을 설정하세요.',
+      error:
+        '데이터베이스에 연결할 수 없습니다. Railway에서 웹 서비스 → Variables에 Postgres의 DATABASE_URL 또는 DATABASE_PRIVATE_URL 참조를 추가했는지 확인해 주세요.',
     });
     return false;
   }
