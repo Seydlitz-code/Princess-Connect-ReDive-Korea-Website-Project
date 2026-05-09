@@ -3,6 +3,13 @@ const path = require('path');
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const { createPoolConfig, tTrim } = require('./lib/dbConfig');
+const {
+  getSessionSecret,
+  signSession,
+  getUserIdFromRequest,
+  appendSessionCookie,
+  appendClearSessionCookie,
+} = require('./lib/sessionAuth');
 const { readCharacterLibrarySync } = require('./lib/charactersLibrary');
 
 const app = express();
@@ -157,6 +164,109 @@ function requirePool(res) {
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/api/me', async (req, res) => {
+  const secret = getSessionSecret();
+  if (!secret || !pool) {
+    res.json({ ok: true, user: null });
+    return;
+  }
+  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
+  if (!userId) {
+    res.json({ ok: true, user: null });
+    return;
+  }
+  try {
+    const r = await pool.query(
+      `SELECT id, username, nickname, profile_image AS "profileImage",
+              COALESCE(role, 'user') AS role
+       FROM users WHERE id = $1::uuid LIMIT 1`,
+      [userId]
+    );
+    if (r.rowCount === 0) {
+      appendClearSessionCookie(res);
+      res.json({ ok: true, user: null });
+      return;
+    }
+    const row = r.rows[0];
+    res.json({
+      ok: true,
+      user: {
+        id: row.id,
+        username: row.username,
+        nickname: row.nickname,
+        profileImage: row.profileImage,
+        role: row.role,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+app.post('/api/login', async (req, res) => {
+  if (!requirePool(res)) return;
+  const secret = getSessionSecret();
+  if (!secret) {
+    res.status(503).json({
+      ok: false,
+      error:
+        '로그인이 비활성화되었습니다. Railway 등에 SESSION_SECRET 환경 변수를 설정하고 서비스를 재시작하세요.',
+    });
+    return;
+  }
+  const body = req.body || {};
+  const username = String(body.username || '').trim();
+  const password = String(body.password || '');
+  if (!username || !password) {
+    res.status(400).json({ ok: false, error: '아이디와 비밀번호를 입력해 주세요.' });
+    return;
+  }
+  try {
+    const r = await pool.query(
+      'SELECT id, password_hash FROM users WHERE username = $1 LIMIT 1',
+      [username]
+    );
+    if (r.rowCount === 0) {
+      res.status(401).json({ ok: false, error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
+      return;
+    }
+    const row = r.rows[0];
+    const match = await bcrypt.compare(password, row.password_hash);
+    if (!match) {
+      res.status(401).json({ ok: false, error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
+      return;
+    }
+    const token = signSession(secret, row.id);
+    appendSessionCookie(res, token);
+    const u = await pool.query(
+      `SELECT id, username, nickname, profile_image AS "profileImage",
+              COALESCE(role, 'user') AS role
+       FROM users WHERE id = $1`,
+      [row.id]
+    );
+    const usr = u.rows[0];
+    res.json({
+      ok: true,
+      user: {
+        id: usr.id,
+        username: usr.username,
+        nickname: usr.nickname,
+        profileImage: usr.profileImage,
+        role: usr.role,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+app.post('/api/logout', (req, res) => {
+  appendClearSessionCookie(res);
+  res.json({ ok: true });
+});
 
 app.get('/api/health', (req, res) => {
   const diag = getDbDiagnostics();
@@ -417,6 +527,11 @@ async function start() {
   }
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server listening on ${PORT}`);
+    if (process.env.NODE_ENV === 'production' && !(process.env.SESSION_SECRET || '').trim()) {
+      console.warn(
+        'SESSION_SECRET이 비어 있습니다. 로그인(POST /api/login)은 동작하지 않습니다. 변수를 추가한 뒤 재배포하세요.'
+      );
+    }
   });
 }
 

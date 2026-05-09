@@ -150,6 +150,7 @@
 
   function openModal() {
     if (!modal) return;
+    if (loginModal && !loginModal.hidden) closeLoginModal();
     resetSignupFlow();
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
@@ -181,8 +182,167 @@
     if (e.target === modal) closeModal();
   });
 
+  /* ----- 로그인 · 세션 헤더 ----- */
+  const loginModal = document.getElementById('login-modal');
+  const openLoginBtn = document.getElementById('open-login');
+  const loginModalCloseBtn = document.getElementById('login-modal-close');
+  const loginForm = document.getElementById('login-form');
+  const loginUsernameEl = document.getElementById('login-username');
+  const loginPasswordEl = document.getElementById('login-password');
+  const loginSubmitBtn = document.getElementById('login-submit-btn');
+  const loginFormErrorEl = document.getElementById('login-form-error');
+  const headerGuest = document.getElementById('header-actions-guest');
+  const headerLogged = document.getElementById('header-actions-logged');
+  const headerUserAvatarImg = document.getElementById('header-user-avatar');
+  const headerUserAvatarPh = document.getElementById('header-user-avatar-ph');
+  const headerUserNicknameEl = document.getElementById('header-user-nickname');
+  const headerLogoutBtn = document.getElementById('header-logout');
+
+  function showLoginFormError(text) {
+    if (!loginFormErrorEl) return;
+    loginFormErrorEl.textContent = text;
+    loginFormErrorEl.hidden = false;
+  }
+
+  function clearLoginFormError() {
+    if (!loginFormErrorEl) return;
+    loginFormErrorEl.textContent = '';
+    loginFormErrorEl.hidden = true;
+  }
+
+  function renderLoggedOutHeader() {
+    if (headerGuest) headerGuest.hidden = false;
+    if (headerLogged) headerLogged.hidden = true;
+    if (headerUserAvatarImg) {
+      headerUserAvatarImg.hidden = true;
+      headerUserAvatarImg.removeAttribute('src');
+      headerUserAvatarImg.alt = '';
+    }
+    if (headerUserAvatarPh) headerUserAvatarPh.hidden = false;
+  }
+
+  function renderLoggedInHeader(user) {
+    if (!user) {
+      renderLoggedOutHeader();
+      return;
+    }
+    if (headerGuest) headerGuest.hidden = true;
+    if (headerLogged) headerLogged.hidden = false;
+    if (headerUserNicknameEl) headerUserNicknameEl.textContent = user.nickname || '—';
+
+    const imgSrc = typeof user.profileImage === 'string' ? user.profileImage : '';
+    if (imgSrc && /^data:image\//.test(imgSrc)) {
+      if (headerUserAvatarImg) {
+        headerUserAvatarImg.src = imgSrc;
+        headerUserAvatarImg.alt = `${user.nickname || '사용자'} 프로필`;
+        headerUserAvatarImg.hidden = false;
+      }
+      if (headerUserAvatarPh) headerUserAvatarPh.hidden = true;
+    } else {
+      if (headerUserAvatarImg) {
+        headerUserAvatarImg.hidden = true;
+        headerUserAvatarImg.removeAttribute('src');
+        headerUserAvatarImg.alt = '';
+      }
+      if (headerUserAvatarPh) headerUserAvatarPh.hidden = false;
+    }
+  }
+
+  async function refreshSessionHeader() {
+    try {
+      const res = await fetch('/api/me', { credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      if (data && data.ok && data.user) renderLoggedInHeader(data.user);
+      else renderLoggedOutHeader();
+    } catch {
+      renderLoggedOutHeader();
+    }
+  }
+
+  function openLoginModal() {
+    if (!loginModal) return;
+    clearLoginFormError();
+    loginModal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    loginUsernameEl?.focus();
+  }
+
+  function closeLoginModal() {
+    if (!loginModal) return;
+    loginModal.hidden = true;
+    if (signupModalShows()) return;
+    document.body.style.overflow = '';
+    openLoginBtn?.focus();
+  }
+
+  function signupModalShows() {
+    return modal ? !modal.hidden : false;
+  }
+
+  loginModalCloseBtn?.addEventListener('click', closeLoginModal);
+  loginModal?.querySelectorAll('[data-close-login-modal]').forEach((el) => {
+    el.addEventListener('click', closeLoginModal);
+  });
+  loginModal?.addEventListener('click', (e) => {
+    if (e.target === loginModal) closeLoginModal();
+  });
+
+  openLoginBtn?.addEventListener('click', () => openLoginModal());
+
+  loginForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearLoginFormError();
+    const username = loginUsernameEl?.value.trim() || '';
+    const password = loginPasswordEl?.value || '';
+    if (!username || !password) {
+      showLoginFormError('아이디와 비밀번호를 입력해 주세요.');
+      return;
+    }
+
+    loginSubmitBtn.disabled = true;
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showLoginFormError(data.error || `로그인 실패 (${res.status})`);
+        return;
+      }
+      if (data.user) renderLoggedInHeader(data.user);
+      else await refreshSessionHeader();
+      loginForm.reset();
+      closeLoginModal();
+      document.body.style.overflow = signupModalShows() ? 'hidden' : '';
+    } finally {
+      loginSubmitBtn.disabled = false;
+    }
+  });
+
+  headerLogoutBtn?.addEventListener('click', async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    } finally {
+      renderLoggedOutHeader();
+      openLoginBtn?.focus();
+    }
+  });
+
+  window.addEventListener('load', () => {
+    refreshSessionHeader();
+  });
+
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal && !modal.hidden) closeModal();
+    if (e.key !== 'Escape') return;
+    if (loginModal && !loginModal.hidden) {
+      closeLoginModal();
+      document.body.style.overflow = signupModalShows() ? 'hidden' : '';
+      return;
+    }
+    if (modal && !modal.hidden) closeModal();
   });
 
   profileTrigger?.addEventListener('click', () => profileFile?.click());
@@ -479,7 +639,4 @@
     }
   });
 
-  document.querySelector('.btn-login')?.addEventListener('click', () => {
-    window.alert('로그인은 다음 단계에서 구현할 수 있습니다.');
-  });
 })();
