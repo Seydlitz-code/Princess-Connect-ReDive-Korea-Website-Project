@@ -68,6 +68,12 @@
   const signupNext = document.getElementById('signup-next');
   const signupSubmit = document.getElementById('signup-submit');
 
+  const nicknameInput = document.getElementById('nickname');
+  const useridInput = document.getElementById('userid');
+  const passwordInput = document.getElementById('password');
+  const password2Input = document.getElementById('password2');
+  const captchaInput = document.getElementById('captcha-input');
+
   let signupStep = 1;
   let charactersCache = null;
   let selectedCharacterIds = new Set();
@@ -80,22 +86,66 @@
     if (stepCharacters) stepCharacters.hidden = is1;
     if (headAccount) headAccount.hidden = !is1;
     if (headCharacters) headCharacters.hidden = is1;
-    if (footerAccount) footerAccount.hidden = !is1;
-    if (footerCharacters) footerCharacters.hidden = is1;
+    if (footerAccount) {
+      footerAccount.hidden = !is1;
+      footerAccount.setAttribute('aria-hidden', is1 ? 'false' : 'true');
+    }
+    if (footerCharacters) {
+      footerCharacters.hidden = is1;
+      footerCharacters.setAttribute('aria-hidden', is1 ? 'true' : 'false');
+    }
     if (modal) {
       const label = is1 ? 'signup-heading' : 'signup-heading-characters';
       modal.setAttribute('aria-labelledby', label);
     }
+    if (is1) syncSignupNextButton();
+  }
+
+  const nicknameFeedbackEl = document.getElementById('nickname-check-feedback');
+  const useridFeedbackEl = document.getElementById('userid-check-feedback');
+  const checkNicknameBtn = document.getElementById('check-nickname');
+  const checkUseridBtn = document.getElementById('check-userid');
+
+  /** 현재 문자열 기준 서버 확인으로 사용 승인된 값(null이면 미승인) */
+  let nicknameApprovedFor = null;
+  let usernameApprovedFor = null;
+
+  function clearCheckFeedback(el) {
+    if (!el) return;
+    el.textContent = '';
+    el.classList.remove('is-ok', 'is-warn');
+  }
+
+  function setCheckFeedback(el, text, kind) {
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove('is-ok', 'is-warn');
+    if (kind === 'ok') el.classList.add('is-ok');
+    if (kind === 'warn') el.classList.add('is-warn');
+  }
+
+  function syncSignupNextButton() {
+    if (!signupNext) return;
+    if (signupStep !== 1) return;
+    const u = useridInput?.value.trim() || '';
+    const n = nicknameInput?.value.trim() || '';
+    const idOk = u.length > 0 && usernameApprovedFor === u;
+    const nickOk = n.length > 0 && nicknameApprovedFor === n;
+    signupNext.disabled = !(idOk && nickOk);
   }
 
   function resetSignupFlow() {
-    setSignupStep(1);
     selectedCharacterIds = new Set();
+    nicknameApprovedFor = null;
+    usernameApprovedFor = null;
+    clearCheckFeedback(nicknameFeedbackEl);
+    clearCheckFeedback(useridFeedbackEl);
     if (deferCheckbox) deferCheckbox.checked = false;
     if (characterLoadError) {
       characterLoadError.hidden = true;
       characterLoadError.textContent = '';
     }
+    setSignupStep(1);
   }
 
   function openModal() {
@@ -155,11 +205,6 @@
     }
   });
 
-  const nicknameInput = document.getElementById('nickname');
-  const useridInput = document.getElementById('userid');
-  const passwordInput = document.getElementById('password');
-  const password2Input = document.getElementById('password2');
-  const captchaInput = document.getElementById('captcha-input');
   const EXPECTED_CAPTCHA = 'A8K4';
   const MAX_PROFILE_BYTES = 512 * 1024;
 
@@ -176,32 +221,84 @@
     return data;
   }
 
-  document.getElementById('check-userid')?.addEventListener('click', async () => {
-    const username = useridInput?.value.trim();
-    if (!username) {
-      window.alert('아이디를 입력한 뒤 중복 확인을 눌러 주세요.');
-      return;
-    }
-    try {
-      const data = await apiJson(`/api/users/check?${new URLSearchParams({ username })}`);
-      window.alert(data.usernameAvailable ? '사용 가능한 아이디입니다.' : '이미 사용 중인 아이디입니다.');
-    } catch (e) {
-      window.alert(e instanceof Error ? e.message : String(e));
-    }
+  nicknameInput?.addEventListener('input', () => {
+    const v = nicknameInput.value.trim();
+    if (nicknameApprovedFor !== null && v !== nicknameApprovedFor) nicknameApprovedFor = null;
+    clearCheckFeedback(nicknameFeedbackEl);
+    syncSignupNextButton();
   });
 
-  document.getElementById('check-nickname')?.addEventListener('click', async () => {
-    const nickname = nicknameInput?.value.trim();
+  useridInput?.addEventListener('input', () => {
+    const v = useridInput.value.trim();
+    if (usernameApprovedFor !== null && v !== usernameApprovedFor) usernameApprovedFor = null;
+    clearCheckFeedback(useridFeedbackEl);
+    syncSignupNextButton();
+  });
+
+  checkNicknameBtn?.addEventListener('click', async () => {
+    const nickname = nicknameInput?.value.trim() || '';
     if (!nickname) {
-      window.alert('닉네임을 입력한 뒤 중복 확인을 눌러 주세요.');
+      nicknameApprovedFor = null;
+      setCheckFeedback(nicknameFeedbackEl, '닉네임을 입력해 주세요.', 'warn');
+      syncSignupNextButton();
       return;
     }
     try {
-      const data = await apiJson(`/api/users/check?${new URLSearchParams({ nickname })}`);
-      window.alert(data.nicknameAvailable ? '사용 가능한 닉네임입니다.' : '이미 사용 중인 닉네임입니다.');
+      const res = await fetch(`/api/users/check?${new URLSearchParams({ nickname })}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        nicknameApprovedFor = null;
+        setCheckFeedback(nicknameFeedbackEl, data.error || '확인 중 오류가 발생했습니다.', 'warn');
+        syncSignupNextButton();
+        return;
+      }
+      if (data.nicknameAvailable) {
+        nicknameApprovedFor = nickname;
+        setCheckFeedback(nicknameFeedbackEl, '사용 가능한 닉네임입니다.', 'ok');
+      } else {
+        nicknameApprovedFor = null;
+        setCheckFeedback(nicknameFeedbackEl, '중복된 닉네임입니다.', 'warn');
+      }
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : String(e));
+      nicknameApprovedFor = null;
+      setCheckFeedback(
+        nicknameFeedbackEl,
+        e instanceof Error ? e.message : String(e),
+        'warn'
+      );
     }
+    syncSignupNextButton();
+  });
+
+  checkUseridBtn?.addEventListener('click', async () => {
+    const username = useridInput?.value.trim() || '';
+    if (!username) {
+      usernameApprovedFor = null;
+      setCheckFeedback(useridFeedbackEl, '아이디를 입력해 주세요.', 'warn');
+      syncSignupNextButton();
+      return;
+    }
+    try {
+      const res = await fetch(`/api/users/check?${new URLSearchParams({ username })}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        usernameApprovedFor = null;
+        setCheckFeedback(useridFeedbackEl, data.error || '확인 중 오류가 발생했습니다.', 'warn');
+        syncSignupNextButton();
+        return;
+      }
+      if (data.usernameAvailable) {
+        usernameApprovedFor = username;
+        setCheckFeedback(useridFeedbackEl, '사용 가능한 아이디입니다.', 'ok');
+      } else {
+        usernameApprovedFor = null;
+        setCheckFeedback(useridFeedbackEl, '중복된 아이디입니다.', 'warn');
+      }
+    } catch (e) {
+      usernameApprovedFor = null;
+      setCheckFeedback(useridFeedbackEl, e instanceof Error ? e.message : String(e), 'warn');
+    }
+    syncSignupNextButton();
   });
 
   function fileToDataUrl(file) {
@@ -276,6 +373,13 @@
     const password2 = password2Input?.value || '';
     const captcha = captchaInput?.value.trim() || '';
 
+    if (!username || !nickname) {
+      return;
+    }
+    if (usernameApprovedFor !== username || nicknameApprovedFor !== nickname) {
+      return;
+    }
+
     if (captcha.toUpperCase() !== EXPECTED_CAPTCHA) {
       window.alert('보안 문자가 일치하지 않습니다.');
       return;
@@ -284,8 +388,8 @@
       window.alert('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
       return;
     }
-    if (!username || !nickname || !password) {
-      window.alert('아이디, 닉네임, 비밀번호를 입력해 주세요.');
+    if (!password) {
+      window.alert('비밀번호를 입력해 주세요.');
       return;
     }
 

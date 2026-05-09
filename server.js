@@ -18,35 +18,70 @@ const MAX_PROFILE_DATA_URL_LENGTH = 600_000;
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-/** Railway 등: 웹 서비스에 DATABASE_URL 참조가 없어도 흔한 변수명으로 연결 시도 */
+const tTrim = (v) => (typeof v === 'string' ? v.trim() : '');
+
+/**
+ * 변수 이름 대신 값이 postgres URL 형태면 사용 (Railway 등에서 변수명을 다르게 둔 경우).
+ * 같은 프로젝트의 Postgres 변수 참조 이름이 Postgres 말고도 있어서 이름 기반 검색 한계를 줄임.
+ */
+function detectPostgresUrlFromAnyEnv() {
+  const scored = [];
+  for (const [key, raw] of Object.entries(process.env)) {
+    const v = tTrim(raw);
+    if (!/^postgres(ql)?:\/\//i.test(v)) continue;
+    let score = 0;
+    const ku = key.toUpperCase();
+    if (/(^|_)PASSWORD(_|$)/i.test(key) || /^NPM_/i.test(key)) continue;
+    if (!/(DATABASE|POSTGRES|PG_|SQL|SUPABASE|NEON|COCKROACH|RLWY)/i.test(key)) continue;
+    if (ku.includes('PRIVATE')) score += 120;
+    if (ku.includes('DATABASE_URL') || ku === 'DATABASE_URL') score += 80;
+    if (ku.includes('POSTGRES')) score += 40;
+    if (ku.endsWith('_URL')) score += 20;
+    scored.push({ key, value: v, score });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  const best = scored[0];
+  if (best && best.score > 0) {
+    console.log(`PostgreSQL URL: 미지정 변수 대신 「${best.key}」값을 사용합니다.`);
+    return best.value;
+  }
+  return '';
+}
+
+/** Railway 등: 여러 변수명·마지막 수단 자동 검색으로 연결 문자열 확인 */
 function resolvePostgresConnectionString() {
-  const t = (v) => (typeof v === 'string' ? v.trim() : '');
   const fromUrl =
-    t(process.env.DATABASE_URL) ||
-    t(process.env.DATABASE_PRIVATE_URL) ||
-    t(process.env.POSTGRES_URL) ||
-    t(process.env.DATABASE_PUBLIC_URL);
+    tTrim(process.env.DATABASE_URL) ||
+    tTrim(process.env.DATABASE_PRIVATE_URL) ||
+    tTrim(process.env.POSTGRES_URL) ||
+    tTrim(process.env.POSTGRES_PRISMA_URL) ||
+    tTrim(process.env.DATABASE_PUBLIC_URL) ||
+    tTrim(process.env.RAILWAY_DATABASE_URL);
   if (fromUrl) return fromUrl;
 
-  const host = t(process.env.PGHOST || process.env.POSTGRES_HOSTNAME || process.env.POSTGRES_HOST);
-  const port = t(process.env.PGPORT || process.env.POSTGRES_PORT) || '5432';
-  const user = t(process.env.PGUSER || process.env.POSTGRES_USER);
+  const host = tTrim(
+    process.env.PGHOST || process.env.POSTGRES_HOSTNAME || process.env.POSTGRES_HOST
+  );
+  const port = tTrim(process.env.PGPORT || process.env.POSTGRES_PORT) || '5432';
+  const user = tTrim(process.env.PGUSER || process.env.POSTGRES_USER);
   const password = process.env.PGPASSWORD != null ? String(process.env.PGPASSWORD) : '';
-  const database = t(
+  const database = tTrim(
     process.env.PGDATABASE || process.env.POSTGRES_DB || process.env.POSTGRES_DATABASE
   );
-  if (!host || !user || !database) return '';
+  if (host && user && database) {
+    const sslMode = tTrim(process.env.PGSSLMODE);
+    const useSsl =
+      sslMode === 'require' ||
+      (sslMode !== 'disable' && host !== 'localhost' && host !== '127.0.0.1');
+    const query = useSsl ? '?sslmode=require' : '';
 
-  const sslMode = t(process.env.PGSSLMODE);
-  const useSsl =
-    sslMode === 'require' ||
-    (sslMode !== 'disable' && host !== 'localhost' && host !== '127.0.0.1');
-  const query = useSsl ? '?sslmode=require' : '';
+    const u = encodeURIComponent(user);
+    const p = encodeURIComponent(password);
+    const db = encodeURIComponent(database);
+    return `postgresql://${u}:${p}@${host}:${port}/${db}${query}`;
+  }
 
-  const u = encodeURIComponent(user);
-  const p = encodeURIComponent(password);
-  const db = encodeURIComponent(database);
-  return `postgresql://${u}:${p}@${host}:${port}/${db}${query}`;
+  return detectPostgresUrlFromAnyEnv();
 }
 
 function createPoolConfig() {
@@ -129,26 +164,72 @@ async function initDb() {
   const cfg = createPoolConfig();
   if (!cfg) {
     console.warn(
-      'PostgreSQL 연결 문자열이 없습니다. Railway 웹 서비스에 Postgres의 DATABASE_URL(또는 DATABASE_PRIVATE_URL) 변수 참조를 추가하거나, PGHOST·PGUSER·PGPASSWORD·PGDATABASE 를 설정하세요.'
+      'PostgreSQL 연결 문자열이 없습니다.\n',
+      '- Railway 웹 서비스(지금 실행 중인 Node 앱) → Variables → 변수 추가에서 Reference로 Postgres 선택 후\n',
+      '  이름: DATABASE_PRIVATE_URL (추천) 또는 DATABASE_URL 값: ${{ Postgres.DATABASE_PRIVATE_URL }}\n',
+      '  (Postgres 카드 이름이 다르면 Postgres 부분은 실제 서비스 이름으로 바뀝니다)\n',
+      '- 배포 재시작 후 https://.../api/health 에서 dbEnvHints 를 확인하세요.'
     );
     return;
   }
-  pool = new Pool(cfg);
-  const client = await pool.connect();
+  let tmpPool = null;
   try {
-    await ensureSchema(client);
-    console.log('PostgreSQL 연결 및 users·characters·user_owned_characters 테이블 준비 완료');
-  } finally {
-    client.release();
+    tmpPool = new Pool(cfg);
+    const client = await tmpPool.connect();
+    try {
+      await ensureSchema(client);
+      console.log('PostgreSQL 연결 및 users·characters·user_owned_characters 테이블 준비 완료');
+    } finally {
+      client.release();
+    }
+    pool = tmpPool;
+    tmpPool = null;
+  } catch (err) {
+    if (tmpPool) {
+      await tmpPool.end().catch(() => {});
+    }
+    console.error('PostgreSQL 연결 실패(문자열은 있으나 접속 불가):', err && err.message ? err.message : err);
+    pool = null;
   }
+}
+
+function getDbDiagnostics() {
+  const keysToCheck = [
+    'DATABASE_URL',
+    'DATABASE_PRIVATE_URL',
+    'DATABASE_PUBLIC_URL',
+    'POSTGRES_URL',
+    'POSTGRES_PRISMA_URL',
+    'RAILWAY_DATABASE_URL',
+    'PGHOST',
+    'PGUSER',
+    'PGDATABASE',
+    'PGPASSWORD',
+  ];
+  /** @type {Record<string, boolean>} */
+  const dbEnvHints = {};
+  for (const k of keysToCheck) {
+    dbEnvHints[k] = Boolean(process.env[k] && tTrim(process.env[k]));
+  }
+  const postgresUriKeys = Object.keys(process.env)
+    .filter((key) => {
+      const v = tTrim(process.env[key]);
+      if (!/^postgres(ql)?:\/\//i.test(v)) return false;
+      return /DATABASE|POSTGRES|PG_|SQL|SUPABASE|NEON|RLWY/i.test(key);
+    })
+    .sort();
+  return { dbEnvHints, postgresUriKeyCount: postgresUriKeys.length, postgresUriKeySample: postgresUriKeys.slice(0, 15) };
 }
 
 function requirePool(res) {
   if (!pool) {
+    const diag = getDbDiagnostics();
     res.status(503).json({
       ok: false,
       error:
-        '데이터베이스에 연결할 수 없습니다. Railway에서 웹 서비스 → Variables에 Postgres의 DATABASE_URL 또는 DATABASE_PRIVATE_URL 참조를 추가했는지 확인해 주세요.',
+        '웹 서비스 프로세스에 PostgreSQL 접속 정보가 없거나 첫 접속에 실패했습니다. 같은 프로젝트의 Postgres와 웹(앱) 서비스를 연결해 Variables에 DATABASE_PRIVATE_URL(또는 DATABASE_URL) 참조를 추가한 뒤 재배포하세요. 브라우저에서 /api/health 를 열어 poolReady·dbEnvHints 를 확인할 수 있습니다.',
+      diagnostics: diag,
+      helpUrlPath: '/api/health',
     });
     return false;
   }
@@ -157,6 +238,19 @@ function requirePool(res) {
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/api/health', (req, res) => {
+  const diag = getDbDiagnostics();
+  res.json({
+    ok: true,
+    database: {
+      poolReady: Boolean(pool),
+      ...diag,
+    },
+    hint:
+      'poolReady가 false이면 Railway 웹 서비스에 Postgres의 DATABASE_PRIVATE_URL(또는 DATABASE_URL) 변수 **참조**를 추가하고 재배포하세요. Postgres 서비스 이름이 "Postgres"가 아니면 참조 문법의 서비스명도 맞춥니다.',
+  });
+});
 
 app.get('/api/users/check', async (req, res) => {
   if (!requirePool(res)) return;
