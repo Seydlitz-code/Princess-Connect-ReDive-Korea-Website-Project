@@ -53,18 +53,20 @@
           </div>
         </nav>
 
-        <div class="header-actions" id="header-actions-guest">
-          <button type="button" class="btn btn-signup" id="open-signup">회원가입</button>
-          <button type="button" class="btn btn-primary btn-login" id="open-login">로그인</button>
-        </div>
-        <div class="header-actions header-actions-logged" id="header-actions-logged" hidden>
-          <div class="user-bar" aria-label="로그인한 계정">
-            <div class="user-avatar-wrap">
-              <img id="header-user-avatar" class="user-avatar-img" alt="" width="42" height="42" decoding="async" hidden />
-              <span id="header-user-avatar-ph" class="user-avatar-placeholder">프로필 이미지</span>
+        <div class="header-actions-slot" id="header-actions-slot">
+          <div class="header-actions" id="header-actions-guest">
+            <button type="button" class="btn btn-signup" id="open-signup">회원가입</button>
+            <button type="button" class="btn btn-primary btn-login" id="open-login">로그인</button>
+          </div>
+          <div class="header-actions header-actions-logged" id="header-actions-logged" hidden>
+            <div class="user-bar" aria-label="로그인한 계정">
+              <div class="user-avatar-wrap">
+                <img id="header-user-avatar" class="user-avatar-img" alt="" width="42" height="42" decoding="async" hidden />
+                <span id="header-user-avatar-ph" class="user-avatar-placeholder">프로필 이미지</span>
+              </div>
+              <span id="header-user-nickname" class="user-nickname">—</span>
+              <button type="button" class="btn btn-signup btn-logout-header" id="header-logout">로그아웃</button>
             </div>
-            <span id="header-user-nickname" class="user-nickname">—</span>
-            <button type="button" class="btn btn-signup btn-logout-header" id="header-logout">로그아웃</button>
           </div>
         </div>
       </div>

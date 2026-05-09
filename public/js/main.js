@@ -211,8 +211,14 @@
   }
 
   function renderLoggedOutHeader() {
-    if (headerGuest) headerGuest.hidden = false;
-    if (headerLogged) headerLogged.hidden = true;
+    if (headerGuest) {
+      headerGuest.hidden = false;
+      headerGuest.removeAttribute('aria-hidden');
+    }
+    if (headerLogged) {
+      headerLogged.hidden = true;
+      headerLogged.setAttribute('aria-hidden', 'true');
+    }
     if (headerUserAvatarImg) {
       headerUserAvatarImg.hidden = true;
       headerUserAvatarImg.removeAttribute('src');
@@ -226,8 +232,14 @@
       renderLoggedOutHeader();
       return;
     }
-    if (headerGuest) headerGuest.hidden = true;
-    if (headerLogged) headerLogged.hidden = false;
+    if (headerGuest) {
+      headerGuest.hidden = true;
+      headerGuest.setAttribute('aria-hidden', 'true');
+    }
+    if (headerLogged) {
+      headerLogged.hidden = false;
+      headerLogged.removeAttribute('aria-hidden');
+    }
     if (headerUserNicknameEl) headerUserNicknameEl.textContent = user.nickname || '—';
 
     const imgSrc = typeof user.profileImage === 'string' ? user.profileImage : '';
