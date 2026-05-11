@@ -10,7 +10,8 @@
     "build:logo": "node scripts/process-logo.js",
     "import:characters": "node scripts/import-characters.js",
     "build:characters": "node scripts/build-character-library.js",
-    "bootstrap:admin": "node scripts/create-admin.js"
+    "bootstrap:admin": "node scripts/create-admin.js",
+    "db:check": "node scripts/check-db.js"
   },
   "engines": {
     "node": ">=18"

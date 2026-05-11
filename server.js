@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
-const { createPoolConfig, tTrim } = require('./lib/dbConfig');
+const { createPoolConfig, getDbEnvDiagnostics } = require('./lib/dbConfig');
 const {
   getSessionSecret,
   signSession,
@@ -120,31 +120,7 @@ async function initDb() {
 }
 
 function getDbDiagnostics() {
-  const keysToCheck = [
-    'DATABASE_URL',
-    'DATABASE_PRIVATE_URL',
-    'DATABASE_PUBLIC_URL',
-    'POSTGRES_URL',
-    'POSTGRES_PRISMA_URL',
-    'RAILWAY_DATABASE_URL',
-    'PGHOST',
-    'PGUSER',
-    'PGDATABASE',
-    'PGPASSWORD',
-  ];
-  /** @type {Record<string, boolean>} */
-  const dbEnvHints = {};
-  for (const k of keysToCheck) {
-    dbEnvHints[k] = Boolean(process.env[k] && tTrim(process.env[k]));
-  }
-  const postgresUriKeys = Object.keys(process.env)
-    .filter((key) => {
-      const v = tTrim(process.env[key]);
-      if (!/^postgres(ql)?:\/\//i.test(v)) return false;
-      return /DATABASE|POSTGRES|PG_|SQL|SUPABASE|NEON|RLWY/i.test(key);
-    })
-    .sort();
-  return { dbEnvHints, postgresUriKeyCount: postgresUriKeys.length, postgresUriKeySample: postgresUriKeys.slice(0, 15) };
+  return getDbEnvDiagnostics();
 }
 
 function requirePool(res) {

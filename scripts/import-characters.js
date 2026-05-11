@@ -1,7 +1,7 @@
 /**
  * 폴더 내 이미지 파일을 파일명(확장자 제외)=캐릭터명 과 함께 DB에 저장합니다.
  *
- * DATABASE_URL 필요 (PostgreSQL).
+ * DATABASE_URL 또는 DATABASE_PRIVATE_URL 필요 (Railway/PostgreSQL).
  * 선택: CHARACTERS_IMAGE_DIR — 원본 폴더 (기본: 사용자 공유 문서 폴더 기준 예시 경로)
  *
  * 실행: DATABASE_URL="..." npm run import:characters
@@ -10,6 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
+const { createPoolConfig } = require('../lib/dbConfig');
 
 const DEFAULT_CHAR_DIR =
   process.platform === 'win32'
@@ -21,21 +22,6 @@ const CHAR_DIR = process.env.CHARACTERS_IMAGE_DIR
   : DEFAULT_CHAR_DIR;
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
-
-function createPoolConfig() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) return null;
-  const cfg = { connectionString };
-  try {
-    const u = new URL(connectionString);
-    if (u.searchParams.get('sslmode') === 'require') {
-      cfg.ssl = { rejectUnauthorized: false };
-    }
-  } catch {
-    /* ignore */
-  }
-  return cfg;
-}
 
 function mimeFromExt(ext) {
   const e = ext.toLowerCase();
@@ -61,7 +47,7 @@ async function ensureCharactersTable(client) {
 async function main() {
   const cfg = createPoolConfig();
   if (!cfg) {
-    console.error('DATABASE_URL 환경 변수를 설정해 주세요.');
+    console.error('DATABASE_URL 또는 DATABASE_PRIVATE_URL 등 PostgreSQL 연결 환경 변수를 설정해 주세요.');
     process.exit(1);
   }
   if (!fs.existsSync(CHAR_DIR) || !fs.statSync(CHAR_DIR).isDirectory()) {
