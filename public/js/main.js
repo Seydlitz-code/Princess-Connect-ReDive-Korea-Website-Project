@@ -72,12 +72,85 @@
   const useridInput = document.getElementById('userid');
   const passwordInput = document.getElementById('password');
   const password2Input = document.getElementById('password2');
-  const captchaInput = document.getElementById('captcha-input');
+  const signupRecaptchaWrap = document.getElementById('signup-recaptcha-wrap');
 
   let signupStep = 1;
   let charactersCache = null;
   let selectedCharacterIds = new Set();
   let charactersLoadPromise = null;
+  let publicCfg = { recaptchaSiteKey: null };
+  let recaptchaWidgetId = null;
+  let recaptchaApiPromise = null;
+
+  function syncRecaptchaWrapVisibility() {
+    if (!signupRecaptchaWrap) return;
+    signupRecaptchaWrap.hidden = !publicCfg.recaptchaSiteKey;
+  }
+
+  async function refreshPublicRuntimeConfig() {
+    try {
+      const res = await fetch('/api/config');
+      const data = await res.json().catch(() => ({}));
+      const key =
+        typeof data.recaptchaSiteKey === 'string' && data.recaptchaSiteKey.trim()
+          ? data.recaptchaSiteKey.trim()
+          : null;
+      publicCfg = { recaptchaSiteKey: key };
+    } catch {
+      publicCfg = { recaptchaSiteKey: null };
+    }
+    syncRecaptchaWrapVisibility();
+  }
+
+  function resetRecaptchaWidget() {
+    if (recaptchaWidgetId === null || !window.grecaptcha) return;
+    try {
+      window.grecaptcha.reset(recaptchaWidgetId);
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  function loadRecaptchaApi() {
+    if (window.grecaptcha && typeof window.grecaptcha.render === 'function') return Promise.resolve();
+    if (recaptchaApiPromise) return recaptchaApiPromise;
+    const cbName = '__pcrRecaptchaExplicitLoadCb';
+    recaptchaApiPromise = new Promise((resolve, reject) => {
+      window[cbName] = () => {
+        try {
+          delete window[cbName];
+        } catch (_) {
+          /* ignore */
+        }
+        resolve();
+      };
+      const s = document.createElement('script');
+      s.async = true;
+      s.defer = true;
+      s.src = `https://www.google.com/recaptcha/api.js?onload=${cbName}&render=explicit`;
+      s.onerror = () => {
+        try {
+          delete window[cbName];
+        } catch (_) {
+          /* ignore */
+        }
+        recaptchaApiPromise = null;
+        reject(new Error('reCAPTCHA 스크립트를 불러올 수 없습니다.'));
+      };
+      document.head.appendChild(s);
+    });
+    return recaptchaApiPromise;
+  }
+
+  async function renderSignupRecaptchaOnce() {
+    if (!publicCfg.recaptchaSiteKey) return;
+    const mount = document.getElementById('signup-recaptcha');
+    if (!mount || recaptchaWidgetId !== null) return;
+    await loadRecaptchaApi();
+    recaptchaWidgetId = window.grecaptcha.render(mount, {
+      sitekey: publicCfg.recaptchaSiteKey,
+    });
+  }
 
   function setSignupStep(step) {
     signupStep = step;
@@ -138,6 +211,7 @@
     selectedCharacterIds = new Set();
     nicknameApprovedFor = null;
     usernameApprovedFor = null;
+    resetRecaptchaWidget();
     clearCheckFeedback(nicknameFeedbackEl);
     clearCheckFeedback(useridFeedbackEl);
     if (deferCheckbox) deferCheckbox.checked = false;
@@ -148,8 +222,9 @@
     setSignupStep(1);
   }
 
-  function openModal() {
+  async function openModal() {
     if (!modal) return;
+    await refreshPublicRuntimeConfig();
     if (loginModal && !loginModal.hidden) closeLoginModal();
     resetSignupFlow();
     modal.hidden = false;
@@ -165,12 +240,15 @@
     openSignup?.focus();
   }
 
-  openSignup?.addEventListener('click', openModal);
+  openSignup?.addEventListener('click', () => {
+    openModal();
+  });
   closeBackdropEls?.forEach((el) => el.addEventListener('click', closeModal));
 
   modalBack?.addEventListener('click', () => {
     if (!modal) return;
     if (signupStep === 2) {
+      resetRecaptchaWidget();
       setSignupStep(1);
       modalBack?.focus();
       return;
@@ -360,6 +438,7 @@
 
   window.addEventListener('load', () => {
     refreshSessionHeader();
+    refreshPublicRuntimeConfig();
   });
 
   document.addEventListener('keydown', (e) => {
@@ -392,7 +471,7 @@
     }
   });
 
-  const EXPECTED_CAPTCHA = 'A8K4';
+
   const MAX_PROFILE_BYTES = 512 * 1024;
 
   async function apiJson(url, options = {}) {
@@ -558,7 +637,6 @@
     const username = useridInput?.value.trim() || '';
     const password = passwordInput?.value || '';
     const password2 = password2Input?.value || '';
-    const captcha = captchaInput?.value.trim() || '';
 
     if (!username || !nickname) {
       return;
@@ -567,10 +645,6 @@
       return;
     }
 
-    if (captcha.toUpperCase() !== EXPECTED_CAPTCHA) {
-      window.alert('보안 문자가 일치하지 않습니다.');
-      return;
-    }
     if (password !== password2) {
       window.alert('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
       return;
@@ -584,6 +658,13 @@
     try {
       const list = await ensureCharactersLoaded();
       setSignupStep(2);
+      try {
+        await renderSignupRecaptchaOnce();
+      } catch (reErr) {
+        window.alert(reErr instanceof Error ? reErr.message : String(reErr));
+        setSignupStep(1);
+        return;
+      }
       renderCharacterGrid(list);
       if (characterLoadError) {
         if (list.length === 0) {
@@ -608,16 +689,28 @@
     const username = useridInput?.value.trim() || '';
     const password = passwordInput?.value || '';
     const password2 = password2Input?.value || '';
-    const captcha = captchaInput?.value.trim() || '';
     const defer = Boolean(deferCheckbox?.checked);
 
-    if (captcha.toUpperCase() !== EXPECTED_CAPTCHA) {
-      window.alert('보안 문자가 일치하지 않습니다.');
+    let recaptchaToken = '';
+    if (publicCfg.recaptchaSiteKey) {
+      if (recaptchaWidgetId === null || !window.grecaptcha) {
+        window.alert('보안 확인을 초기화할 수 없습니다. 페이지를 새로 고친 뒤 다시 시도해 주세요.');
+        return;
+      }
+      recaptchaToken = window.grecaptcha.getResponse(recaptchaWidgetId);
+      if (!recaptchaToken) {
+        window.alert('「로봇이 아닙니다」 확인을 완료해 주세요.');
+        return;
+      }
+    }
+
+    if (password !== password2) {
+      window.alert('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
       setSignupStep(1);
       return;
     }
-    if (password !== password2) {
-      window.alert('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+    if (!password) {
+      window.alert('비밀번호를 입력해 주세요.');
       setSignupStep(1);
       return;
     }
@@ -653,6 +746,7 @@
           profileImage,
           characterIds: Array.from(selectedCharacterIds),
           deferOwnedCharacters: defer,
+          recaptchaToken,
         }),
       });
       const count = typeof data.ownedCharacterCount === 'number' ? data.ownedCharacterCount : 0;
@@ -660,6 +754,7 @@
       window.alert(`회원가입이 완료되었습니다.\n닉네임: ${data.user.nickname}\n아이디: ${data.user.username}\n${deferMsg}`);
       closeModal();
     } catch (e) {
+      if (publicCfg.recaptchaSiteKey) resetRecaptchaWidget();
       window.alert(e instanceof Error ? e.message : String(e));
     } finally {
       signupSubmit.disabled = false;

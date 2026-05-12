@@ -11,8 +11,11 @@ const {
   appendClearSessionCookie,
 } = require('./lib/sessionAuth');
 const { readCharacterLibrarySync } = require('./lib/charactersLibrary');
+const { verifyRecaptchaResponse } = require('./lib/recaptcha');
 
 const app = express();
+
+app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 3000;
 
 const BCRYPT_ROUNDS = 11;
@@ -153,6 +156,14 @@ function getDbDiagnostics() {
   return getDbEnvDiagnostics();
 }
 
+function getRecaptchaSiteKeyTrimmed() {
+  return String(process.env.RECAPTCHA_SITE_KEY || '').trim();
+}
+
+function getRecaptchaSecretTrimmed() {
+  return String(process.env.RECAPTCHA_SECRET_KEY || '').trim();
+}
+
 function requirePool(res) {
   if (!pool) {
     const diag = getDbDiagnostics();
@@ -169,6 +180,15 @@ function requirePool(res) {
 }
 
 app.use(express.json({ limit: '1mb' }));
+
+app.get('/api/config', (req, res) => {
+  const siteKey = getRecaptchaSiteKeyTrimmed();
+  res.json({
+    ok: true,
+    recaptchaSiteKey: siteKey ? siteKey : null,
+  });
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/me', async (req, res) => {
@@ -276,12 +296,19 @@ app.post('/api/logout', (req, res) => {
 
 app.get('/api/health', (req, res) => {
   const diag = getDbDiagnostics();
+  const rkSite = Boolean(getRecaptchaSiteKeyTrimmed());
+  const rkSecret = Boolean(getRecaptchaSecretTrimmed());
   res.json({
     ok: true,
     database: {
       poolReady: Boolean(pool),
       lastDbInitError,
       ...diag,
+    },
+    recaptcha: {
+      siteKeyConfigured: rkSite,
+      secretConfigured: rkSecret,
+      signupProtected: rkSite && rkSecret,
     },
     hint:
       'poolReady가 false이면 Railway 웹 서비스에 Postgres의 DATABASE_PRIVATE_URL(또는 DATABASE_URL) 변수 **참조**를 추가하고 재배포하세요. Postgres 서비스 이름이 "Postgres"가 아니면 참조 문법의 서비스명도 맞춥니다.',
@@ -316,6 +343,56 @@ app.get('/api/users/check', async (req, res) => {
 app.post('/api/register', async (req, res) => {
   if (!requirePool(res)) return;
   const body = req.body || {};
+  const rkSecret = getRecaptchaSecretTrimmed();
+  const rkSite = getRecaptchaSiteKeyTrimmed();
+  const recaptchaToken = String(body.recaptchaToken || '').trim();
+
+  if (rkSecret || rkSite) {
+    if (!rkSecret || !rkSite) {
+      console.warn(
+        'reCAPTCHA: RECAPTCHA_SITE_KEY 과 RECAPTCHA_SECRET_KEY 를 함께 설정해야 회원가입 보호가 동작합니다.'
+      );
+      res.status(503).json({
+        ok: false,
+        error:
+          '회원가입 보안 확인(reCAPTCHA) 설정이 불완전합니다. 관리자에게 문의해 주세요. (SITE_KEY·SECRET 모두 필요)',
+      });
+      return;
+    }
+    if (!recaptchaToken) {
+      res.status(400).json({
+        ok: false,
+        error: '보안 확인(Google reCAPTCHA)을 완료한 뒤 다시 시도해 주세요.',
+      });
+      return;
+    }
+
+    try {
+      const verify = await verifyRecaptchaResponse({
+        secret: rkSecret,
+        token: recaptchaToken,
+        remoteip: req.ip,
+      });
+      if (!verify || !verify.success) {
+        const codes =
+          verify && Array.isArray(verify['error-codes']) ? verify['error-codes'].join(',') : '';
+        console.warn('reCAPTCHA 검증 실패:', codes || verify);
+        res.status(400).json({
+          ok: false,
+          error: '보안 확인에 실패했습니다. 확인란을 다시 체크한 뒤 시도해 주세요.',
+        });
+        return;
+      }
+    } catch (err) {
+      console.error('reCAPTCHA siteverify 오류:', err && err.message ? err.message : err);
+      res.status(502).json({
+        ok: false,
+        error: '보안 확인 서비스에 일시적으로 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.',
+      });
+      return;
+    }
+  }
+
   const username = String(body.username || '').trim();
   const nickname = String(body.nickname || '').trim();
   const password = String(body.password || '');

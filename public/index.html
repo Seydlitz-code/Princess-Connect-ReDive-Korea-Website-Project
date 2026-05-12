@@ -143,22 +143,6 @@
                 <input id="password" type="password" class="input" placeholder="비밀번호" autocomplete="new-password" />
               </div>
 
-              <div class="field-group">
-                <label class="field-label" for="password2">비밀번호 확인</label>
-                <input id="password2" type="password" class="input" placeholder="비밀번호 재입력" autocomplete="new-password" />
-              </div>
-
-              <div class="field-group">
-                <label class="field-label" for="captcha-input">보안 문자</label>
-                <div class="captcha-row">
-                  <div class="captcha-box" aria-hidden="true">
-                    <span class="captcha-fake">A8K4</span>
-                  </div>
-                  <input id="captcha-input" type="text" class="input captcha-input" placeholder="보안 문자 입력" autocomplete="off" />
-                </div>
-                <p class="field-hint">실제 검증은 다음 단계에서 연결할 수 있습니다.</p>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -174,6 +158,15 @@
             <button type="button" class="btn btn-primary btn-lg btn-footer-primary" id="signup-next" disabled>다음으로</button>
           </div>
           <div id="signup-footer-characters" class="signup-footer-panel signup-footer-characters" hidden>
+            <div id="signup-recaptcha-wrap" class="signup-recaptcha-wrap" hidden>
+              <span class="field-label" id="signup-recaptcha-label">보안 확인</span>
+              <div id="signup-recaptcha" class="signup-recaptcha-mount"></div>
+              <p class="field-hint signup-recaptcha-policy">
+                Google reCAPTCHA로 스팸 가입을 줄입니다.
+                <a href="https://policies.google.com/privacy" rel="noopener noreferrer" target="_blank">개인정보처리방침</a> ·
+                <a href="https://policies.google.com/terms" rel="noopener noreferrer" target="_blank">서비스 약관</a>
+              </p>
+            </div>
             <label class="defer-label">
               <input type="checkbox" id="defer-characters-later" />
               <span>보유 캐릭터 추후 등록</span>
