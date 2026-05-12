@@ -28,6 +28,9 @@ const UUID_RE =
 
 let pool = null;
 
+/** initDb 연속 시도 후에도 pool 이 null 이면 마지막 오류(진단용) */
+let lastDbInitError = null;
+
 /** null 이면 캐릭터 메타만 DB 사용 */
 let characterLibrary = null;
 
@@ -86,37 +89,64 @@ async function ensureSchema(client) {
   `);
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function initDb() {
+  lastDbInitError = null;
   const cfg = createPoolConfig();
   if (!cfg) {
+    lastDbInitError = {
+      kind: 'missing_url',
+      message:
+        'PostgreSQL 연결 문자열이 없습니다. 웹 서비스 Variables에 Postgres의 DATABASE_PRIVATE_URL(또는 DATABASE_URL) 참조를 추가하세요.',
+    };
     console.warn(
       'PostgreSQL 연결 문자열이 없습니다.\n',
       '- Railway 웹 서비스(지금 실행 중인 Node 앱) → Variables → 변수 추가에서 Reference로 Postgres 선택 후\n',
       '  이름: DATABASE_PRIVATE_URL (추천) 또는 DATABASE_URL 값: ${{ Postgres.DATABASE_PRIVATE_URL }}\n',
       '  (Postgres 카드 이름이 다르면 Postgres 부분은 실제 서비스 이름으로 바뀝니다)\n',
-      '- 배포 재시작 후 https://.../api/health 에서 dbEnvHints 를 확인하세요.'
+      '- 배포 재시작 후 https://.../api/health 에서 dbEnvHints·lastDbInitError 를 확인하세요.'
     );
     return;
   }
-  let tmpPool = null;
-  try {
-    tmpPool = new Pool(cfg);
-    const client = await tmpPool.connect();
+
+  const maxAttempts = Math.max(1, Number(process.env.PG_INIT_RETRIES) || 5);
+  const delayMs = Math.max(0, Number(process.env.PG_INIT_RETRY_MS) || 2000);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    let tmpPool = null;
     try {
-      await ensureSchema(client);
-      console.log('PostgreSQL 연결 및 users·characters·user_owned_characters 테이블 준비 완료');
-    } finally {
-      client.release();
+      tmpPool = new Pool(cfg);
+      const client = await tmpPool.connect();
+      try {
+        await ensureSchema(client);
+        console.log('PostgreSQL 연결 및 users·characters·user_owned_characters 테이블 준비 완료');
+      } finally {
+        client.release();
+      }
+      pool = tmpPool;
+      lastDbInitError = null;
+      return;
+    } catch (err) {
+      if (tmpPool) {
+        await tmpPool.end().catch(() => {});
+      }
+      const msg = err && err.message ? err.message : String(err);
+      const code = err && err.code ? err.code : undefined;
+      lastDbInitError = { kind: 'connect_failed', message: msg, code, attempt, maxAttempts };
+      console.error(
+        `PostgreSQL 연결 실패 (${attempt}/${maxAttempts}):`,
+        msg,
+        code ? `(code ${code})` : ''
+      );
+      if (attempt < maxAttempts) {
+        await sleep(delayMs);
+      }
     }
-    pool = tmpPool;
-    tmpPool = null;
-  } catch (err) {
-    if (tmpPool) {
-      await tmpPool.end().catch(() => {});
-    }
-    console.error('PostgreSQL 연결 실패(문자열은 있으나 접속 불가):', err && err.message ? err.message : err);
-    pool = null;
   }
+  pool = null;
 }
 
 function getDbDiagnostics() {
@@ -129,8 +159,8 @@ function requirePool(res) {
     res.status(503).json({
       ok: false,
       error:
-        '웹 서비스 프로세스에 PostgreSQL 접속 정보가 없거나 첫 접속에 실패했습니다. 같은 프로젝트의 Postgres와 웹(앱) 서비스를 연결해 Variables에 DATABASE_PRIVATE_URL(또는 DATABASE_URL) 참조를 추가한 뒤 재배포하세요. 브라우저에서 /api/health 를 열어 poolReady·dbEnvHints 를 확인할 수 있습니다.',
-      diagnostics: diag,
+        '웹 서비스 프로세스에 PostgreSQL 접속 정보가 없거나 첫 접속에 실패했습니다. 같은 프로젝트의 Postgres와 웹(앱) 서비스를 연결해 Variables에 DATABASE_PRIVATE_URL(또는 DATABASE_URL) 참조를 추가한 뒤 재배포하세요. 브라우저에서 /api/health 를 열어 poolReady·dbEnvHints·lastDbInitError 를 확인할 수 있습니다.',
+      diagnostics: { ...diag, lastDbInitError },
       helpUrlPath: '/api/health',
     });
     return false;
@@ -250,6 +280,7 @@ app.get('/api/health', (req, res) => {
     ok: true,
     database: {
       poolReady: Boolean(pool),
+      lastDbInitError,
       ...diag,
     },
     hint:

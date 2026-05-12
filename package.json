@@ -11,7 +11,8 @@
     "import:characters": "node scripts/import-characters.js",
     "build:characters": "node scripts/build-character-library.js",
     "bootstrap:admin": "node scripts/create-admin.js",
-    "db:check": "node scripts/check-db.js"
+    "db:check": "node scripts/check-db.js",
+    "railway:db-hint": "node scripts/railway-db-vars-hint.js"
   },
   "engines": {
     "node": ">=18"
