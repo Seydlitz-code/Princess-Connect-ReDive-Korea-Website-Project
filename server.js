@@ -46,6 +46,7 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 let pool = null;
+let httpServer = null;
 
 /** initDb 연속 시도 후에도 pool 이 null 이면 마지막 오류(진단용) */
 let lastDbInitError = null;
@@ -1199,6 +1200,39 @@ app.get('*', (req, res, next) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+function gracefulShutdown(signal) {
+  console.log(`${signal}: 컨테이너 종료 요청을 받았습니다. 연결을 닫는 중…`);
+  const forceExit = setTimeout(() => {
+    console.error('종료 제한 시간 초과, 프로세스를 종료합니다.');
+    process.exit(1);
+  }, 10_000);
+  forceExit.unref();
+
+  const done = async () => {
+    clearTimeout(forceExit);
+    if (pool) {
+      try {
+        await pool.end();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    process.exit(0);
+  };
+
+  if (!httpServer) {
+    void done();
+    return;
+  }
+  httpServer.close((closeErr) => {
+    if (closeErr) console.error(closeErr);
+    void done();
+  });
+}
+
+process.once('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.once('SIGINT', () => gracefulShutdown('SIGINT'));
+
 async function start() {
   await initDb();
   await bootstrapAdminFromEnvIfNeeded(pool);
@@ -1206,7 +1240,7 @@ async function start() {
   if (characterLibrary) {
     console.log(`캐릭터 정적 라이브러리 사용: ${characterLibrary.list.length}건 (public/data/characters.json)`);
   }
-  app.listen(PORT, '0.0.0.0', () => {
+  httpServer = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server listening on ${PORT}`);
     if (process.env.NODE_ENV === 'production' && !(process.env.SESSION_SECRET || '').trim()) {
       console.warn(
