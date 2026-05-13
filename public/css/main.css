@@ -578,6 +578,13 @@ body.is-mypage-route .mypage-shell {
   flex-direction: column;
 }
 
+.owned-characters-modal-form {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .owned-characters-modal-scroll {
   flex: 1;
   min-height: 200px;

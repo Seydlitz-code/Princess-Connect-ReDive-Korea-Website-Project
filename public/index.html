@@ -417,18 +417,20 @@
         <button type="button" class="modal-back link-back" id="owned-characters-modal-close">
           <span aria-hidden="true">←</span> 뒤로 가기
         </button>
-        <header class="modal-head">
-          <h2 id="owned-characters-heading" class="modal-title">보유 캐릭터 업데이트</h2>
-          <p class="modal-sub">보유 중인 캐릭터를 탭하여 선택·해제한 뒤 저장하세요. 추천 파티 등에 반영됩니다.</p>
-        </header>
-        <div class="character-grid-scroll owned-characters-modal-scroll" tabindex="0">
-          <div id="owned-update-character-grid" class="character-grid character-grid--cols-8" role="list" aria-label="캐릭터 선택"></div>
-        </div>
-        <p id="owned-update-error" class="field-hint signup-error" hidden></p>
-        <footer class="modal-footer owned-characters-modal-footer">
-          <button type="button" class="btn btn-outline" id="owned-update-cancel">취소</button>
-          <button type="button" class="btn btn-primary" id="owned-update-save">저장</button>
-        </footer>
+        <form id="owned-update-form" class="owned-characters-modal-form" novalidate>
+          <header class="modal-head">
+            <h2 id="owned-characters-heading" class="modal-title">보유 캐릭터 업데이트</h2>
+            <p class="modal-sub">보유 중인 캐릭터를 탭하여 선택·해제한 뒤 저장하세요. 추천 파티 등에 반영됩니다.</p>
+          </header>
+          <div class="character-grid-scroll owned-characters-modal-scroll" tabindex="0">
+            <div id="owned-update-character-grid" class="character-grid character-grid--cols-8" role="list" aria-label="캐릭터 선택"></div>
+          </div>
+          <p id="owned-update-error" class="field-hint signup-error" hidden></p>
+          <footer class="modal-footer owned-characters-modal-footer">
+            <button type="button" class="btn btn-outline" id="owned-update-cancel">취소</button>
+            <button type="submit" class="btn btn-primary" id="owned-update-save">저장하기</button>
+          </footer>
+        </form>
       </div>
     </div>
 

@@ -637,6 +637,7 @@
   const ownedCharactersModal = document.getElementById('owned-characters-modal');
   const ownedUpdateGrid = document.getElementById('owned-update-character-grid');
   const ownedModalScroll = ownedCharactersModal?.querySelector('.owned-characters-modal-scroll');
+  const ownedUpdateForm = document.getElementById('owned-update-form');
   const ownedUpdateSave = document.getElementById('owned-update-save');
   const ownedUpdateCancel = document.getElementById('owned-update-cancel');
   const ownedUpdateError = document.getElementById('owned-update-error');
@@ -1490,18 +1491,19 @@
     if (e.target === ownedCharactersModal) closeOwnedCharactersModal();
   });
 
-  ownedUpdateSave?.addEventListener('click', async () => {
-    if (!ownedUpdateSave) return;
+  async function persistOwnedCharactersFromModal() {
+    if (!ownedUpdateSave || !ownedCharactersModal || ownedCharactersModal.hidden) return;
     if (ownedUpdateError) {
       ownedUpdateError.hidden = true;
       ownedUpdateError.textContent = '';
     }
+    const characterIds = [...ownedUpdateSelection].sort();
     ownedUpdateSave.disabled = true;
     try {
       await apiJson('/api/me/owned-characters', {
         method: 'PATCH',
         credentials: 'include',
-        body: JSON.stringify({ characterIds: Array.from(ownedUpdateSelection) }),
+        body: JSON.stringify({ characterIds }),
       });
       closeOwnedCharactersModal();
       await refreshMypageOwnedList();
@@ -1513,6 +1515,11 @@
     } finally {
       ownedUpdateSave.disabled = false;
     }
+  }
+
+  ownedUpdateForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    void persistOwnedCharactersFromModal();
   });
 
   signupNext?.addEventListener('click', async () => {
