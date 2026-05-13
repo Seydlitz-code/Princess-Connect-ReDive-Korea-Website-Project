@@ -1,19 +1,11 @@
 /**
- * 관리자 계정 1회 생성·갱신.
+ * 관리자 계정 1회 생성·갱신(로컬·CI용). Railway에서는 보통 웹 서비스 Variables에
+ * ADMIN_BOOTSTRAP_PASSWORD·ADMIN_USERNAME·ADMIN_NICKNAME 을 두고 서버 기동 시 자동 생성합니다(server.js).
  *
- * (권장·Railway) PostgreSQL에 admin_install_seed 행을 넣으면 웹 서버 기동 시 자동 생성되며
- *   평문 비밀번호 행은 삭제됩니다. 웹 Variables에 ADMIN_BOOTSTRAP_PASSWORD는 필요 없습니다.
- *
- * 이 스크립트 사용 시 비밀번호 (우선순위): ADMIN_BOOTSTRAP_PASSWORD / ADMIN_PASSWORD
+ * 이 스크립트 비밀번호: ADMIN_BOOTSTRAP_PASSWORD / ADMIN_PASSWORD
  *   → 없으면 scripts/admin-credentials.local.js
- *   DB에는 bcrypt 해시(단방향)만 저장. 아이디·닉네임은 AES-GCM + blind index.
  *
- * 선택:
- *   DATABASE_URL 등 (Railway Postgres와 동일 규칙, lib/dbConfig.js)
- *   ADMIN_USERNAME 기본값 seydlitz (8~20자, 영문·숫자·밑줄)
- *   ADMIN_NICKNAME 기본값 릴리프 (2~10자)
- *   SESSION_SECRET 또는 USER_PII_ENCRYPTION_KEY (닉네임·아이디 AES 암호화에 사용)
- *   ADMIN_PROFILE_IMAGE 스크립트 기준 프로필 PNG 경로 (기본 scripts/admin-profile-source.png)
+ * 선택: DATABASE_URL, SESSION_SECRET 또는 USER_PII_ENCRYPTION_KEY, ADMIN_PROFILE_IMAGE
  *
  * 예 (PowerShell):
  *   $env:ADMIN_BOOTSTRAP_PASSWORD='(비밀번호)'

@@ -152,79 +152,66 @@ async function ensureSchema(client) {
       PRIMARY KEY (user_id, character_id)
     );
   `);
-  /** 일회용: Postgres에 행을 넣어두면 첫 기동 시 관리자를 만든 뒤 이 테이블 행은 삭제됩니다(웹 Variables에 ADMIN_BOOTSTRAP_PASSWORD 불필요). */
-  await client.query(`
-    CREATE TABLE IF NOT EXISTS admin_install_seed (
-      id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-      username TEXT NOT NULL DEFAULT 'seydlitz',
-      nickname TEXT NOT NULL DEFAULT '릴리프',
-      password_plain TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-  `);
 }
 
 /**
- * admin_install_seed(id=1) 행이 있으면 관리자가 없을 때만 계정을 만들고 행을 삭제합니다.
- * 비밀번호 평문은 처리 직후 DB에서 제거됩니다.
+ * Railway 등: 웹 서비스 환경 변수 ADMIN_BOOTSTRAP_PASSWORD(또는 ADMIN_PASSWORD)가 있고
+ * DB에 관리자가 없으면 첫 기동 시 계정을 만듭니다.
+ * ADMIN_USERNAME·ADMIN_NICKNAME은 선택(기본 seydlitz / 릴리프).
+ * 관리자 생성 후에는 Variables에서 비밀번호 변수 제거를 권장합니다.
  */
-async function consumeAdminInstallSeedIfNeeded(pgPool) {
+async function bootstrapAdminFromEnvIfNeeded(pgPool) {
   if (!pgPool) return;
+  const passwordRaw =
+    (typeof process.env.ADMIN_BOOTSTRAP_PASSWORD === 'string' && process.env.ADMIN_BOOTSTRAP_PASSWORD) ||
+    (typeof process.env.ADMIN_PASSWORD === 'string' && process.env.ADMIN_PASSWORD) ||
+    '';
+  const passwordPlain = String(passwordRaw).trim();
+  if (!passwordPlain) return;
+
   const client = await pgPool.connect();
   try {
     await client.query('BEGIN');
     await client.query('SELECT pg_advisory_xact_lock(74821901)');
-    const seedRes = await client.query(
-      `SELECT username, nickname, password_plain FROM admin_install_seed WHERE id = 1 FOR UPDATE`
-    );
-    if (seedRes.rowCount === 0) {
-      await client.query('COMMIT');
-      return;
-    }
-
-    const seed = seedRes.rows[0];
-    const username = String(seed.username || '').trim();
-    const nickname = String(seed.nickname || '').trim();
-    const passwordPlain = String(seed.password_plain || '');
 
     const adminExists = await client.query(
       `SELECT 1 FROM users WHERE COALESCE(role, 'user') = 'admin' LIMIT 1`
     );
     if (adminExists.rowCount > 0) {
-      await client.query('DELETE FROM admin_install_seed WHERE id = 1');
       await client.query('COMMIT');
-      console.log('[admin_install_seed] 이미 관리자 계정이 있어 시드 행만 제거했습니다.');
       return;
     }
 
     if (!isPiiEncryptionReady()) {
       await client.query('ROLLBACK');
       console.warn(
-        '[admin_install_seed] SESSION_SECRET 또는 USER_PII_ENCRYPTION_KEY가 없어 시드를 보류합니다. 설정 후 재시작하면 처리됩니다.'
+        '[admin_bootstrap] SESSION_SECRET 또는 USER_PII_ENCRYPTION_KEY가 없어 환경 변수 관리자 생성을 건너뜁니다.'
       );
       return;
     }
 
+    const username = String(process.env.ADMIN_USERNAME || 'seydlitz').trim();
+    const nickname = String(process.env.ADMIN_NICKNAME || '릴리프').trim();
+
     if (!USERNAME_RE.test(username)) {
-      await client.query('DELETE FROM admin_install_seed WHERE id = 1');
-      await client.query('COMMIT');
-      console.error('[admin_install_seed] username 형식이 잘못되어 시드를 폐기했습니다. (영문·숫자·밑줄 8~20자)');
+      await client.query('ROLLBACK');
+      console.error(
+        '[admin_bootstrap] ADMIN_USERNAME 형식이 올바르지 않습니다. (영문·숫자·밑줄 8~20자)'
+      );
       return;
     }
     const nLen = nicknameCodepointLen(nickname);
     if (nLen < NICKNAME_MIN || nLen > NICKNAME_MAX) {
-      await client.query('DELETE FROM admin_install_seed WHERE id = 1');
-      await client.query('COMMIT');
+      await client.query('ROLLBACK');
       console.error(
-        `[admin_install_seed] nickname 길이가 잘못되어 시드를 폐기했습니다. (${NICKNAME_MIN}~${NICKNAME_MAX}자)`
+        `[admin_bootstrap] ADMIN_NICKNAME 길이가 올바르지 않습니다. (${NICKNAME_MIN}~${NICKNAME_MAX}자)`
       );
       return;
     }
     if (passwordPlain.length < PASSWORD_MIN || passwordPlain.length > PASSWORD_MAX) {
-      await client.query('DELETE FROM admin_install_seed WHERE id = 1');
-      await client.query('COMMIT');
+      await client.query('ROLLBACK');
       console.error(
-        `[admin_install_seed] password 길이가 잘못되어 시드를 폐기했습니다. (${PASSWORD_MIN}~${PASSWORD_MAX}자)`
+        `[admin_bootstrap] 비밀번호 길이가 올바르지 않습니다. (${PASSWORD_MIN}~${PASSWORD_MAX}자)`
       );
       return;
     }
@@ -247,12 +234,13 @@ async function consumeAdminInstallSeedIfNeeded(pgPool) {
        VALUES (NULL, NULL, $1, $2, $3, $4, $5, $6, 'admin')`,
       [ub, nb, uCipher, nCipher, hash, profileImage]
     );
-    await client.query('DELETE FROM admin_install_seed WHERE id = 1');
     await client.query('COMMIT');
-    console.log('[admin_install_seed] DB 시드로 관리자 계정을 생성했고 시드 행을 삭제했습니다.');
+    console.log(
+      '[admin_bootstrap] 환경 변수로 관리자 계정을 생성했습니다. 보안을 위해 Railway Variables에서 ADMIN_BOOTSTRAP_PASSWORD·ADMIN_PASSWORD 제거를 권장합니다.'
+    );
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
-    console.error('[admin_install_seed] 처리 실패:', err && err.message ? err.message : err);
+    console.error('[admin_bootstrap] 실패:', err && err.message ? err.message : err);
   } finally {
     client.release();
   }
@@ -1113,7 +1101,7 @@ app.get('*', (req, res, next) => {
 
 async function start() {
   await initDb();
-  await consumeAdminInstallSeedIfNeeded(pool);
+  await bootstrapAdminFromEnvIfNeeded(pool);
   characterLibrary = readCharacterLibrarySync(__dirname);
   if (characterLibrary) {
     console.log(`캐릭터 정적 라이브러리 사용: ${characterLibrary.list.length}건 (public/data/characters.json)`);
