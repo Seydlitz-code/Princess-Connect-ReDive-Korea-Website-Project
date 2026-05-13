@@ -89,7 +89,7 @@
         <div id="signup-head-account">
           <header class="modal-head">
             <h2 id="signup-heading" class="modal-title">회원가입</h2>
-            <p class="modal-sub">새 계정을 만들어서 댓글을 남겨보세요.</p>
+            <p class="modal-sub">새 계정을 만들어 게시물을 작성하고 댓글을 남겨보세요.</p>
           </header>
         </div>
         <div id="signup-head-characters" class="signup-head-characters" hidden>
@@ -120,8 +120,8 @@
               <div class="field-group">
                 <label class="field-label" for="nickname">닉네임</label>
                 <div class="field-row field-row--check">
-                  <button type="button" class="btn btn-secondary btn-compact" id="check-nickname">중복 확인</button>
-                  <input id="nickname" type="text" class="input" placeholder="닉네임을 입력하세요" autocomplete="nickname" />
+                  <button type="button" class="btn btn-secondary btn-compact" id="check-nickname">닉네임 중복 확인</button>
+                  <input id="nickname" type="text" class="input" placeholder="2~10자 닉네임" autocomplete="nickname" />
                 </div>
                 <p id="nickname-check-feedback" class="field-check-feedback" role="status" aria-live="polite"></p>
                 <p class="field-hint">한글·영문 등 2~10자, 중복 확인 후 다음 단계로 진행할 수 있습니다.</p>
@@ -132,8 +132,8 @@
               <div class="field-group">
                 <label class="field-label" for="userid">아이디</label>
                 <div class="field-row field-row--check">
-                  <button type="button" class="btn btn-secondary btn-compact" id="check-userid">중복 확인</button>
-                  <input id="userid" type="text" class="input" placeholder="아이디 (영문·숫자·밑줄)" autocomplete="username" />
+                  <button type="button" class="btn btn-secondary btn-compact" id="check-userid">아이디 중복 확인</button>
+                  <input id="userid" type="text" class="input" placeholder="8~20자 영문·숫자·밑줄" autocomplete="username" />
                 </div>
                 <p id="userid-check-feedback" class="field-check-feedback" role="status" aria-live="polite"></p>
                 <p class="field-hint">8~20자, 영문·숫자·밑줄(_)만 사용할 수 있습니다.</p>
@@ -141,18 +141,29 @@
 
               <div class="field-group">
                 <label class="field-label" for="password">비밀번호</label>
-                <input id="password" type="password" class="input" placeholder="비밀번호" autocomplete="new-password" />
+                <div class="input-with-toggle">
+                  <input id="password" type="password" class="input" placeholder="비밀번호" autocomplete="new-password" />
+                  <button type="button" class="btn-pw-toggle" id="password-visibility" aria-pressed="false" aria-label="비밀번호 표시">
+                    보기
+                  </button>
+                </div>
               </div>
 
               <div class="field-group">
                 <label class="field-label" for="password2">비밀번호 확인</label>
-                <input
-                  id="password2"
-                  type="password"
-                  class="input"
-                  placeholder="비밀번호를 다시 입력하세요"
-                  autocomplete="new-password"
-                />
+                <div class="input-with-toggle">
+                  <input
+                    id="password2"
+                    type="password"
+                    class="input"
+                    placeholder="비밀번호를 다시 입력하세요"
+                    autocomplete="new-password"
+                  />
+                  <button type="button" class="btn-pw-toggle" id="password2-visibility" aria-pressed="false" aria-label="비밀번호 확인란 표시">
+                    보기
+                  </button>
+                </div>
+                <p id="password-match-feedback" class="field-check-feedback" role="status" aria-live="polite"></p>
               </div>
 
               <div class="field-group signup-captcha-block">
@@ -186,7 +197,8 @@
 
         <footer class="modal-footer">
           <div id="signup-footer-account" class="signup-footer-panel">
-            <button type="button" class="btn btn-primary btn-lg btn-footer-primary signup-btn-next" id="signup-next" disabled>다음으로</button>
+            <p id="signup-step1-alert" class="signup-step1-alert" role="alert" aria-live="polite" hidden></p>
+            <button type="button" class="btn btn-primary btn-lg btn-footer-primary signup-btn-next" id="signup-next">다음으로</button>
           </div>
           <div id="signup-footer-characters" class="signup-footer-panel signup-footer-characters" hidden>
             <div id="signup-recaptcha-wrap" class="signup-recaptcha-wrap" hidden>
@@ -205,6 +217,33 @@
             <button type="button" class="btn btn-primary btn-lg btn-footer-primary" id="signup-submit">회원가입</button>
           </div>
         </footer>
+      </div>
+    </div>
+
+    <div class="profile-crop-modal" id="profile-crop-modal" role="dialog" aria-modal="true" aria-labelledby="profile-crop-title" hidden>
+      <div class="profile-crop-backdrop" id="profile-crop-backdrop"></div>
+      <div class="profile-crop-sheet">
+        <header class="profile-crop-head">
+          <button type="button" class="profile-crop-icon-btn" id="profile-crop-cancel" aria-label="취소">
+            <span aria-hidden="true">×</span>
+          </button>
+          <h2 id="profile-crop-title" class="profile-crop-title">이미지 편집하기</h2>
+          <button type="button" class="profile-crop-icon-btn profile-crop-icon-btn--ok" id="profile-crop-confirm" aria-label="적용">
+            <span aria-hidden="true">✓</span>
+          </button>
+        </header>
+        <div class="profile-crop-stage-wrap">
+          <div class="profile-crop-stage" id="profile-crop-stage">
+            <canvas id="profile-crop-canvas" width="320" height="320" aria-hidden="true"></canvas>
+          </div>
+        </div>
+        <div class="profile-crop-controls">
+          <div class="profile-crop-zoom-row">
+            <span class="profile-crop-zoom-pct"><span id="profile-crop-zoom-pct">100</span>%</span>
+            <input type="range" id="profile-crop-zoom" min="100" max="300" value="100" step="1" aria-valuemin="100" aria-valuemax="300" aria-label="확대 비율" />
+          </div>
+          <button type="button" class="profile-crop-tool-btn" id="profile-crop-rotate" aria-label="이미지 회전 90도">⟲</button>
+        </div>
       </div>
     </div>
 

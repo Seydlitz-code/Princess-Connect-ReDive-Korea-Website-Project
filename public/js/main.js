@@ -76,6 +76,19 @@
   const signupCaptchaSvg = document.getElementById('signup-captcha-svg');
   const signupCaptchaRefresh = document.getElementById('signup-captcha-refresh');
   const signupCaptchaAnswer = document.getElementById('signup-captcha-answer');
+  const signupStep1Alert = document.getElementById('signup-step1-alert');
+  const passwordVisibilityBtn = document.getElementById('password-visibility');
+  const password2VisibilityBtn = document.getElementById('password2-visibility');
+  const passwordMatchFeedbackEl = document.getElementById('password-match-feedback');
+  const profileCropModal = document.getElementById('profile-crop-modal');
+  const profileCropCanvas = document.getElementById('profile-crop-canvas');
+  const profileCropStage = document.getElementById('profile-crop-stage');
+  const profileCropZoom = document.getElementById('profile-crop-zoom');
+  const profileCropZoomPct = document.getElementById('profile-crop-zoom-pct');
+  const profileCropCancel = document.getElementById('profile-crop-cancel');
+  const profileCropConfirm = document.getElementById('profile-crop-confirm');
+  const profileCropRotate = document.getElementById('profile-crop-rotate');
+  const profileCropBackdrop = document.getElementById('profile-crop-backdrop');
 
   const USERNAME_RE_CLIENT = /^[a-zA-Z0-9_]{8,20}$/;
   const NICKNAME_LEN_MIN = 2;
@@ -95,6 +108,15 @@
   let recaptchaApiPromise = null;
   let signupCaptchaId = '';
   let signupStepPassToken = '';
+  let croppedProfileDataUrl = null;
+  let pendingCropObjectUrl = null;
+  let cropImg = null;
+  let cropPanX = 0;
+  let cropPanY = 0;
+  let cropRotation = 0;
+  let cropDragging = false;
+  let cropLastPointerX = 0;
+  let cropLastPointerY = 0;
   let profilePreviewUrl = null;
 
   function syncRecaptchaWrapVisibility() {
@@ -205,6 +227,232 @@
     }
   }
 
+  function clearSignupStep1Alert() {
+    if (!signupStep1Alert) return;
+    signupStep1Alert.textContent = '';
+    signupStep1Alert.hidden = true;
+  }
+
+  function setSignupStep1Alert(message) {
+    if (!signupStep1Alert) return;
+    if (!message) {
+      clearSignupStep1Alert();
+      return;
+    }
+    signupStep1Alert.textContent = message;
+    signupStep1Alert.hidden = false;
+  }
+
+  function getFirstSignupStep1ValidationError() {
+    const nickname = nicknameInput?.value.trim() || '';
+    const username = useridInput?.value.trim() || '';
+    const password = passwordInput?.value || '';
+    const password2 = password2Input?.value || '';
+    const captchaAnswer = signupCaptchaAnswer?.value?.trim() || '';
+
+    if (!nickname) return '닉네임을 입력해 주세요.';
+    const nLen = nicknameCharCount(nickname);
+    if (nLen < NICKNAME_LEN_MIN || nLen > NICKNAME_LEN_MAX) {
+      return `닉네임은 ${NICKNAME_LEN_MIN}~${NICKNAME_LEN_MAX}자로 입력해 주세요.`;
+    }
+    if (nicknameApprovedFor !== nickname) return '닉네임 중복 확인을 해 주세요.';
+
+    if (!username) return '아이디를 입력해 주세요.';
+    if (!USERNAME_RE_CLIENT.test(username)) {
+      return '아이디는 영문·숫자·밑줄만 사용하고 8~20자로 입력해 주세요.';
+    }
+    if (usernameApprovedFor !== username) return '아이디 중복 확인을 해 주세요.';
+
+    if (!password) return '비밀번호를 입력해 주세요.';
+    if (password.length < PASSWORD_LEN_MIN) {
+      return `비밀번호는 ${PASSWORD_LEN_MIN}자 이상 입력해 주세요.`;
+    }
+    if (!password2) return '비밀번호 확인을 입력해 주세요.';
+    if (password !== password2) return '비밀번호 확인이 일치하지 않습니다.';
+
+    if (!signupCaptchaId) {
+      return '보안 문자 이미지를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.';
+    }
+    if (!captchaAnswer) return '보안 문자를 입력해 주세요.';
+
+    return null;
+  }
+
+  function syncPasswordMatchFeedback() {
+    if (!passwordMatchFeedbackEl) return;
+    const a = passwordInput?.value || '';
+    const b = password2Input?.value || '';
+    if (!b) {
+      passwordMatchFeedbackEl.textContent = '';
+      passwordMatchFeedbackEl.classList.remove('is-ok', 'is-warn');
+      return;
+    }
+    if (a === b) {
+      passwordMatchFeedbackEl.textContent = '비밀번호가 일치합니다.';
+      passwordMatchFeedbackEl.classList.remove('is-warn');
+      passwordMatchFeedbackEl.classList.add('is-ok');
+    } else {
+      passwordMatchFeedbackEl.textContent = '비밀번호가 일치하지 않습니다.';
+      passwordMatchFeedbackEl.classList.remove('is-ok');
+      passwordMatchFeedbackEl.classList.add('is-warn');
+    }
+  }
+
+  function updateCropZoomLabel() {
+    if (profileCropZoomPct && profileCropZoom) profileCropZoomPct.textContent = String(profileCropZoom.value);
+  }
+
+  function fitCropCanvasToStage() {
+    if (!profileCropCanvas || !profileCropStage) return;
+    const d = Math.max(200, Math.round(profileCropStage.clientWidth || 320));
+    profileCropCanvas.width = d;
+    profileCropCanvas.height = d;
+  }
+
+  function drawCropPreview() {
+    if (!cropImg || !profileCropCanvas) return;
+    const ctx = profileCropCanvas.getContext('2d');
+    const W = profileCropCanvas.width;
+    const H = profileCropCanvas.height;
+    const cx = W / 2;
+    const cy = H / 2;
+    const r = Math.min(W, H) / 2 - 4;
+    const iw = cropImg.naturalWidth;
+    const ih = cropImg.naturalHeight;
+    const rot = cropRotation;
+    const cos = Math.abs(Math.cos(rot));
+    const sin = Math.abs(Math.sin(rot));
+    const rw = iw * cos + ih * sin;
+    const rh = iw * sin + ih * cos;
+    const zoom = Number(profileCropZoom?.value || 100) / 100;
+    const scaleCover = (2 * r) / Math.min(rw, rh);
+    const s = scaleCover * zoom;
+
+    ctx.fillStyle = '#141414';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.translate(cx + cropPanX, cy + cropPanY);
+    ctx.rotate(rot);
+    ctx.drawImage(cropImg, (-iw * s) / 2, (-ih * s) / 2, iw * s, ih * s);
+    ctx.restore();
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
+    ctx.beginPath();
+    ctx.rect(0, 0, W, H);
+    ctx.arc(cx, cy, r, 0, Math.PI * 2, true);
+    ctx.fill('evenodd');
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 3; i += 1) {
+      const g = (2 * r * i) / 3;
+      const x0 = cx - r + g;
+      ctx.beginPath();
+      ctx.moveTo(x0, cy - r);
+      ctx.lineTo(x0, cy + r);
+      ctx.stroke();
+      const y0 = cy - r + g;
+      ctx.beginPath();
+      ctx.moveTo(cx - r, y0);
+      ctx.lineTo(cx + r, y0);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  function exportProfileCrop() {
+    if (!cropImg || !profileCropCanvas) return '';
+    const W = profileCropCanvas.width;
+    const H = profileCropCanvas.height;
+    const r = Math.min(W, H) / 2 - 4;
+    const OUT = 512;
+    const R = OUT / 2 - 2;
+    const cx = OUT / 2;
+    const cy = OUT / 2;
+    const k = R / r;
+    const canvas = document.createElement('canvas');
+    canvas.width = OUT;
+    canvas.height = OUT;
+    const ctx = canvas.getContext('2d');
+    const iw = cropImg.naturalWidth;
+    const ih = cropImg.naturalHeight;
+    const rot = cropRotation;
+    const cos = Math.abs(Math.cos(rot));
+    const sin = Math.abs(Math.sin(rot));
+    const rw = iw * cos + ih * sin;
+    const rh = iw * sin + ih * cos;
+    const zoom = Number(profileCropZoom?.value || 100) / 100;
+    const scaleCover = (2 * R) / Math.min(rw, rh);
+    const s = scaleCover * zoom;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.translate(cx + cropPanX * k, cy + cropPanY * k);
+    ctx.rotate(rot);
+    ctx.drawImage(cropImg, (-iw * s) / 2, (-ih * s) / 2, iw * s, ih * s);
+    ctx.restore();
+
+    return canvas.toDataURL('image/jpeg', 0.88);
+  }
+
+  function closeProfileCropEditor(revokePending) {
+    if (profileCropModal) profileCropModal.hidden = true;
+    if (revokePending && pendingCropObjectUrl) {
+      try {
+        URL.revokeObjectURL(pendingCropObjectUrl);
+      } catch (_) {
+        /* ignore */
+      }
+      pendingCropObjectUrl = null;
+    }
+    cropImg = null;
+    cropDragging = false;
+  }
+
+  function openProfileCropEditor(objectUrl) {
+    const img = new Image();
+    img.onload = () => {
+      cropImg = img;
+      cropPanX = 0;
+      cropPanY = 0;
+      cropRotation = 0;
+      if (profileCropZoom) profileCropZoom.value = '100';
+      updateCropZoomLabel();
+      fitCropCanvasToStage();
+      drawCropPreview();
+      if (profileCropModal) profileCropModal.hidden = false;
+      profileCropCancel?.focus();
+    };
+    img.onerror = () => {
+      window.alert('이미지를 불러올 수 없습니다.');
+      if (objectUrl === pendingCropObjectUrl) {
+        try {
+          URL.revokeObjectURL(pendingCropObjectUrl);
+        } catch (_) {
+          /* ignore */
+        }
+        pendingCropObjectUrl = null;
+      }
+    };
+    img.src = objectUrl;
+  }
+
   const nicknameFeedbackEl = document.getElementById('nickname-check-feedback');
   const useridFeedbackEl = document.getElementById('userid-check-feedback');
   const checkNicknameBtn = document.getElementById('check-nickname');
@@ -229,16 +477,8 @@
   }
 
   function syncSignupNextButton() {
-    if (!signupNext) return;
-    if (signupStep !== 1) return;
-    const u = useridInput?.value.trim() || '';
-    const n = nicknameInput?.value.trim() || '';
-    const pw = passwordInput?.value || '';
-    const pw2 = password2Input?.value || '';
-    const idOk = u.length > 0 && usernameApprovedFor === u;
-    const nickOk = n.length > 0 && nicknameApprovedFor === n;
-    const pwOk = pw.length >= PASSWORD_LEN_MIN && pw === pw2;
-    signupNext.disabled = !(idOk && nickOk && pwOk);
+    if (!signupNext || signupStep !== 1) return;
+    signupNext.disabled = false;
   }
 
   function resetSignupFlow() {
@@ -246,6 +486,9 @@
     nicknameApprovedFor = null;
     usernameApprovedFor = null;
     signupStepPassToken = '';
+    croppedProfileDataUrl = null;
+    closeProfileCropEditor(true);
+    clearSignupStep1Alert();
     resetRecaptchaWidget();
     clearCheckFeedback(nicknameFeedbackEl);
     clearCheckFeedback(useridFeedbackEl);
@@ -265,6 +508,7 @@
       }
       profilePreviewUrl = null;
     }
+    syncPasswordMatchFeedback();
     if (deferCheckbox) deferCheckbox.checked = false;
     if (characterLoadError) {
       characterLoadError.hidden = true;
@@ -304,6 +548,7 @@
       resetRecaptchaWidget();
       setSignupStep(1);
       void loadSignupCaptcha();
+      clearSignupStep1Alert();
       modalBack?.focus();
       return;
     }
@@ -497,6 +742,11 @@
 
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
+    if (profileCropModal && !profileCropModal.hidden) {
+      onProfileCropCancelClick();
+      e.preventDefault();
+      return;
+    }
     if (loginModal && !loginModal.hidden) {
       closeLoginModal();
       document.body.style.overflow = signupModalShows() ? 'hidden' : '';
@@ -507,25 +757,120 @@
 
   profileTrigger?.addEventListener('click', () => profileFile?.click());
 
+  function wirePwToggle(btn, input) {
+    if (!btn || !input) return;
+    btn.addEventListener('click', () => {
+      const toText = input.type === 'password';
+      input.type = toText ? 'text' : 'password';
+      btn.setAttribute('aria-pressed', toText ? 'true' : 'false');
+      btn.textContent = toText ? '숨기기' : '보기';
+    });
+  }
+  wirePwToggle(passwordVisibilityBtn, passwordInput);
+  wirePwToggle(password2VisibilityBtn, password2Input);
+
   profileFile?.addEventListener('change', () => {
     const file = profileFile.files?.[0];
-    if (!file || !profilePreview) return;
-    if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
-    profilePreviewUrl = URL.createObjectURL(file);
-    const prevImg = profilePreview.querySelector('img');
-    if (prevImg) {
-      prevImg.src = profilePreviewUrl;
-    } else {
-      profilePreview.innerHTML = '';
-      const img = document.createElement('img');
-      img.alt = '프로필 미리보기';
-      img.src = profilePreviewUrl;
-      profilePreview.appendChild(img);
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      profileFile.value = '';
+      window.alert('이미지 파일만 선택할 수 있습니다.');
+      return;
+    }
+    if (pendingCropObjectUrl) {
+      try {
+        URL.revokeObjectURL(pendingCropObjectUrl);
+      } catch (_) {
+        /* ignore */
+      }
+      pendingCropObjectUrl = null;
+    }
+    pendingCropObjectUrl = URL.createObjectURL(file);
+    openProfileCropEditor(pendingCropObjectUrl);
+    profileFile.value = '';
+  });
+
+  function onProfileCropCancelClick() {
+    closeProfileCropEditor(true);
+  }
+  profileCropCancel?.addEventListener('click', onProfileCropCancelClick);
+  profileCropBackdrop?.addEventListener('click', onProfileCropCancelClick);
+
+  profileCropConfirm?.addEventListener('click', () => {
+    if (!cropImg) return;
+    try {
+      croppedProfileDataUrl = exportProfileCrop();
+      if (pendingCropObjectUrl) {
+        try {
+          URL.revokeObjectURL(pendingCropObjectUrl);
+        } catch (_) {
+          /* ignore */
+        }
+        pendingCropObjectUrl = null;
+      }
+      if (profilePreview) {
+        profilePreview.innerHTML = '';
+        const imgEl = document.createElement('img');
+        imgEl.src = croppedProfileDataUrl;
+        imgEl.alt = '프로필 미리보기';
+        profilePreview.appendChild(imgEl);
+      }
+      closeProfileCropEditor(false);
+      clearSignupStep1Alert();
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : String(e));
     }
   });
 
+  profileCropZoom?.addEventListener('input', () => {
+    updateCropZoomLabel();
+    drawCropPreview();
+  });
 
-  const MAX_PROFILE_BYTES = 512 * 1024;
+  profileCropRotate?.addEventListener('click', () => {
+    cropRotation = (cropRotation + Math.PI / 2) % (Math.PI * 2);
+    drawCropPreview();
+  });
+
+  function endCropDrag(e) {
+    if (!cropDragging) return;
+    cropDragging = false;
+    try {
+      profileCropCanvas?.releasePointerCapture(e.pointerId);
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  profileCropCanvas?.addEventListener('pointerdown', (e) => {
+    if (!cropImg) return;
+    cropDragging = true;
+    cropLastPointerX = e.clientX;
+    cropLastPointerY = e.clientY;
+    try {
+      profileCropCanvas.setPointerCapture(e.pointerId);
+    } catch (_) {
+      /* ignore */
+    }
+  });
+  profileCropCanvas?.addEventListener('pointermove', (e) => {
+    if (!cropDragging || !cropImg) return;
+    const dx = e.clientX - cropLastPointerX;
+    const dy = e.clientY - cropLastPointerY;
+    cropLastPointerX = e.clientX;
+    cropLastPointerY = e.clientY;
+    cropPanX += dx;
+    cropPanY += dy;
+    drawCropPreview();
+  });
+  profileCropCanvas?.addEventListener('pointerup', endCropDrag);
+  profileCropCanvas?.addEventListener('pointercancel', endCropDrag);
+
+  window.addEventListener('resize', () => {
+    if (!profileCropModal || profileCropModal.hidden || !cropImg) return;
+    fitCropCanvasToStage();
+    drawCropPreview();
+  });
 
   async function apiJson(url, options = {}) {
     const res = await fetch(url, {
@@ -541,6 +886,7 @@
   }
 
   nicknameInput?.addEventListener('input', () => {
+    clearSignupStep1Alert();
     const v = nicknameInput.value.trim();
     if (nicknameApprovedFor !== null && v !== nicknameApprovedFor) nicknameApprovedFor = null;
     clearCheckFeedback(nicknameFeedbackEl);
@@ -548,6 +894,7 @@
   });
 
   useridInput?.addEventListener('input', () => {
+    clearSignupStep1Alert();
     const v = useridInput.value.trim();
     if (usernameApprovedFor !== null && v !== usernameApprovedFor) usernameApprovedFor = null;
     clearCheckFeedback(useridFeedbackEl);
@@ -555,6 +902,7 @@
   });
 
   checkNicknameBtn?.addEventListener('click', async () => {
+    clearSignupStep1Alert();
     const nickname = nicknameInput?.value.trim() || '';
     if (!nickname) {
       nicknameApprovedFor = null;
@@ -601,6 +949,7 @@
   });
 
   checkUseridBtn?.addEventListener('click', async () => {
+    clearSignupStep1Alert();
     const username = useridInput?.value.trim() || '';
     if (!username) {
       usernameApprovedFor = null;
@@ -641,21 +990,26 @@
     syncSignupNextButton();
   });
 
-  passwordInput?.addEventListener('input', syncSignupNextButton);
-  password2Input?.addEventListener('input', syncSignupNextButton);
+  passwordInput?.addEventListener('input', () => {
+    clearSignupStep1Alert();
+    syncSignupNextButton();
+    syncPasswordMatchFeedback();
+  });
+  password2Input?.addEventListener('input', () => {
+    clearSignupStep1Alert();
+    syncSignupNextButton();
+    syncPasswordMatchFeedback();
+  });
+
+  signupCaptchaAnswer?.addEventListener('input', () => {
+    clearSignupStep1Alert();
+  });
 
   signupCaptchaRefresh?.addEventListener('click', () => {
     void loadSignupCaptcha();
   });
 
-  function fileToDataUrl(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ''));
-      reader.onerror = () => reject(new Error('이미지를 읽을 수 없습니다.'));
-      reader.readAsDataURL(file);
-    });
-  }
+  const MAX_PROFILE_DATA_URL_LENGTH = 600_000;
 
   function ensureCharactersLoaded() {
     if (charactersCache !== null) return Promise.resolve(charactersCache);
@@ -714,33 +1068,14 @@
   }
 
   signupNext?.addEventListener('click', async () => {
-    const nickname = nicknameInput?.value.trim() || '';
-    const username = useridInput?.value.trim() || '';
-    const password = passwordInput?.value || '';
-    const password2 = password2Input?.value || '';
+    const err = getFirstSignupStep1ValidationError();
+    if (err) {
+      setSignupStep1Alert(err);
+      return;
+    }
+    clearSignupStep1Alert();
+
     const captchaAnswer = signupCaptchaAnswer?.value || '';
-
-    if (!username || !nickname) {
-      return;
-    }
-    if (usernameApprovedFor !== username || nicknameApprovedFor !== nickname) {
-      return;
-    }
-
-    if (password.length < PASSWORD_LEN_MIN) {
-      window.alert(`비밀번호는 ${PASSWORD_LEN_MIN}자 이상으로 입력해 주세요.`);
-      return;
-    }
-    if (password !== password2) {
-      window.alert('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
-      return;
-    }
-
-    if (!signupCaptchaId) {
-      window.alert('보안 문자를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.');
-      void loadSignupCaptcha();
-      return;
-    }
 
     signupNext.disabled = true;
     try {
@@ -754,7 +1089,7 @@
       });
       const captchaData = await captchaRes.json().catch(() => ({}));
       if (!captchaRes.ok) {
-        window.alert(captchaData.error || '보안 문자 확인에 실패했습니다.');
+        setSignupStep1Alert(captchaData.error || '보안 문자 확인에 실패했습니다.');
         void loadSignupCaptcha();
         return;
       }
@@ -833,19 +1168,10 @@
       return;
     }
 
-    let profileImage = null;
-    const file = profileFile?.files?.[0];
-    if (file) {
-      if (file.size > MAX_PROFILE_BYTES) {
-        window.alert('프로필 이미지는 약 512KB 이하로 올려 주세요.');
-        return;
-      }
-      try {
-        profileImage = await fileToDataUrl(file);
-      } catch (e) {
-        window.alert(e instanceof Error ? e.message : String(e));
-        return;
-      }
+    let profileImage = croppedProfileDataUrl || null;
+    if (profileImage && profileImage.length > MAX_PROFILE_DATA_URL_LENGTH) {
+      window.alert('프로필 이미지 데이터가 너무 큽니다. 다른 이미지를 선택해 주세요.');
+      return;
     }
 
     signupSubmit.disabled = true;
