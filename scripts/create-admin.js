@@ -1,9 +1,12 @@
 /**
- * 관리자 계정 1회 생성·갱신. 비밀번호는 저장소에 커밋하지 마세요 — 환경 변수 또는 admin-credentials.local.js 로만 입력합니다.
+ * 관리자 계정 1회 생성·갱신.
  *
- * 비밀번호 (우선순위): 환경 변수 ADMIN_BOOTSTRAP_PASSWORD / ADMIN_PASSWORD
- *   → 없으면 scripts/admin-credentials.local.js 의 ADMIN_BOOTSTRAP_PASSWORD (예시는 admin-credentials.local.example.js 참고)
- *   DB에는 bcrypt 해시(단방향)로만 저장됩니다. 아이디·닉네임은 AES-GCM 암호문과 blind index로 저장됩니다.
+ * (권장·Railway) PostgreSQL에 admin_install_seed 행을 넣으면 웹 서버 기동 시 자동 생성되며
+ *   평문 비밀번호 행은 삭제됩니다. 웹 Variables에 ADMIN_BOOTSTRAP_PASSWORD는 필요 없습니다.
+ *
+ * 이 스크립트 사용 시 비밀번호 (우선순위): ADMIN_BOOTSTRAP_PASSWORD / ADMIN_PASSWORD
+ *   → 없으면 scripts/admin-credentials.local.js
+ *   DB에는 bcrypt 해시(단방향)만 저장. 아이디·닉네임은 AES-GCM + blind index.
  *
  * 선택:
  *   DATABASE_URL 등 (Railway Postgres와 동일 규칙, lib/dbConfig.js)

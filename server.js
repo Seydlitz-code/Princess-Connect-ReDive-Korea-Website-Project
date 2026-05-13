@@ -1,4 +1,5 @@
 const express = require('express');
+const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
@@ -151,6 +152,110 @@ async function ensureSchema(client) {
       PRIMARY KEY (user_id, character_id)
     );
   `);
+  /** 일회용: Postgres에 행을 넣어두면 첫 기동 시 관리자를 만든 뒤 이 테이블 행은 삭제됩니다(웹 Variables에 ADMIN_BOOTSTRAP_PASSWORD 불필요). */
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS admin_install_seed (
+      id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+      username TEXT NOT NULL DEFAULT 'seydlitz',
+      nickname TEXT NOT NULL DEFAULT '릴리프',
+      password_plain TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+}
+
+/**
+ * admin_install_seed(id=1) 행이 있으면 관리자가 없을 때만 계정을 만들고 행을 삭제합니다.
+ * 비밀번호 평문은 처리 직후 DB에서 제거됩니다.
+ */
+async function consumeAdminInstallSeedIfNeeded(pgPool) {
+  if (!pgPool) return;
+  const client = await pgPool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock(74821901)');
+    const seedRes = await client.query(
+      `SELECT username, nickname, password_plain FROM admin_install_seed WHERE id = 1 FOR UPDATE`
+    );
+    if (seedRes.rowCount === 0) {
+      await client.query('COMMIT');
+      return;
+    }
+
+    const seed = seedRes.rows[0];
+    const username = String(seed.username || '').trim();
+    const nickname = String(seed.nickname || '').trim();
+    const passwordPlain = String(seed.password_plain || '');
+
+    const adminExists = await client.query(
+      `SELECT 1 FROM users WHERE COALESCE(role, 'user') = 'admin' LIMIT 1`
+    );
+    if (adminExists.rowCount > 0) {
+      await client.query('DELETE FROM admin_install_seed WHERE id = 1');
+      await client.query('COMMIT');
+      console.log('[admin_install_seed] 이미 관리자 계정이 있어 시드 행만 제거했습니다.');
+      return;
+    }
+
+    if (!isPiiEncryptionReady()) {
+      await client.query('ROLLBACK');
+      console.warn(
+        '[admin_install_seed] SESSION_SECRET 또는 USER_PII_ENCRYPTION_KEY가 없어 시드를 보류합니다. 설정 후 재시작하면 처리됩니다.'
+      );
+      return;
+    }
+
+    if (!USERNAME_RE.test(username)) {
+      await client.query('DELETE FROM admin_install_seed WHERE id = 1');
+      await client.query('COMMIT');
+      console.error('[admin_install_seed] username 형식이 잘못되어 시드를 폐기했습니다. (영문·숫자·밑줄 8~20자)');
+      return;
+    }
+    const nLen = nicknameCodepointLen(nickname);
+    if (nLen < NICKNAME_MIN || nLen > NICKNAME_MAX) {
+      await client.query('DELETE FROM admin_install_seed WHERE id = 1');
+      await client.query('COMMIT');
+      console.error(
+        `[admin_install_seed] nickname 길이가 잘못되어 시드를 폐기했습니다. (${NICKNAME_MIN}~${NICKNAME_MAX}자)`
+      );
+      return;
+    }
+    if (passwordPlain.length < PASSWORD_MIN || passwordPlain.length > PASSWORD_MAX) {
+      await client.query('DELETE FROM admin_install_seed WHERE id = 1');
+      await client.query('COMMIT');
+      console.error(
+        `[admin_install_seed] password 길이가 잘못되어 시드를 폐기했습니다. (${PASSWORD_MIN}~${PASSWORD_MAX}자)`
+      );
+      return;
+    }
+
+    const hash = await bcrypt.hash(passwordPlain, BCRYPT_ROUNDS);
+    const ub = usernameBlindIndex(username);
+    const nb = nicknameBlindIndex(nickname);
+    const uCipher = encryptUtf8(normalizeUsername(username));
+    const nCipher = encryptUtf8(nickname.trim());
+
+    let profileImage = null;
+    const profileAbs = path.join(__dirname, 'scripts', 'admin-profile-source.png');
+    if (fs.existsSync(profileAbs)) {
+      const buf = fs.readFileSync(profileAbs);
+      profileImage = `data:image/png;base64,${buf.toString('base64')}`;
+    }
+
+    await client.query(
+      `INSERT INTO users (username, nickname, username_blind, nickname_blind, username_cipher, nickname_cipher, password_hash, profile_image, role)
+       VALUES (NULL, NULL, $1, $2, $3, $4, $5, $6, 'admin')`,
+      [ub, nb, uCipher, nCipher, hash, profileImage]
+    );
+    await client.query('DELETE FROM admin_install_seed WHERE id = 1');
+    await client.query('COMMIT');
+    console.log('[admin_install_seed] DB 시드로 관리자 계정을 생성했고 시드 행을 삭제했습니다.');
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('[admin_install_seed] 처리 실패:', err && err.message ? err.message : err);
+  } finally {
+    client.release();
+  }
 }
 
 function sleep(ms) {
@@ -1008,6 +1113,7 @@ app.get('*', (req, res, next) => {
 
 async function start() {
   await initDb();
+  await consumeAdminInstallSeedIfNeeded(pool);
   characterLibrary = readCharacterLibrarySync(__dirname);
   if (characterLibrary) {
     console.log(`캐릭터 정적 라이브러리 사용: ${characterLibrary.list.length}건 (public/data/characters.json)`);
