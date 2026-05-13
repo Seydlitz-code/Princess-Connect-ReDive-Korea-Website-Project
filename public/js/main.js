@@ -73,6 +73,18 @@
   const passwordInput = document.getElementById('password');
   const password2Input = document.getElementById('password2');
   const signupRecaptchaWrap = document.getElementById('signup-recaptcha-wrap');
+  const signupCaptchaSvg = document.getElementById('signup-captcha-svg');
+  const signupCaptchaRefresh = document.getElementById('signup-captcha-refresh');
+  const signupCaptchaAnswer = document.getElementById('signup-captcha-answer');
+
+  const USERNAME_RE_CLIENT = /^[a-zA-Z0-9_]{8,20}$/;
+  const NICKNAME_LEN_MIN = 2;
+  const NICKNAME_LEN_MAX = 10;
+  const PASSWORD_LEN_MIN = 8;
+
+  function nicknameCharCount(s) {
+    return [...String(s || '')].length;
+  }
 
   let signupStep = 1;
   let charactersCache = null;
@@ -81,6 +93,9 @@
   let publicCfg = { recaptchaSiteKey: null };
   let recaptchaWidgetId = null;
   let recaptchaApiPromise = null;
+  let signupCaptchaId = '';
+  let signupStepPassToken = '';
+  let profilePreviewUrl = null;
 
   function syncRecaptchaWrapVisibility() {
     if (!signupRecaptchaWrap) return;
@@ -174,6 +189,22 @@
     if (is1) syncSignupNextButton();
   }
 
+  async function loadSignupCaptcha() {
+    if (!signupCaptchaSvg) return;
+    signupCaptchaSvg.innerHTML = '';
+    signupCaptchaId = '';
+    if (signupCaptchaAnswer) signupCaptchaAnswer.value = '';
+    try {
+      const res = await fetch('/api/signup/captcha');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.svg || !data.id) return;
+      signupCaptchaId = data.id;
+      signupCaptchaSvg.innerHTML = data.svg;
+    } catch {
+      /* ignore */
+    }
+  }
+
   const nicknameFeedbackEl = document.getElementById('nickname-check-feedback');
   const useridFeedbackEl = document.getElementById('userid-check-feedback');
   const checkNicknameBtn = document.getElementById('check-nickname');
@@ -202,24 +233,45 @@
     if (signupStep !== 1) return;
     const u = useridInput?.value.trim() || '';
     const n = nicknameInput?.value.trim() || '';
+    const pw = passwordInput?.value || '';
+    const pw2 = password2Input?.value || '';
     const idOk = u.length > 0 && usernameApprovedFor === u;
     const nickOk = n.length > 0 && nicknameApprovedFor === n;
-    signupNext.disabled = !(idOk && nickOk);
+    const pwOk = pw.length >= PASSWORD_LEN_MIN && pw === pw2;
+    signupNext.disabled = !(idOk && nickOk && pwOk);
   }
 
   function resetSignupFlow() {
     selectedCharacterIds = new Set();
     nicknameApprovedFor = null;
     usernameApprovedFor = null;
+    signupStepPassToken = '';
     resetRecaptchaWidget();
     clearCheckFeedback(nicknameFeedbackEl);
     clearCheckFeedback(useridFeedbackEl);
+    if (nicknameInput) nicknameInput.value = '';
+    if (useridInput) useridInput.value = '';
+    if (passwordInput) passwordInput.value = '';
+    if (password2Input) password2Input.value = '';
+    if (profileFile) profileFile.value = '';
+    if (profilePreview) {
+      profilePreview.innerHTML = '<span class="profile-placeholder-text">프로필</span>';
+    }
+    if (profilePreviewUrl) {
+      try {
+        URL.revokeObjectURL(profilePreviewUrl);
+      } catch (_) {
+        /* ignore */
+      }
+      profilePreviewUrl = null;
+    }
     if (deferCheckbox) deferCheckbox.checked = false;
     if (characterLoadError) {
       characterLoadError.hidden = true;
       characterLoadError.textContent = '';
     }
     setSignupStep(1);
+    void loadSignupCaptcha();
   }
 
   async function openModal() {
@@ -248,8 +300,10 @@
   modalBack?.addEventListener('click', () => {
     if (!modal) return;
     if (signupStep === 2) {
+      signupStepPassToken = '';
       resetRecaptchaWidget();
       setSignupStep(1);
+      void loadSignupCaptcha();
       modalBack?.focus();
       return;
     }
@@ -453,7 +507,6 @@
 
   profileTrigger?.addEventListener('click', () => profileFile?.click());
 
-  let profilePreviewUrl = null;
   profileFile?.addEventListener('change', () => {
     const file = profileFile.files?.[0];
     if (!file || !profilePreview) return;
@@ -509,6 +562,17 @@
       syncSignupNextButton();
       return;
     }
+    const nLen = nicknameCharCount(nickname);
+    if (nLen < NICKNAME_LEN_MIN || nLen > NICKNAME_LEN_MAX) {
+      nicknameApprovedFor = null;
+      setCheckFeedback(
+        nicknameFeedbackEl,
+        `닉네임은 ${NICKNAME_LEN_MIN}~${NICKNAME_LEN_MAX}자로 입력해 주세요.`,
+        'warn'
+      );
+      syncSignupNextButton();
+      return;
+    }
     try {
       const res = await fetch(`/api/users/check?${new URLSearchParams({ nickname })}`);
       const data = await res.json().catch(() => ({}));
@@ -544,6 +608,16 @@
       syncSignupNextButton();
       return;
     }
+    if (!USERNAME_RE_CLIENT.test(username)) {
+      usernameApprovedFor = null;
+      setCheckFeedback(
+        useridFeedbackEl,
+        '아이디는 영문·숫자·밑줄만 사용하고 8~20자로 입력해 주세요.',
+        'warn'
+      );
+      syncSignupNextButton();
+      return;
+    }
     try {
       const res = await fetch(`/api/users/check?${new URLSearchParams({ username })}`);
       const data = await res.json().catch(() => ({}));
@@ -555,7 +629,7 @@
       }
       if (data.usernameAvailable) {
         usernameApprovedFor = username;
-        setCheckFeedback(useridFeedbackEl, '사용 가능한 아이디입니다.', 'ok');
+        setCheckFeedback(useridFeedbackEl, '사용 가능한 아이디 입니다', 'ok');
       } else {
         usernameApprovedFor = null;
         setCheckFeedback(useridFeedbackEl, '중복된 아이디입니다.', 'warn');
@@ -565,6 +639,13 @@
       setCheckFeedback(useridFeedbackEl, e instanceof Error ? e.message : String(e), 'warn');
     }
     syncSignupNextButton();
+  });
+
+  passwordInput?.addEventListener('input', syncSignupNextButton);
+  password2Input?.addEventListener('input', syncSignupNextButton);
+
+  signupCaptchaRefresh?.addEventListener('click', () => {
+    void loadSignupCaptcha();
   });
 
   function fileToDataUrl(file) {
@@ -637,6 +718,7 @@
     const username = useridInput?.value.trim() || '';
     const password = passwordInput?.value || '';
     const password2 = password2Input?.value || '';
+    const captchaAnswer = signupCaptchaAnswer?.value || '';
 
     if (!username || !nickname) {
       return;
@@ -645,17 +727,39 @@
       return;
     }
 
+    if (password.length < PASSWORD_LEN_MIN) {
+      window.alert(`비밀번호는 ${PASSWORD_LEN_MIN}자 이상으로 입력해 주세요.`);
+      return;
+    }
     if (password !== password2) {
       window.alert('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
       return;
     }
-    if (!password) {
-      window.alert('비밀번호를 입력해 주세요.');
+
+    if (!signupCaptchaId) {
+      window.alert('보안 문자를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.');
+      void loadSignupCaptcha();
       return;
     }
 
     signupNext.disabled = true;
     try {
+      const captchaRes = await fetch('/api/signup/verify-step1', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          captchaId: signupCaptchaId,
+          captchaAnswer,
+        }),
+      });
+      const captchaData = await captchaRes.json().catch(() => ({}));
+      if (!captchaRes.ok) {
+        window.alert(captchaData.error || '보안 문자 확인에 실패했습니다.');
+        void loadSignupCaptcha();
+        return;
+      }
+      signupStepPassToken = captchaData.stepPassToken || '';
+
       const list = await ensureCharactersLoaded();
       setSignupStep(2);
       try {
@@ -663,6 +767,8 @@
       } catch (reErr) {
         window.alert(reErr instanceof Error ? reErr.message : String(reErr));
         setSignupStep(1);
+        signupStepPassToken = '';
+        void loadSignupCaptcha();
         return;
       }
       renderCharacterGrid(list);
@@ -720,6 +826,13 @@
       return;
     }
 
+    if (!signupStepPassToken) {
+      window.alert('1단계(보안 문자 및 정보 입력)가 완료되지 않았습니다. 이전 단계로 돌아가 다시 진행해 주세요.');
+      setSignupStep(1);
+      void loadSignupCaptcha();
+      return;
+    }
+
     let profileImage = null;
     const file = profileFile?.files?.[0];
     if (file) {
@@ -747,6 +860,7 @@
           characterIds: Array.from(selectedCharacterIds),
           deferOwnedCharacters: defer,
           recaptchaToken,
+          stepPassToken: signupStepPassToken,
         }),
       });
       const count = typeof data.ownedCharacterCount === 'number' ? data.ownedCharacterCount : 0;
@@ -755,7 +869,10 @@
       closeModal();
     } catch (e) {
       if (publicCfg.recaptchaSiteKey) resetRecaptchaWidget();
+      signupStepPassToken = '';
       window.alert(e instanceof Error ? e.message : String(e));
+      setSignupStep(1);
+      void loadSignupCaptcha();
     } finally {
       signupSubmit.disabled = false;
     }

@@ -82,7 +82,7 @@
 
     <div class="modal-root" id="signup-modal" role="dialog" aria-modal="true" aria-labelledby="signup-heading" hidden>
       <div class="modal-backdrop" data-close-modal tabindex="-1"></div>
-      <div class="modal-sheet signup-modal-sheet" role="document">
+      <div class="modal-sheet signup-modal-sheet signup-modal-sheet--mono" role="document">
         <button type="button" class="modal-back link-back" id="signup-modal-back">
           <span aria-hidden="true">←</span> 뒤로 가기
         </button>
@@ -106,12 +106,12 @@
             <div class="signup-col signup-col--left">
               <div class="profile-block">
                 <div class="profile-preview-wrap">
-                  <div class="profile-preview" id="profile-preview">
+                  <div class="profile-preview profile-preview--lg" id="profile-preview">
                     <span class="profile-placeholder-text">프로필</span>
                   </div>
                 </div>
                 <div class="profile-controls">
-                  <label class="profile-label" for="profile-file">프로필 이미지 설정</label>
+                  <span class="profile-label">프로필 이미지 설정</span>
                   <input type="file" id="profile-file" accept="image/*" hidden />
                   <button type="button" class="btn btn-outline btn-sm" id="profile-file-trigger">이미지 선택</button>
                 </div>
@@ -119,23 +119,24 @@
 
               <div class="field-group">
                 <label class="field-label" for="nickname">닉네임</label>
-                <div class="field-row">
-                  <input id="nickname" type="text" class="input" placeholder="닉네임을 입력하세요" autocomplete="nickname" />
+                <div class="field-row field-row--check">
                   <button type="button" class="btn btn-secondary btn-compact" id="check-nickname">중복 확인</button>
+                  <input id="nickname" type="text" class="input" placeholder="닉네임을 입력하세요" autocomplete="nickname" />
                 </div>
                 <p id="nickname-check-feedback" class="field-check-feedback" role="status" aria-live="polite"></p>
-                <p class="field-hint">닉네임은 2~32자, 중복되지 않아야 합니다.</p>
+                <p class="field-hint">한글·영문 등 2~10자, 중복 확인 후 다음 단계로 진행할 수 있습니다.</p>
               </div>
             </div>
 
             <div class="signup-col signup-col--right">
               <div class="field-group">
                 <label class="field-label" for="userid">아이디</label>
-                <div class="field-row">
-                  <input id="userid" type="text" class="input" placeholder="아이디" autocomplete="username" />
+                <div class="field-row field-row--check">
                   <button type="button" class="btn btn-secondary btn-compact" id="check-userid">중복 확인</button>
+                  <input id="userid" type="text" class="input" placeholder="아이디 (영문·숫자·밑줄)" autocomplete="username" />
                 </div>
                 <p id="userid-check-feedback" class="field-check-feedback" role="status" aria-live="polite"></p>
+                <p class="field-hint">8~20자, 영문·숫자·밑줄(_)만 사용할 수 있습니다.</p>
               </div>
 
               <div class="field-group">
@@ -143,6 +144,36 @@
                 <input id="password" type="password" class="input" placeholder="비밀번호" autocomplete="new-password" />
               </div>
 
+              <div class="field-group">
+                <label class="field-label" for="password2">비밀번호 확인</label>
+                <input
+                  id="password2"
+                  type="password"
+                  class="input"
+                  placeholder="비밀번호를 다시 입력하세요"
+                  autocomplete="new-password"
+                />
+              </div>
+
+              <div class="field-group signup-captcha-block">
+                <span class="field-label" id="signup-captcha-label">보안 문자</span>
+                <p class="field-hint signup-captcha-hint">자동 가입을 줄이기 위해 아래 문자를 입력해 주세요.</p>
+                <div class="signup-captcha-toolbar">
+                  <div id="signup-captcha-svg" class="signup-captcha-svg" role="img" aria-labelledby="signup-captcha-label"></div>
+                  <button type="button" class="btn btn-outline btn-sm" id="signup-captcha-refresh">이미지 새로고침</button>
+                </div>
+                <input
+                  id="signup-captcha-answer"
+                  type="text"
+                  class="input"
+                  placeholder="보안 문자 입력"
+                  maxlength="12"
+                  autocomplete="off"
+                  autocapitalize="characters"
+                  spellcheck="false"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -155,7 +186,7 @@
 
         <footer class="modal-footer">
           <div id="signup-footer-account" class="signup-footer-panel">
-            <button type="button" class="btn btn-primary btn-lg btn-footer-primary" id="signup-next" disabled>다음으로</button>
+            <button type="button" class="btn btn-primary btn-lg btn-footer-primary signup-btn-next" id="signup-next" disabled>다음으로</button>
           </div>
           <div id="signup-footer-characters" class="signup-footer-panel signup-footer-characters" hidden>
             <div id="signup-recaptcha-wrap" class="signup-recaptcha-wrap" hidden>

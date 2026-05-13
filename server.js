@@ -12,6 +12,21 @@ const {
 } = require('./lib/sessionAuth');
 const { readCharacterLibrarySync } = require('./lib/charactersLibrary');
 const { verifyRecaptchaResponse } = require('./lib/recaptcha');
+const {
+  normalizeUsername,
+  usernameBlindIndex,
+  nicknameBlindIndex,
+  encryptUtf8,
+  displayUsernameFromRow,
+  displayNicknameFromRow,
+  isPiiEncryptionReady,
+} = require('./lib/userPiiCrypto');
+const { ensureUserPiiSchema } = require('./lib/userPiiSchema');
+const {
+  createSignupCaptchaChallenge,
+  verifySignupCaptchaAndIssueStepPass,
+  consumeStepPassToken,
+} = require('./lib/signupCaptcha');
 
 const app = express();
 
@@ -19,9 +34,9 @@ app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 3000;
 
 const BCRYPT_ROUNDS = 11;
-const USERNAME_RE = /^[a-zA-Z0-9_]{3,32}$/;
+const USERNAME_RE = /^[a-zA-Z0-9_]{8,20}$/;
 const NICKNAME_MIN = 2;
-const NICKNAME_MAX = 32;
+const NICKNAME_MAX = 10;
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 72;
 const MAX_PROFILE_DATA_URL_LENGTH = 600_000;
@@ -38,6 +53,10 @@ let lastDbInitError = null;
 let characterLibrary = null;
 
 const MAX_OWNED_CHARACTERS_PER_REGISTER = 500;
+
+function nicknameCodepointLen(s) {
+  return [...String(s || '')].length;
+}
 
 function normalizeCharacterIds(value) {
   if (!Array.isArray(value)) return [];
@@ -63,8 +82,8 @@ async function ensureSchema(client) {
   await client.query(`
     CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      username VARCHAR(32) NOT NULL UNIQUE,
-      nickname VARCHAR(32) NOT NULL UNIQUE,
+      username VARCHAR(32),
+      nickname VARCHAR(32),
       password_hash TEXT NOT NULL,
       profile_image TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -73,6 +92,7 @@ async function ensureSchema(client) {
   await client.query(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) NOT NULL DEFAULT 'user';
   `);
+  await ensureUserPiiSchema(client);
   await client.query(`
     CREATE TABLE IF NOT EXISTS characters (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -189,6 +209,23 @@ app.get('/api/config', (req, res) => {
   });
 });
 
+app.get('/api/signup/captcha', (req, res) => {
+  const { id, svg } = createSignupCaptchaChallenge();
+  res.json({ ok: true, id, svg });
+});
+
+app.post('/api/signup/verify-step1', (req, res) => {
+  const body = req.body || {};
+  const captchaId = String(body.captchaId || '').trim();
+  const captchaAnswer = body.captchaAnswer;
+  const v = verifySignupCaptchaAndIssueStepPass(captchaId, captchaAnswer);
+  if (!v.ok) {
+    res.status(400).json({ ok: false, error: v.error });
+    return;
+  }
+  res.json({ ok: true, stepPassToken: v.stepPassToken });
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/me', async (req, res) => {
@@ -205,6 +242,7 @@ app.get('/api/me', async (req, res) => {
   try {
     const r = await pool.query(
       `SELECT id, username, nickname, profile_image AS "profileImage",
+              username_cipher, nickname_cipher,
               COALESCE(role, 'user') AS role
        FROM users WHERE id = $1::uuid LIMIT 1`,
       [userId]
@@ -219,8 +257,8 @@ app.get('/api/me', async (req, res) => {
       ok: true,
       user: {
         id: row.id,
-        username: row.username,
-        nickname: row.nickname,
+        username: displayUsernameFromRow(row),
+        nickname: displayNicknameFromRow(row),
         profileImage: row.profileImage,
         role: row.role,
       },
@@ -250,10 +288,23 @@ app.post('/api/login', async (req, res) => {
     return;
   }
   try {
-    const r = await pool.query(
-      'SELECT id, password_hash FROM users WHERE username = $1 LIMIT 1',
-      [username]
-    );
+    let r;
+    if (isPiiEncryptionReady()) {
+      const blind = usernameBlindIndex(username);
+      r = await pool.query(
+        `SELECT id, password_hash FROM users
+         WHERE username_blind = $1
+            OR (
+              (username_blind IS NULL OR username_blind = '')
+              AND username IS NOT NULL
+              AND LOWER(username) = LOWER($2)
+            )
+         LIMIT 1`,
+        [blind, username]
+      );
+    } else {
+      r = await pool.query('SELECT id, password_hash FROM users WHERE username = $1 LIMIT 1', [username]);
+    }
     if (r.rowCount === 0) {
       res.status(401).json({ ok: false, error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
       return;
@@ -268,6 +319,7 @@ app.post('/api/login', async (req, res) => {
     appendSessionCookie(res, token);
     const u = await pool.query(
       `SELECT id, username, nickname, profile_image AS "profileImage",
+              username_cipher, nickname_cipher,
               COALESCE(role, 'user') AS role
        FROM users WHERE id = $1`,
       [row.id]
@@ -277,8 +329,8 @@ app.post('/api/login', async (req, res) => {
       ok: true,
       user: {
         id: usr.id,
-        username: usr.username,
-        nickname: usr.nickname,
+        username: displayUsernameFromRow(usr),
+        nickname: displayNicknameFromRow(usr),
         profileImage: usr.profileImage,
         role: usr.role,
       },
@@ -326,12 +378,55 @@ app.get('/api/users/check', async (req, res) => {
   try {
     const out = { ok: true, usernameAvailable: true, nicknameAvailable: true };
     if (username) {
-      const r = await pool.query('SELECT 1 FROM users WHERE username = $1 LIMIT 1', [username]);
-      out.usernameAvailable = r.rowCount === 0;
+      if (!USERNAME_RE.test(username)) {
+        out.usernameAvailable = false;
+      } else if (isPiiEncryptionReady()) {
+        const blind = usernameBlindIndex(username);
+        const r = await pool.query(
+          `SELECT 1 FROM users
+           WHERE username_blind = $1
+              OR (
+                (username_blind IS NULL OR username_blind = '')
+                AND username IS NOT NULL
+                AND LOWER(username) = LOWER($2)
+              )
+           LIMIT 1`,
+          [blind, username]
+        );
+        out.usernameAvailable = r.rowCount === 0;
+      } else {
+        const r = await pool.query(
+          'SELECT 1 FROM users WHERE username IS NOT NULL AND LOWER(username) = LOWER($1) LIMIT 1',
+          [username]
+        );
+        out.usernameAvailable = r.rowCount === 0;
+      }
     }
     if (nickname) {
-      const r = await pool.query('SELECT 1 FROM users WHERE nickname = $1 LIMIT 1', [nickname]);
-      out.nicknameAvailable = r.rowCount === 0;
+      const nlen = nicknameCodepointLen(nickname);
+      if (nlen < NICKNAME_MIN || nlen > NICKNAME_MAX) {
+        out.nicknameAvailable = false;
+      } else if (isPiiEncryptionReady()) {
+        const nb = nicknameBlindIndex(nickname);
+        const r = await pool.query(
+          `SELECT 1 FROM users
+           WHERE nickname_blind = $1
+              OR (
+                (nickname_blind IS NULL OR nickname_blind = '')
+                AND nickname IS NOT NULL
+                AND nickname = $2
+              )
+           LIMIT 1`,
+          [nb, nickname]
+        );
+        out.nicknameAvailable = r.rowCount === 0;
+      } else {
+        const r = await pool.query(
+          'SELECT 1 FROM users WHERE nickname IS NOT NULL AND nickname = $1 LIMIT 1',
+          [nickname]
+        );
+        out.nicknameAvailable = r.rowCount === 0;
+      }
     }
     res.json(out);
   } catch (err) {
@@ -343,6 +438,17 @@ app.get('/api/users/check', async (req, res) => {
 app.post('/api/register', async (req, res) => {
   if (!requirePool(res)) return;
   const body = req.body || {};
+  const stepPassToken = String(body.stepPassToken || '').trim();
+
+  if (!isPiiEncryptionReady()) {
+    res.status(503).json({
+      ok: false,
+      error:
+        '회원가입 서버 설정이 완료되지 않았습니다. SESSION_SECRET(또는 USER_PII_ENCRYPTION_KEY)을 설정한 뒤 서비스를 재시작해 주세요.',
+    });
+    return;
+  }
+
   const rkSecret = getRecaptchaSecretTrimmed();
   const rkSite = getRecaptchaSiteKeyTrimmed();
   const recaptchaToken = String(body.recaptchaToken || '').trim();
@@ -401,11 +507,12 @@ app.post('/api/register', async (req, res) => {
   if (!USERNAME_RE.test(username)) {
     res.status(400).json({
       ok: false,
-      error: '아이디는 영문·숫자·밑줄만 사용하고 3~32자로 입력해 주세요.',
+      error: '아이디는 영문·숫자·밑줄만 사용하고 8~20자로 입력해 주세요.',
     });
     return;
   }
-  if (nickname.length < NICKNAME_MIN || nickname.length > NICKNAME_MAX) {
+  const nLen = nicknameCodepointLen(nickname);
+  if (nLen < NICKNAME_MIN || nLen > NICKNAME_MAX) {
     res.status(400).json({
       ok: false,
       error: `닉네임은 ${NICKNAME_MIN}~${NICKNAME_MAX}자로 입력해 주세요.`,
@@ -435,6 +542,15 @@ app.post('/api/register', async (req, res) => {
     res.status(400).json({
       ok: false,
       error: '보유 캐릭터를 한 명 이상 선택하거나, ‘보유 캐릭터 추후 등록’을 체크해 주세요.',
+    });
+    return;
+  }
+
+  if (!consumeStepPassToken(stepPassToken)) {
+    res.status(400).json({
+      ok: false,
+      error:
+        '회원가입 1단계가 만료되었거나 보안 문자 확인이 완료되지 않았습니다. 첫 단계로 돌아가 보안 문자부터 다시 진행해 주세요.',
     });
     return;
   }
@@ -472,14 +588,19 @@ app.post('/api/register', async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    const ub = usernameBlindIndex(username);
+    const nb = nicknameBlindIndex(nickname);
+    const uCipher = encryptUtf8(normalizeUsername(username));
+    const nCipher = encryptUtf8(nickname.trim());
+
     await client.query('BEGIN');
     let userRow;
     try {
       const ins = await client.query(
-        `INSERT INTO users (username, nickname, password_hash, profile_image)
-         VALUES ($1, $2, $3, $4)
-         RETURNING id, username, nickname, created_at AS "createdAt"`,
-        [username, nickname, passwordHash, profileImage || null]
+        `INSERT INTO users (username, nickname, username_blind, nickname_blind, username_cipher, nickname_cipher, password_hash, profile_image)
+         VALUES (NULL, NULL, $1, $2, $3, $4, $5, $6)
+         RETURNING id, username_cipher, nickname_cipher, created_at AS "createdAt"`,
+        [ub, nb, uCipher, nCipher, passwordHash, profileImage || null]
       );
       userRow = ins.rows[0];
 
@@ -499,8 +620,8 @@ app.post('/api/register', async (req, res) => {
       ok: true,
       user: {
         id: userRow.id,
-        username: userRow.username,
-        nickname: userRow.nickname,
+        username: displayUsernameFromRow(userRow),
+        nickname: displayNicknameFromRow(userRow),
         createdAt: userRow.createdAt,
       },
       ownedCharacterCount: ownedFiltered.length,

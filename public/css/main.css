@@ -413,6 +413,87 @@ body {
   max-height: min(94vh, 920px);
 }
 
+.signup-modal-sheet--mono {
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+}
+
+.signup-modal-sheet--mono .modal-title {
+  color: #0a0a0a;
+  letter-spacing: -0.02em;
+}
+
+.signup-modal-sheet--mono .input {
+  background: #f0f0f0;
+  border-color: #d4d4d4;
+}
+
+.signup-modal-sheet--mono .input:focus {
+  border-color: #0a0a0a;
+  box-shadow: 0 0 0 2px rgba(10, 10, 10, 0.12);
+  background: #fff;
+}
+
+.profile-preview--lg {
+  width: 128px;
+  height: 128px;
+}
+
+.field-row--check {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.field-row--check .btn-compact {
+  flex-shrink: 0;
+  min-width: 5.5rem;
+}
+
+.signup-captcha-block {
+  padding-top: 4px;
+}
+
+.signup-captcha-hint {
+  margin-top: -2px;
+}
+
+.signup-captcha-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.signup-captcha-svg {
+  flex: 0 0 auto;
+  min-height: 64px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #d4d4d4;
+  border-radius: 10px;
+}
+
+.signup-captcha-svg svg {
+  display: block;
+}
+
+.signup-footer-panel .btn-footer-primary.signup-btn-next {
+  background: #0a0a0a;
+  border-color: #0a0a0a;
+  color: #fff;
+}
+
+.signup-footer-panel .btn-footer-primary.signup-btn-next:hover {
+  background: #262626;
+  border-color: #262626;
+}
+
+.signup-footer-panel .btn-footer-primary.signup-btn-next:disabled {
+  opacity: 0.45;
+}
+
 .link-back {
   display: inline-flex;
   align-items: center;
@@ -588,8 +669,6 @@ body {
     transform: scale(0.92);
     transform-origin: top left;
   }
-}
-  margin-top: 4px;
 }
 
 .character-grid-scroll {
