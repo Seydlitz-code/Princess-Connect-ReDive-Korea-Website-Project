@@ -1,8 +1,9 @@
 /**
- * 관리자 계정 1회 생성·갱신. 비밀번호는 깃허브에 두지 마세요 — 환경 변수로만 입력합니다.
+ * 관리자 계정 1회 생성·갱신. 비밀번호는 저장소에 커밋하지 마세요 — 환경 변수 또는 admin-credentials.local.js 로만 입력합니다.
  *
- * 필수 환경 변수:
- *   ADMIN_BOOTSTRAP_PASSWORD (또는 ADMIN_PASSWORD) … 평문은 이 변수로만 넘김 → DB에는 bcrypt 저장
+ * 비밀번호 (우선순위): 환경 변수 ADMIN_BOOTSTRAP_PASSWORD / ADMIN_PASSWORD
+ *   → 없으면 scripts/admin-credentials.local.js 의 ADMIN_BOOTSTRAP_PASSWORD (예시는 admin-credentials.local.example.js 참고)
+ *   DB에는 bcrypt 해시(단방향)로만 저장됩니다. 아이디·닉네임은 AES-GCM 암호문과 blind index로 저장됩니다.
  *
  * 선택:
  *   DATABASE_URL 등 (Railway Postgres와 동일 규칙, lib/dbConfig.js)
@@ -47,16 +48,29 @@ function mimeFromExt(ext) {
   return 'application/octet-stream';
 }
 
+function loadLocalAdminPassword() {
+  const localPath = path.join(__dirname, 'admin-credentials.local.js');
+  if (!fs.existsSync(localPath)) return '';
+  try {
+    // eslint-disable-next-line global-require, import/no-dynamic-require
+    const m = require(localPath);
+    if (m && typeof m.ADMIN_BOOTSTRAP_PASSWORD === 'string') return m.ADMIN_BOOTSTRAP_PASSWORD;
+  } catch (e) {
+    console.warn('admin-credentials.local.js 를 읽지 못했습니다:', e.message);
+  }
+  return '';
+}
+
 async function main() {
-  const password =
-    typeof process.env.ADMIN_BOOTSTRAP_PASSWORD === 'string'
-      ? process.env.ADMIN_BOOTSTRAP_PASSWORD
-      : typeof process.env.ADMIN_PASSWORD === 'string'
-        ? process.env.ADMIN_PASSWORD
-        : '';
+  const passwordRaw =
+    (typeof process.env.ADMIN_BOOTSTRAP_PASSWORD === 'string' && process.env.ADMIN_BOOTSTRAP_PASSWORD) ||
+    (typeof process.env.ADMIN_PASSWORD === 'string' && process.env.ADMIN_PASSWORD) ||
+    loadLocalAdminPassword() ||
+    '';
+  const password = String(passwordRaw).trim();
   if (!password) {
     console.error(
-      'ADMIN_BOOTSTRAP_PASSWORD(또는 ADMIN_PASSWORD) 환경 변수에 관리자 비밀번호를 설정한 뒤 실행하세요. 평문은 저장소에 넣지 마세요.'
+      '관리자 비밀번호가 필요합니다. ADMIN_BOOTSTRAP_PASSWORD 환경 변수를 설정하거나, scripts/admin-credentials.local.js 를 만드세요 (예시: admin-credentials.local.example.js).'
     );
     process.exit(1);
   }
@@ -135,7 +149,9 @@ async function main() {
       [ub, nb, uCipher, nCipher, hash, profileImage]
     );
     await client.query('COMMIT');
-    console.log('관리자 계정이 생성되었습니다 (비밀번호는 bcrypt 해시, 아이디·닉네임은 AES-GCM으로 저장).');
+    console.log(
+      '관리자 계정이 생성되었습니다. (아이디·닉네임: AES-GCM + blind index / 비밀번호: bcrypt 단방향 해시 — 평문은 DB에 저장되지 않습니다.)'
+    );
     console.log('아이디:', username, '| 닉네임:', nickname, '| 역할: admin');
   } catch (e) {
     await client.query('ROLLBACK').catch(() => {});

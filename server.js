@@ -199,7 +199,7 @@ function requirePool(res) {
   return true;
 }
 
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '2mb' }));
 
 app.get('/api/config', (req, res) => {
   const siteKey = getRecaptchaSiteKeyTrimmed();
@@ -375,6 +375,17 @@ app.get('/api/users/check', async (req, res) => {
     res.status(400).json({ ok: false, error: 'username 또는 nickname 쿼리가 필요합니다.' });
     return;
   }
+
+  let excludeUserId = null;
+  const excludeRaw = String(req.query.excludeUserId || '').trim();
+  if (excludeRaw && UUID_RE.test(excludeRaw)) {
+    const secret = getSessionSecret();
+    const sessionUserId = secret ? getUserIdFromRequest(secret, req.headers.cookie || '') : null;
+    if (sessionUserId && sessionUserId === excludeRaw) {
+      excludeUserId = excludeRaw;
+    }
+  }
+
   try {
     const out = { ok: true, usernameAvailable: true, nicknameAvailable: true };
     if (username) {
@@ -382,23 +393,35 @@ app.get('/api/users/check', async (req, res) => {
         out.usernameAvailable = false;
       } else if (isPiiEncryptionReady()) {
         const blind = usernameBlindIndex(username);
+        const params = excludeUserId ? [blind, username, excludeUserId] : [blind, username];
         const r = await pool.query(
           `SELECT 1 FROM users
-           WHERE username_blind = $1
+           WHERE (
+             username_blind = $1
               OR (
                 (username_blind IS NULL OR username_blind = '')
                 AND username IS NOT NULL
                 AND LOWER(username) = LOWER($2)
               )
+           )
+           ${excludeUserId ? 'AND id <> $3::uuid' : ''}
            LIMIT 1`,
-          [blind, username]
+          params
         );
         out.usernameAvailable = r.rowCount === 0;
       } else {
-        const r = await pool.query(
-          'SELECT 1 FROM users WHERE username IS NOT NULL AND LOWER(username) = LOWER($1) LIMIT 1',
-          [username]
-        );
+        const r = excludeUserId
+          ? await pool.query(
+              `SELECT 1 FROM users
+               WHERE username IS NOT NULL AND LOWER(username) = LOWER($1)
+                 AND id <> $2::uuid
+               LIMIT 1`,
+              [username, excludeUserId]
+            )
+          : await pool.query(
+              'SELECT 1 FROM users WHERE username IS NOT NULL AND LOWER(username) = LOWER($1) LIMIT 1',
+              [username]
+            );
         out.usernameAvailable = r.rowCount === 0;
       }
     }
@@ -408,27 +431,209 @@ app.get('/api/users/check', async (req, res) => {
         out.nicknameAvailable = false;
       } else if (isPiiEncryptionReady()) {
         const nb = nicknameBlindIndex(nickname);
+        const params = excludeUserId ? [nb, nickname, excludeUserId] : [nb, nickname];
         const r = await pool.query(
           `SELECT 1 FROM users
-           WHERE nickname_blind = $1
+           WHERE (
+             nickname_blind = $1
               OR (
                 (nickname_blind IS NULL OR nickname_blind = '')
                 AND nickname IS NOT NULL
                 AND nickname = $2
               )
+           )
+           ${excludeUserId ? 'AND id <> $3::uuid' : ''}
            LIMIT 1`,
-          [nb, nickname]
+          params
         );
         out.nicknameAvailable = r.rowCount === 0;
       } else {
-        const r = await pool.query(
-          'SELECT 1 FROM users WHERE nickname IS NOT NULL AND nickname = $1 LIMIT 1',
-          [nickname]
-        );
+        const r = excludeUserId
+          ? await pool.query(
+              `SELECT 1 FROM users
+               WHERE nickname IS NOT NULL AND nickname = $1
+                 AND id <> $2::uuid
+               LIMIT 1`,
+              [nickname, excludeUserId]
+            )
+          : await pool.query(
+              'SELECT 1 FROM users WHERE nickname IS NOT NULL AND nickname = $1 LIMIT 1',
+              [nickname]
+            );
         out.nicknameAvailable = r.rowCount === 0;
       }
     }
     res.json(out);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+app.patch('/api/me', async (req, res) => {
+  if (!requirePool(res)) return;
+  const secret = getSessionSecret();
+  if (!secret) {
+    res.status(503).json({
+      ok: false,
+      error:
+        '프로필 수정이 비활성화되었습니다. SESSION_SECRET 환경 변수를 설정하고 서비스를 재시작하세요.',
+    });
+    return;
+  }
+  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
+  if (!userId) {
+    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
+    return;
+  }
+
+  const body = req.body || {};
+  const hasNickname = Object.prototype.hasOwnProperty.call(body, 'nickname');
+  const hasProfile = Object.prototype.hasOwnProperty.call(body, 'profileImage');
+  if (!hasNickname && !hasProfile) {
+    res.status(400).json({
+      ok: false,
+      error: '변경할 닉네임(nickname) 또는 프로필 이미지(profileImage) 중 하나 이상을 보내 주세요.',
+    });
+    return;
+  }
+
+  let nicknameNext = null;
+  if (hasNickname) {
+    nicknameNext = String(body.nickname || '').trim();
+    const nLen = nicknameCodepointLen(nicknameNext);
+    if (nLen < NICKNAME_MIN || nLen > NICKNAME_MAX) {
+      res.status(400).json({
+        ok: false,
+        error: `닉네임은 ${NICKNAME_MIN}~${NICKNAME_MAX}자로 입력해 주세요.`,
+      });
+      return;
+    }
+  }
+
+  let profileNext = undefined;
+  if (hasProfile) {
+    if (body.profileImage == null) {
+      profileNext = null;
+    } else {
+      profileNext = String(body.profileImage);
+      if (profileNext.length > MAX_PROFILE_DATA_URL_LENGTH) {
+        res.status(400).json({
+          ok: false,
+          error: '프로필 이미지가 너무 큽니다. 더 작은 이미지를 사용해 주세요.',
+        });
+        return;
+      }
+      if (!/^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(profileNext)) {
+        res.status(400).json({
+          ok: false,
+          error: '프로필 이미지는 base64 데이터 URL(image/*) 형식이어야 합니다.',
+        });
+        return;
+      }
+    }
+  }
+
+  try {
+    const sel = await pool.query(
+      `SELECT id, username, nickname, profile_image AS "profileImage",
+              username_cipher, nickname_cipher
+       FROM users WHERE id = $1::uuid LIMIT 1`,
+      [userId]
+    );
+    if (sel.rowCount === 0) {
+      appendClearSessionCookie(res);
+      res.status(401).json({ ok: false, error: '세션이 만료되었거나 계정을 찾을 수 없습니다.' });
+      return;
+    }
+    const row = sel.rows[0];
+    const currentNick = displayNicknameFromRow(row);
+    const currentProfile = row.profileImage == null ? '' : String(row.profileImage);
+
+    const nickWillChange = hasNickname && nicknameNext !== currentNick;
+    const profileWillChange =
+      hasProfile && (profileNext == null ? '' : profileNext) !== currentProfile;
+
+    if (!nickWillChange && !profileWillChange) {
+      res.status(400).json({ ok: false, error: '변경된 내용이 없습니다.' });
+      return;
+    }
+
+    if (nickWillChange) {
+      let conflict;
+      if (isPiiEncryptionReady()) {
+        const nb = nicknameBlindIndex(nicknameNext);
+        conflict = await pool.query(
+          `SELECT 1 FROM users
+           WHERE (
+             nickname_blind = $1
+              OR (
+                (nickname_blind IS NULL OR nickname_blind = '')
+                AND nickname IS NOT NULL
+                AND nickname = $2
+              )
+           )
+           AND id <> $3::uuid
+           LIMIT 1`,
+          [nb, nicknameNext, userId]
+        );
+      } else {
+        conflict = await pool.query(
+          `SELECT 1 FROM users
+           WHERE nickname IS NOT NULL AND nickname = $1 AND id <> $2::uuid
+           LIMIT 1`,
+          [nicknameNext, userId]
+        );
+      }
+      if (conflict.rowCount > 0) {
+        res.status(409).json({ ok: false, error: '다른 사용자가 이미 사용 중인 닉네임입니다.' });
+        return;
+      }
+    }
+
+    const setParts = [];
+    const vals = [];
+    let p = 1;
+    if (nickWillChange) {
+      if (isPiiEncryptionReady()) {
+        const nb = nicknameBlindIndex(nicknameNext);
+        const nc = encryptUtf8(nicknameNext.trim());
+        setParts.push(`nickname = NULL`, `nickname_blind = $${p++}`, `nickname_cipher = $${p++}`);
+        vals.push(nb, nc);
+      } else {
+        setParts.push(`nickname = $${p++}`);
+        vals.push(nicknameNext.trim());
+      }
+    }
+    if (profileWillChange) {
+      setParts.push(`profile_image = $${p++}`);
+      vals.push(profileNext);
+    }
+    vals.push(userId);
+
+    await pool.query(
+      `UPDATE users SET ${setParts.join(', ')} WHERE id = $${p}::uuid`,
+      vals
+    );
+
+    const out = await pool.query(
+      `SELECT id, username, nickname, profile_image AS "profileImage",
+              username_cipher, nickname_cipher,
+              COALESCE(role, 'user') AS role
+       FROM users WHERE id = $1::uuid LIMIT 1`,
+      [userId]
+    );
+    const urow = out.rows[0];
+    res.json({
+      ok: true,
+      user: {
+        id: urow.id,
+        username: displayUsernameFromRow(urow),
+        nickname: displayNicknameFromRow(urow),
+        profileImage: urow.profileImage,
+        role: urow.role,
+      },
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });

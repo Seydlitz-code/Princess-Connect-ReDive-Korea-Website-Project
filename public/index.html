@@ -60,11 +60,13 @@
           </div>
           <div class="header-actions header-actions-logged" id="header-actions-logged" hidden>
             <div class="user-bar" aria-label="로그인한 계정">
-              <div class="user-avatar-wrap">
-                <img id="header-user-avatar" class="user-avatar-img" alt="" width="42" height="42" decoding="async" hidden />
-                <span id="header-user-avatar-ph" class="user-avatar-placeholder">프로필 이미지</span>
-              </div>
-              <span id="header-user-nickname" class="user-nickname">—</span>
+              <button type="button" class="user-mypage-hit" id="header-open-mypage" aria-label="마이페이지">
+                <span class="user-avatar-wrap">
+                  <img id="header-user-avatar" class="user-avatar-img" alt="" width="42" height="42" decoding="async" hidden />
+                  <span id="header-user-avatar-ph" class="user-avatar-placeholder">프로필 이미지</span>
+                </span>
+                <span id="header-user-nickname" class="user-nickname">—</span>
+              </button>
               <button type="button" class="btn btn-signup btn-logout-header" id="header-logout">로그아웃</button>
             </div>
           </div>
@@ -78,6 +80,57 @@
       <section class="board-panel" data-board-panel="stadium" hidden aria-label="배틀 스타디움 게시판"></section>
       <section class="board-panel" data-board-panel="deep" hidden aria-label="심역 퀘스트 게시판"></section>
       <section class="board-panel" data-board-panel="abyss" hidden aria-label="심역 토벌전 게시판"></section>
+      <section class="board-panel board-panel--mypage" data-board-panel="mypage" hidden aria-label="마이페이지">
+        <div class="mypage-shell">
+          <aside class="mypage-sidebar" aria-label="마이페이지 메뉴">
+            <button type="button" class="mypage-nav-btn is-active" data-mypage-tab="profile">프로필</button>
+            <button type="button" class="mypage-nav-btn" data-mypage-tab="characters">보유 캐릭터 업데이트</button>
+          </aside>
+          <div class="mypage-main">
+            <div class="mypage-tab-panel" data-mypage-panel="profile">
+              <header class="mypage-profile-head">
+                <h2 class="mypage-panel-title">프로필 설정 및 변경</h2>
+                <button type="button" class="btn btn-secondary" id="mypage-profile-apply" disabled>적용하기</button>
+              </header>
+              <div class="mypage-profile-body">
+                <div class="profile-block mypage-profile-block">
+                  <div class="profile-preview-wrap">
+                    <div class="profile-preview profile-preview--lg" id="mypage-profile-preview">
+                      <span class="profile-placeholder-text">프로필</span>
+                    </div>
+                  </div>
+                  <div class="profile-controls">
+                    <span class="profile-label">프로필 이미지</span>
+                    <input type="file" id="mypage-profile-file" accept="image/*" hidden />
+                    <button type="button" class="btn btn-outline btn-sm" id="mypage-profile-file-trigger">이미지 변경</button>
+                  </div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="mypage-nickname">닉네임</label>
+                  <div class="field-row field-row--check">
+                    <input
+                      id="mypage-nickname"
+                      type="text"
+                      class="input"
+                      placeholder="2~10자 닉네임"
+                      autocomplete="nickname"
+                      maxlength="32"
+                    />
+                    <button type="button" class="btn btn-secondary btn-compact" id="mypage-check-nickname">닉네임 중복 확인</button>
+                  </div>
+                  <p id="mypage-nickname-feedback" class="field-check-feedback" role="status" aria-live="polite"></p>
+                </div>
+              </div>
+            </div>
+            <div class="mypage-tab-panel" data-mypage-panel="characters" hidden>
+              <h2 class="mypage-panel-title">보유 캐릭터 업데이트</h2>
+              <p class="field-hint mypage-char-placeholder">
+                이 메뉴에서는 보유 캐릭터 목록을 수정할 수 있게 될 예정입니다. (준비 중)
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
 
     <div class="modal-root" id="signup-modal" role="dialog" aria-modal="true" aria-labelledby="signup-heading" hidden>
@@ -120,8 +173,8 @@
               <div class="field-group">
                 <label class="field-label" for="nickname">닉네임</label>
                 <div class="field-row field-row--check">
-                  <button type="button" class="btn btn-secondary btn-compact" id="check-nickname">닉네임 중복 확인</button>
                   <input id="nickname" type="text" class="input" placeholder="2~10자 닉네임" autocomplete="nickname" />
+                  <button type="button" class="btn btn-secondary btn-compact" id="check-nickname">닉네임 중복 확인</button>
                 </div>
                 <p id="nickname-check-feedback" class="field-check-feedback" role="status" aria-live="polite"></p>
                 <p class="field-hint">한글·영문 등 2~10자, 중복 확인 후 다음 단계로 진행할 수 있습니다.</p>
@@ -132,8 +185,8 @@
               <div class="field-group">
                 <label class="field-label" for="userid">아이디</label>
                 <div class="field-row field-row--check">
-                  <button type="button" class="btn btn-secondary btn-compact" id="check-userid">아이디 중복 확인</button>
                   <input id="userid" type="text" class="input" placeholder="8~20자 영문·숫자·밑줄" autocomplete="username" />
+                  <button type="button" class="btn btn-secondary btn-compact" id="check-userid">아이디 중복 확인</button>
                 </div>
                 <p id="userid-check-feedback" class="field-check-feedback" role="status" aria-live="polite"></p>
                 <p class="field-hint">8~20자, 영문·숫자·밑줄(_)만 사용할 수 있습니다.</p>
@@ -141,48 +194,150 @@
 
               <div class="field-group">
                 <label class="field-label" for="password">비밀번호</label>
-                <div class="input-with-toggle">
-                  <input id="password" type="password" class="input" placeholder="비밀번호" autocomplete="new-password" />
-                  <button type="button" class="btn-pw-toggle" id="password-visibility" aria-pressed="false" aria-label="비밀번호 표시">
-                    보기
+                <div class="pw-input-shell">
+                  <span class="pw-input-lock" aria-hidden="true">
+                    <svg
+                      class="pw-input-icon-svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      focusable="false"
+                    >
+                      <rect x="5" y="11" width="14" height="10" rx="2" />
+                      <path d="M8 11V7a4 4 0 018 0v4" />
+                    </svg>
+                  </span>
+                  <input
+                    id="password"
+                    class="pw-input-field"
+                    type="password"
+                    placeholder="비밀번호"
+                    autocomplete="new-password"
+                  />
+                  <span id="password-strength-badge" class="pw-strength-badge" hidden>안전</span>
+                  <button
+                    type="button"
+                    class="pw-visibility-btn"
+                    id="password-visibility"
+                    aria-pressed="false"
+                    aria-label="비밀번호 표시"
+                  >
+                    <svg class="pw-eye-open" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"
+                      />
+                      <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
+                    </svg>
+                    <svg class="pw-eye-shut" hidden width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a21.77 21.77 0 014.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a21.5 21.5 0 01-2.16 3.19M4 4L20 20"
+                      />
+                    </svg>
                   </button>
                 </div>
               </div>
 
               <div class="field-group">
                 <label class="field-label" for="password2">비밀번호 확인</label>
-                <div class="input-with-toggle">
+                <div class="pw-input-shell">
+                  <span class="pw-input-lock" aria-hidden="true">
+                    <svg
+                      class="pw-input-icon-svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      focusable="false"
+                    >
+                      <rect x="5" y="11" width="14" height="10" rx="2" />
+                      <path d="M8 11V7a4 4 0 018 0v4" />
+                    </svg>
+                  </span>
                   <input
                     id="password2"
+                    class="pw-input-field"
                     type="password"
-                    class="input"
                     placeholder="비밀번호를 다시 입력하세요"
                     autocomplete="new-password"
                   />
-                  <button type="button" class="btn-pw-toggle" id="password2-visibility" aria-pressed="false" aria-label="비밀번호 확인란 표시">
-                    보기
+                  <button
+                    type="button"
+                    class="pw-visibility-btn"
+                    id="password2-visibility"
+                    aria-pressed="false"
+                    aria-label="비밀번호 확인란 표시"
+                  >
+                    <svg class="pw-eye-open" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"
+                      />
+                      <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
+                    </svg>
+                    <svg class="pw-eye-shut" hidden width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a21.77 21.77 0 014.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a21.5 21.5 0 01-2.16 3.19M4 4L20 20"
+                      />
+                    </svg>
                   </button>
                 </div>
                 <p id="password-match-feedback" class="field-check-feedback" role="status" aria-live="polite"></p>
               </div>
 
               <div class="field-group signup-captcha-block">
-                <span class="field-label" id="signup-captcha-label">보안 문자</span>
+                <label class="field-label" for="signup-captcha-answer" id="signup-captcha-label">보안 문자 입력</label>
                 <p class="field-hint signup-captcha-hint">자동 가입을 줄이기 위해 아래 문자를 입력해 주세요.</p>
-                <div class="signup-captcha-toolbar">
-                  <div id="signup-captcha-svg" class="signup-captcha-svg" role="img" aria-labelledby="signup-captcha-label"></div>
-                  <button type="button" class="btn btn-outline btn-sm" id="signup-captcha-refresh">이미지 새로고침</button>
+                <div class="signup-captcha-row">
+                  <div
+                    id="signup-captcha-svg"
+                    class="signup-captcha-svg"
+                    role="img"
+                    aria-labelledby="signup-captcha-label"
+                  ></div>
+                  <div class="signup-captcha-side">
+                    <input
+                      id="signup-captcha-answer"
+                      type="text"
+                      class="input"
+                      placeholder="보안 문자 입력"
+                      maxlength="12"
+                      autocomplete="off"
+                      autocapitalize="characters"
+                      spellcheck="false"
+                    />
+                    <button type="button" class="btn btn-outline btn-sm signup-captcha-refresh" id="signup-captcha-refresh">
+                      이미지 새로고침
+                    </button>
+                  </div>
                 </div>
-                <input
-                  id="signup-captcha-answer"
-                  type="text"
-                  class="input"
-                  placeholder="보안 문자 입력"
-                  maxlength="12"
-                  autocomplete="off"
-                  autocapitalize="characters"
-                  spellcheck="false"
-                />
               </div>
             </div>
           </div>

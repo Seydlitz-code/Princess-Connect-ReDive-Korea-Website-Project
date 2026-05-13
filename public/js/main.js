@@ -29,6 +29,12 @@
 
     const activeBtn = links.find((b) => b.dataset.board === boardId);
     requestAnimationFrame(() => moveUnderline(activeBtn));
+
+    if (boardId === 'mypage') {
+      queueMicrotask(() => {
+        loadMypageProfileForm();
+      });
+    }
   }
 
   links.forEach((btn) => {
@@ -118,6 +124,14 @@
   let cropLastPointerX = 0;
   let cropLastPointerY = 0;
   let profilePreviewUrl = null;
+  /** 'signup' | 'mypage' — 프로필 크롭 확인 시 어디에 반영할지 구분 */
+  let profileCropContext = 'signup';
+
+  let mypageSessionUserId = '';
+  let mypageBaselineNickname = '';
+  let mypageBaselineProfileImage = '';
+  let mypageNicknameApprovedFor = null;
+  let mypagePendingProfileDataUrl = null;
 
   function syncRecaptchaWrapVisibility() {
     if (!signupRecaptchaWrap) return;
@@ -295,6 +309,34 @@
       passwordMatchFeedbackEl.textContent = '비밀번호가 일치하지 않습니다.';
       passwordMatchFeedbackEl.classList.remove('is-ok');
       passwordMatchFeedbackEl.classList.add('is-warn');
+    }
+  }
+
+  function syncPasswordStrengthBadge() {
+    const el = document.getElementById('password-strength-badge');
+    if (!el || !passwordInput) return;
+    const p = passwordInput.value;
+    if (!p) {
+      el.hidden = true;
+      el.textContent = '안전';
+      el.classList.remove('is-safe', 'is-mid', 'is-weak');
+      return;
+    }
+    el.hidden = false;
+    const hasLetter = /[a-zA-Z]/.test(p);
+    const hasNum = /\d/.test(p);
+    const hasSym = /[^a-zA-Z0-9]/.test(p);
+    const variety = [hasLetter, hasNum, hasSym].filter(Boolean).length;
+    el.classList.remove('is-safe', 'is-mid', 'is-weak');
+    if (p.length < 8 || variety < 2) {
+      el.textContent = '약함';
+      el.classList.add('is-weak');
+    } else if (p.length >= 10 && variety >= 3) {
+      el.textContent = '안전';
+      el.classList.add('is-safe');
+    } else {
+      el.textContent = '보통';
+      el.classList.add('is-mid');
     }
   }
 
@@ -482,6 +524,7 @@
   }
 
   function resetSignupFlow() {
+    profileCropContext = 'signup';
     selectedCharacterIds = new Set();
     nicknameApprovedFor = null;
     usernameApprovedFor = null;
@@ -509,6 +552,7 @@
       profilePreviewUrl = null;
     }
     syncPasswordMatchFeedback();
+    syncPasswordStrengthBadge();
     if (deferCheckbox) deferCheckbox.checked = false;
     if (characterLoadError) {
       characterLoadError.hidden = true;
@@ -575,6 +619,213 @@
   const headerUserAvatarPh = document.getElementById('header-user-avatar-ph');
   const headerUserNicknameEl = document.getElementById('header-user-nickname');
   const headerLogoutBtn = document.getElementById('header-logout');
+  const headerOpenMypage = document.getElementById('header-open-mypage');
+  const mypageProfilePreview = document.getElementById('mypage-profile-preview');
+  const mypageProfileFile = document.getElementById('mypage-profile-file');
+  const mypageProfileTrigger = document.getElementById('mypage-profile-file-trigger');
+  const mypageNicknameInput = document.getElementById('mypage-nickname');
+  const mypageCheckNicknameBtn = document.getElementById('mypage-check-nickname');
+  const mypageNicknameFeedbackEl = document.getElementById('mypage-nickname-feedback');
+  const mypageProfileApply = document.getElementById('mypage-profile-apply');
+
+  function renderMypageProfilePreviewFromSrc(src) {
+    if (!mypageProfilePreview) return;
+    if (src && /^data:image\//.test(src)) {
+      mypageProfilePreview.innerHTML = '';
+      const imgEl = document.createElement('img');
+      imgEl.src = src;
+      imgEl.alt = '프로필';
+      mypageProfilePreview.appendChild(imgEl);
+    } else {
+      mypageProfilePreview.innerHTML = '<span class="profile-placeholder-text">프로필</span>';
+    }
+  }
+
+  function clearMypageNicknameFeedback() {
+    clearCheckFeedback(mypageNicknameFeedbackEl);
+  }
+
+  function syncMypageApplyButton() {
+    if (!mypageProfileApply) return;
+    const nick = mypageNicknameInput?.value.trim() || '';
+    const nickChanged = nick !== mypageBaselineNickname;
+    const nLen = nicknameCharCount(nick);
+    const lenOk = nLen >= NICKNAME_LEN_MIN && nLen <= NICKNAME_LEN_MAX;
+    const nickOk = !nickChanged || (mypageNicknameApprovedFor === nick && lenOk);
+    const imageChanged =
+      mypagePendingProfileDataUrl !== null && mypagePendingProfileDataUrl !== mypageBaselineProfileImage;
+
+    const nickBranchOk = nickChanged && nickOk && lenOk;
+    mypageProfileApply.disabled = !(imageChanged || nickBranchOk);
+  }
+
+  async function loadMypageProfileForm() {
+    if (!mypageProfilePreview || !mypageNicknameInput) return;
+    try {
+      const res = await fetch('/api/me', { credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      if (!data || !data.ok || !isSessionUser(data.user)) {
+        setActiveBoard('main');
+        return;
+      }
+      const u = data.user;
+      mypageSessionUserId = u.id;
+      mypageBaselineNickname = u.nickname || '';
+      mypageBaselineProfileImage = typeof u.profileImage === 'string' ? u.profileImage : '';
+      mypageNicknameApprovedFor = null;
+      mypagePendingProfileDataUrl = null;
+
+      mypageNicknameInput.value = mypageBaselineNickname;
+      renderMypageProfilePreviewFromSrc(mypageBaselineProfileImage);
+      clearMypageNicknameFeedback();
+      syncMypageApplyButton();
+    } catch {
+      setActiveBoard('main');
+    }
+  }
+
+  function setMypageTab(tabId) {
+    document.querySelectorAll('.mypage-nav-btn[data-mypage-tab]').forEach((btn) => {
+      const on = btn.dataset.mypageTab === tabId;
+      btn.classList.toggle('is-active', on);
+    });
+    document.querySelectorAll('.mypage-tab-panel[data-mypage-panel]').forEach((panel) => {
+      const on = panel.dataset.mypagePanel === tabId;
+      panel.hidden = !on;
+    });
+  }
+
+  document.querySelectorAll('.mypage-nav-btn[data-mypage-tab]').forEach((btn) => {
+    btn.addEventListener('click', () => setMypageTab(btn.dataset.mypageTab || 'profile'));
+  });
+
+  headerOpenMypage?.addEventListener('click', () => {
+    setActiveBoard('mypage');
+    setMypageTab('profile');
+  });
+
+  mypageNicknameInput?.addEventListener('input', () => {
+    const v = mypageNicknameInput.value.trim();
+    if (mypageNicknameApprovedFor !== null && v !== mypageNicknameApprovedFor) {
+      mypageNicknameApprovedFor = null;
+    }
+    clearMypageNicknameFeedback();
+    syncMypageApplyButton();
+  });
+
+  mypageCheckNicknameBtn?.addEventListener('click', async () => {
+    const nickname = mypageNicknameInput?.value.trim() || '';
+    if (!nickname) {
+      mypageNicknameApprovedFor = null;
+      setCheckFeedback(mypageNicknameFeedbackEl, '닉네임을 입력해 주세요.', 'warn');
+      syncMypageApplyButton();
+      return;
+    }
+    const nLen = nicknameCharCount(nickname);
+    if (nLen < NICKNAME_LEN_MIN || nLen > NICKNAME_LEN_MAX) {
+      mypageNicknameApprovedFor = null;
+      setCheckFeedback(
+        mypageNicknameFeedbackEl,
+        `닉네임은 ${NICKNAME_LEN_MIN}~${NICKNAME_LEN_MAX}자로 입력해 주세요.`,
+        'warn'
+      );
+      syncMypageApplyButton();
+      return;
+    }
+
+    if (!mypageSessionUserId) {
+      await loadMypageProfileForm();
+    }
+    if (!mypageSessionUserId) {
+      mypageNicknameApprovedFor = null;
+      setCheckFeedback(mypageNicknameFeedbackEl, '로그인 상태를 확인할 수 없습니다.', 'warn');
+      syncMypageApplyButton();
+      return;
+    }
+    try {
+      const params = new URLSearchParams({ nickname, excludeUserId: mypageSessionUserId });
+      const res = await fetch(`/api/users/check?${params}`, { credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        mypageNicknameApprovedFor = null;
+        setCheckFeedback(mypageNicknameFeedbackEl, data.error || '확인 중 오류가 발생했습니다.', 'warn');
+        syncMypageApplyButton();
+        return;
+      }
+      if (data.nicknameAvailable) {
+        mypageNicknameApprovedFor = nickname;
+        setCheckFeedback(mypageNicknameFeedbackEl, '사용 가능한 닉네임입니다.', 'ok');
+      } else {
+        mypageNicknameApprovedFor = null;
+        setCheckFeedback(mypageNicknameFeedbackEl, '중복된 닉네임입니다.', 'warn');
+      }
+    } catch (e) {
+      mypageNicknameApprovedFor = null;
+      setCheckFeedback(mypageNicknameFeedbackEl, e instanceof Error ? e.message : String(e), 'warn');
+    }
+    syncMypageApplyButton();
+  });
+
+  mypageProfileTrigger?.addEventListener('click', () => mypageProfileFile?.click());
+
+  mypageProfileFile?.addEventListener('change', () => {
+    profileCropContext = 'mypage';
+    const file = mypageProfileFile.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      mypageProfileFile.value = '';
+      window.alert('이미지 파일만 선택할 수 있습니다.');
+      return;
+    }
+    if (pendingCropObjectUrl) {
+      try {
+        URL.revokeObjectURL(pendingCropObjectUrl);
+      } catch (_) {
+        /* ignore */
+      }
+      pendingCropObjectUrl = null;
+    }
+    pendingCropObjectUrl = URL.createObjectURL(file);
+    openProfileCropEditor(pendingCropObjectUrl);
+    mypageProfileFile.value = '';
+  });
+
+  mypageProfileApply?.addEventListener('click', async () => {
+    const nick = mypageNicknameInput?.value.trim() || '';
+    const nickWillSend = nick !== mypageBaselineNickname && mypageNicknameApprovedFor === nick;
+    const imageWillSend =
+      mypagePendingProfileDataUrl !== null && mypagePendingProfileDataUrl !== mypageBaselineProfileImage;
+
+    const payload = {};
+    if (nickWillSend) payload.nickname = nick;
+    if (imageWillSend) payload.profileImage = mypagePendingProfileDataUrl;
+
+    if (Object.keys(payload).length === 0) return;
+
+    mypageProfileApply.disabled = true;
+    try {
+      const data = await apiJson('/api/me', {
+        method: 'PATCH',
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+      if (isSessionUser(data.user)) {
+        renderLoggedInHeader(data.user);
+        mypageBaselineNickname = data.user.nickname || '';
+        mypageBaselineProfileImage =
+          typeof data.user.profileImage === 'string' ? data.user.profileImage : '';
+        mypagePendingProfileDataUrl = null;
+        mypageNicknameApprovedFor = null;
+        mypageNicknameInput.value = mypageBaselineNickname;
+        renderMypageProfilePreviewFromSrc(mypageBaselineProfileImage);
+        clearMypageNicknameFeedback();
+        syncMypageApplyButton();
+      }
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : String(e));
+      syncMypageApplyButton();
+    }
+  });
 
   function showLoginFormError(text) {
     if (!loginFormErrorEl) return;
@@ -601,6 +852,7 @@
   }
 
   function renderLoggedOutHeader() {
+    mypageSessionUserId = '';
     setHeaderActionsSlotMode(false);
     if (headerGuest) {
       headerGuest.hidden = false;
@@ -633,6 +885,7 @@
       headerLogged.removeAttribute('aria-hidden');
     }
     if (headerUserNicknameEl) headerUserNicknameEl.textContent = user.nickname || '—';
+    mypageSessionUserId = user.id;
 
     const imgSrc = typeof user.profileImage === 'string' ? user.profileImage : '';
     if (imgSrc && /^data:image\//.test(imgSrc)) {
@@ -759,17 +1012,26 @@
 
   function wirePwToggle(btn, input) {
     if (!btn || !input) return;
+    const eyeOpen = btn.querySelector('.pw-eye-open');
+    const eyeShut = btn.querySelector('.pw-eye-shut');
+    const hideLabel = input.id === 'password2' ? '비밀번호 확인란 숨기기' : '비밀번호 숨기기';
+    const showLabel = input.id === 'password2' ? '비밀번호 확인란 표시' : '비밀번호 표시';
     btn.addEventListener('click', () => {
       const toText = input.type === 'password';
       input.type = toText ? 'text' : 'password';
       btn.setAttribute('aria-pressed', toText ? 'true' : 'false');
-      btn.textContent = toText ? '숨기기' : '보기';
+      btn.setAttribute('aria-label', toText ? hideLabel : showLabel);
+      if (eyeOpen && eyeShut) {
+        eyeOpen.hidden = !toText;
+        eyeShut.hidden = toText;
+      }
     });
   }
   wirePwToggle(passwordVisibilityBtn, passwordInput);
   wirePwToggle(password2VisibilityBtn, password2Input);
 
   profileFile?.addEventListener('change', () => {
+    profileCropContext = 'signup';
     const file = profileFile.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -799,7 +1061,7 @@
   profileCropConfirm?.addEventListener('click', () => {
     if (!cropImg) return;
     try {
-      croppedProfileDataUrl = exportProfileCrop();
+      const dataUrl = exportProfileCrop();
       if (pendingCropObjectUrl) {
         try {
           URL.revokeObjectURL(pendingCropObjectUrl);
@@ -808,6 +1070,23 @@
         }
         pendingCropObjectUrl = null;
       }
+
+      if (profileCropContext === 'mypage') {
+        mypagePendingProfileDataUrl = dataUrl;
+        const prev = mypageProfilePreview;
+        if (prev) {
+          prev.innerHTML = '';
+          const imgEl = document.createElement('img');
+          imgEl.src = dataUrl;
+          imgEl.alt = '프로필 미리보기';
+          prev.appendChild(imgEl);
+        }
+        syncMypageApplyButton();
+        closeProfileCropEditor(false);
+        return;
+      }
+
+      croppedProfileDataUrl = dataUrl;
       if (profilePreview) {
         profilePreview.innerHTML = '';
         const imgEl = document.createElement('img');
@@ -994,6 +1273,7 @@
     clearSignupStep1Alert();
     syncSignupNextButton();
     syncPasswordMatchFeedback();
+    syncPasswordStrengthBadge();
   });
   password2Input?.addEventListener('input', () => {
     clearSignupStep1Alert();
