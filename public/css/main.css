@@ -181,36 +181,21 @@ body {
 .user-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  max-width: min(360px, 46vw);
+  gap: 8px;
+  max-width: min(480px, 56vw);
 }
 
-.user-mypage-hit {
+.user-identity-display {
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
   flex: 1;
-  margin: 0;
-  padding: 4px 8px 4px 4px;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  transition: background 0.15s ease;
 }
 
-.user-mypage-hit:hover,
-.user-mypage-hit:focus-visible {
-  background: rgba(0, 0, 0, 0.05);
-  outline: none;
-}
-
-.user-mypage-hit:focus-visible {
-  box-shadow: 0 0 0 2px var(--nav-active);
+.btn-header-mypage {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .user-avatar-wrap {
@@ -395,6 +380,42 @@ body {
 .board-panel--mypage {
   max-width: 1160px;
   margin: 0 auto;
+}
+
+/* 마이페이지: 상단 헤더 유지, 메인 영역 전체를 마이페이지에 사용 */
+body.is-mypage-route {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body.is-mypage-route .site-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+}
+
+body.is-mypage-route .board-panel--mypage {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--header-h));
+  max-width: none;
+  margin: 0;
+  animation: none;
+}
+
+body.is-mypage-route .mypage-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  border-radius: 0;
+  border-width: 0;
+  border-top: 2px solid var(--text);
 }
 
 .mypage-shell {

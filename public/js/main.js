@@ -27,6 +27,8 @@
       panel.classList.toggle('is-visible', match);
     });
 
+    document.body.classList.toggle('is-mypage-route', boardId === 'mypage');
+
     const activeBtn = links.find((b) => b.dataset.board === boardId);
     requestAnimationFrame(() => moveUnderline(activeBtn));
 
@@ -702,6 +704,7 @@
   headerOpenMypage?.addEventListener('click', () => {
     setActiveBoard('mypage');
     setMypageTab('profile');
+    window.scrollTo(0, 0);
   });
 
   mypageNicknameInput?.addEventListener('input', () => {

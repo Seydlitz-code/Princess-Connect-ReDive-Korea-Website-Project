@@ -60,13 +60,14 @@
           </div>
           <div class="header-actions header-actions-logged" id="header-actions-logged" hidden>
             <div class="user-bar" aria-label="로그인한 계정">
-              <button type="button" class="user-mypage-hit" id="header-open-mypage" aria-label="마이페이지">
+              <div class="user-identity-display">
                 <span class="user-avatar-wrap">
                   <img id="header-user-avatar" class="user-avatar-img" alt="" width="42" height="42" decoding="async" hidden />
                   <span id="header-user-avatar-ph" class="user-avatar-placeholder">프로필 이미지</span>
                 </span>
                 <span id="header-user-nickname" class="user-nickname">—</span>
-              </button>
+              </div>
+              <button type="button" class="btn btn-outline btn-sm btn-header-mypage" id="header-open-mypage">마이페이지</button>
               <button type="button" class="btn btn-signup btn-logout-header" id="header-logout">로그아웃</button>
             </div>
           </div>
