@@ -576,6 +576,8 @@ body.is-mypage-route .mypage-shell {
   max-height: min(92vh, 880px);
   display: flex;
   flex-direction: column;
+  /* 모달 시트 자체는 스크롤하지 않음 — 내부 character-grid-scroll만 스크롤 */
+  overflow: hidden;
 }
 
 .owned-characters-modal-form {
@@ -583,19 +585,31 @@ body.is-mypage-route .mypage-shell {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
+}
+
+/* 모달 제목/설명 영역이 압축되지 않도록 고정 */
+#owned-characters-modal .modal-head {
+  flex-shrink: 0;
 }
 
 .owned-characters-modal-scroll {
-  flex: 1;
-  min-height: 200px;
-  max-height: min(52vh, 520px);
+  flex: 1 1 auto;
+  min-height: 120px;
+  /* character-grid-scroll의 max-height(후순위)보다 이 값이 우선되도록 !important */
+  max-height: min(52vh, 480px) !important;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
+/* 푸터(저장하기·취소)가 절대로 압축되거나 잘리지 않도록 */
 .owned-characters-modal-footer {
-  margin-top: 16px;
+  flex-shrink: 0;
+  margin-top: 16px !important; /* .modal-footer의 26px을 덮어씀 */
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+  padding-bottom: 2px;
 }
 
 @media (max-width: 900px) {

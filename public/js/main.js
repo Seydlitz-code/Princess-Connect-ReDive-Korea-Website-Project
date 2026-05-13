@@ -1497,13 +1497,20 @@
     if (e.target === ownedCharactersModal) closeOwnedCharactersModal();
   });
 
-  ownedUpdateSave?.addEventListener('click', async () => {
-    if (ownedUpdateError) {
-      ownedUpdateError.hidden = true;
-      ownedUpdateError.textContent = '';
-    }
+  async function handleOwnedUpdateSave() {
+    /* 클릭 시점에 DOM을 재조회해 stale reference 문제를 원천 차단 */
+    const saveBtn = /** @type {HTMLButtonElement|null} */ (document.getElementById('owned-update-save'));
+    const errEl   = /** @type {HTMLElement|null}       */ (document.getElementById('owned-update-error'));
+
+    if (!saveBtn || saveBtn.disabled) return;
+
+    if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
+
     const characterIds = [...ownedUpdateSelection];
-    ownedUpdateSave.disabled = true;
+    const originalLabel = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = '저장 중…';
+
     try {
       const res = await fetch('/api/me/owned-characters', {
         method: 'PATCH',
@@ -1515,21 +1522,29 @@
       if (!res.ok) {
         throw new Error(data.error || `저장 실패 (${res.status})`);
       }
+      /* 성공 */
       closeOwnedCharactersModal();
       await refreshMypageOwnedList();
     } catch (e) {
-      if (ownedUpdateError) {
-        ownedUpdateError.textContent = e instanceof Error ? e.message : String(e);
-        ownedUpdateError.hidden = false;
+      const errElCatch = document.getElementById('owned-update-error');
+      if (errElCatch) {
+        errElCatch.textContent = e instanceof Error ? e.message : String(e);
+        errElCatch.hidden = false;
       }
     } finally {
-      if (ownedUpdateSave) ownedUpdateSave.disabled = false;
+      const saveBtnFinal = document.getElementById('owned-update-save');
+      if (saveBtnFinal) {
+        saveBtnFinal.disabled = false;
+        saveBtnFinal.textContent = originalLabel;
+      }
     }
-  });
+  }
 
-  ownedUpdateForm?.addEventListener('submit', (e) => {
-    e.preventDefault();
-  });
+  /* 버튼 직접 클릭 */
+  ownedUpdateSave?.addEventListener('click', () => { void handleOwnedUpdateSave(); });
+
+  /* 혹시 form submit이 발생하더라도 페이지 이동 방지 */
+  ownedUpdateForm?.addEventListener('submit', (e) => { e.preventDefault(); });
 
   signupNext?.addEventListener('click', async () => {
     const err = getFirstSignupStep1ValidationError();
