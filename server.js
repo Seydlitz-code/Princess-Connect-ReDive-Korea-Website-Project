@@ -58,6 +58,47 @@ function nicknameCodepointLen(s) {
   return [...String(s || '')].length;
 }
 
+async function loadAdminUserRows(pgPool) {
+  if (!pgPool) return [];
+  const r = await pgPool.query(
+    `SELECT id, username, nickname, username_cipher, nickname_cipher
+     FROM users WHERE COALESCE(role, 'user') = 'admin'`
+  );
+  return r.rows;
+}
+
+/** 관리자 계정과 동일한 아이디면 true(본인 excludeUserId는 제외). */
+function usernameCollidesWithAdminAccount(username, adminRows, excludeUserId) {
+  const nu = normalizeUsername(username);
+  if (!nu) return false;
+  for (const row of adminRows) {
+    const au = displayUsernameFromRow(row);
+    if (!au) continue;
+    if (normalizeUsername(au) === nu) {
+      if (excludeUserId && String(row.id) === String(excludeUserId)) continue;
+      return true;
+    }
+  }
+  return false;
+}
+
+/** 관리자 계정과 동일한 닉네임이면 true(본인 excludeUserId는 제외). */
+function nicknameCollidesWithAdminAccount(nickname, adminRows, excludeUserId) {
+  const nt = String(nickname || '').trim();
+  if (!nt) return false;
+  for (const row of adminRows) {
+    const an = displayNicknameFromRow(row);
+    if (!an) continue;
+    const ant = String(an).trim();
+    if (!ant) continue;
+    if (ant === nt) {
+      if (excludeUserId && String(row.id) === String(excludeUserId)) continue;
+      return true;
+    }
+  }
+  return false;
+}
+
 function normalizeCharacterIds(value) {
   if (!Array.isArray(value)) return [];
   const out = [];
@@ -463,6 +504,15 @@ app.get('/api/users/check', async (req, res) => {
         out.nicknameAvailable = r.rowCount === 0;
       }
     }
+
+    const adminRows = await loadAdminUserRows(pool);
+    if (username && out.usernameAvailable && usernameCollidesWithAdminAccount(username, adminRows, excludeUserId)) {
+      out.usernameAvailable = false;
+    }
+    if (nickname && out.nicknameAvailable && nicknameCollidesWithAdminAccount(nickname, adminRows, excludeUserId)) {
+      out.nicknameAvailable = false;
+    }
+
     res.json(out);
   } catch (err) {
     console.error(err);
@@ -586,6 +636,11 @@ app.patch('/api/me', async (req, res) => {
         );
       }
       if (conflict.rowCount > 0) {
+        res.status(409).json({ ok: false, error: '다른 사용자가 이미 사용 중인 닉네임입니다.' });
+        return;
+      }
+      const adminRowsPatch = await loadAdminUserRows(pool);
+      if (nicknameCollidesWithAdminAccount(nicknameNext, adminRowsPatch, userId)) {
         res.status(409).json({ ok: false, error: '다른 사용자가 이미 사용 중인 닉네임입니다.' });
         return;
       }
@@ -757,6 +812,28 @@ app.post('/api/register', async (req, res) => {
       error:
         '회원가입 1단계가 만료되었거나 보안 문자 확인이 완료되지 않았습니다. 첫 단계로 돌아가 보안 문자부터 다시 진행해 주세요.',
     });
+    return;
+  }
+
+  try {
+    const adminRowsRegister = await loadAdminUserRows(pool);
+    if (usernameCollidesWithAdminAccount(username, adminRowsRegister, null)) {
+      res.status(400).json({
+        ok: false,
+        error: '다른 사용자가 이미 사용 중인 아이디입니다.',
+      });
+      return;
+    }
+    if (nicknameCollidesWithAdminAccount(nickname, adminRowsRegister, null)) {
+      res.status(400).json({
+        ok: false,
+        error: '다른 사용자가 이미 사용 중인 닉네임입니다.',
+      });
+      return;
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
     return;
   }
 
