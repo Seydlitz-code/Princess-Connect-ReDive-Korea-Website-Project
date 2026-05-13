@@ -1347,7 +1347,12 @@
     return charactersLoadPromise;
   }
 
-  function renderCharacterPickerInto(gridEl, list, selectionSet) {
+  /**
+   * 캐릭터 선택 그리드를 렌더링한다.
+   * getSelection/setSelection 콜백으로 Set 참조를 런타임에 읽어
+   * openOwnedCharactersModal 재호출 등으로 Set이 교체돼도 올바른 Set을 조작한다.
+   */
+  function renderCharacterPickerInto(gridEl, list, getSelection) {
     if (!gridEl) return;
     gridEl.innerHTML = '';
     list.forEach((c) => {
@@ -1375,13 +1380,14 @@
       btn.appendChild(nameEl);
 
       const sync = () => {
-        btn.classList.toggle('is-selected', selectionSet.has(id));
+        btn.classList.toggle('is-selected', getSelection().has(id));
       };
       sync();
 
       btn.addEventListener('click', () => {
-        if (selectionSet.has(id)) selectionSet.delete(id);
-        else selectionSet.add(id);
+        const sel = getSelection();
+        if (sel.has(id)) sel.delete(id);
+        else sel.add(id);
         sync();
       });
 
@@ -1390,7 +1396,7 @@
   }
 
   function renderCharacterGrid(list) {
-    renderCharacterPickerInto(characterGrid, list, selectedCharacterIds);
+    renderCharacterPickerInto(characterGrid, list, () => selectedCharacterIds);
   }
 
   function renderOwnedDisplayGrid(container, list) {
@@ -1465,7 +1471,7 @@
       ownedUpdateSelection = new Set(
         (Array.isArray(ownedData.characters) ? ownedData.characters : []).map((c) => String(c.id))
       );
-      renderCharacterPickerInto(ownedUpdateGrid, list, ownedUpdateSelection);
+      renderCharacterPickerInto(ownedUpdateGrid, list, () => ownedUpdateSelection);
       ownedCharactersModal.hidden = false;
       refreshBodyScrollLock();
       requestAnimationFrame(() => ownedModalScroll?.focus());
@@ -1491,20 +1497,24 @@
     if (e.target === ownedCharactersModal) closeOwnedCharactersModal();
   });
 
-  async function persistOwnedCharactersFromModal() {
-    if (!ownedUpdateSave || !ownedCharactersModal || ownedCharactersModal.hidden) return;
+  ownedUpdateSave?.addEventListener('click', async () => {
     if (ownedUpdateError) {
       ownedUpdateError.hidden = true;
       ownedUpdateError.textContent = '';
     }
-    const characterIds = [...ownedUpdateSelection].sort();
+    const characterIds = [...ownedUpdateSelection];
     ownedUpdateSave.disabled = true;
     try {
-      await apiJson('/api/me/owned-characters', {
+      const res = await fetch('/api/me/owned-characters', {
         method: 'PATCH',
         credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ characterIds }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || `저장 실패 (${res.status})`);
+      }
       closeOwnedCharactersModal();
       await refreshMypageOwnedList();
     } catch (e) {
@@ -1513,13 +1523,12 @@
         ownedUpdateError.hidden = false;
       }
     } finally {
-      ownedUpdateSave.disabled = false;
+      if (ownedUpdateSave) ownedUpdateSave.disabled = false;
     }
-  }
+  });
 
   ownedUpdateForm?.addEventListener('submit', (e) => {
     e.preventDefault();
-    void persistOwnedCharactersFromModal();
   });
 
   signupNext?.addEventListener('click', async () => {
