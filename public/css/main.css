@@ -535,6 +535,11 @@ body.is-mypage-route .mypage-shell {
   min-height: 0;
 }
 
+/* [hidden] + display:flex 클래스 충돌 방지: 한 번에 하나의 탭만 표시 */
+.mypage-tab-panel[hidden] {
+  display: none !important;
+}
+
 .mypage-owned-empty {
   margin: 12px 0;
   font-size: 0.95rem;
