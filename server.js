@@ -403,6 +403,106 @@ app.get('/api/me', async (req, res) => {
   }
 });
 
+app.get('/api/me/owned-characters', async (req, res) => {
+  const secret = getSessionSecret();
+  if (!secret || !pool) {
+    res.status(503).json({ ok: false, error: '서버 설정이 완료되지 않았습니다.' });
+    return;
+  }
+  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
+  if (!userId) {
+    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
+    return;
+  }
+  if (!requirePool(res)) return;
+  try {
+    const r = await pool.query(
+      `SELECT c.id, c.name
+       FROM user_owned_characters uoc
+       INNER JOIN characters c ON c.id = uoc.character_id
+       WHERE uoc.user_id = $1::uuid
+       ORDER BY c.name ASC`,
+      [userId]
+    );
+    const characters = r.rows.map((row) => {
+      const id = String(row.id);
+      return {
+        id,
+        name: row.name,
+        imageUrl: `/api/characters/${id}/image`,
+      };
+    });
+    res.json({ ok: true, characters });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+app.patch('/api/me/owned-characters', async (req, res) => {
+  if (!requirePool(res)) return;
+  const secret = getSessionSecret();
+  if (!secret) {
+    res.status(503).json({
+      ok: false,
+      error:
+        '요청을 처리할 수 없습니다. SESSION_SECRET 환경 변수를 설정하고 서비스를 재시작하세요.',
+    });
+    return;
+  }
+  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
+  if (!userId) {
+    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
+    return;
+  }
+  const body = req.body || {};
+  if (!Array.isArray(body.characterIds)) {
+    res.status(400).json({ ok: false, error: 'characterIds 배열이 필요합니다.' });
+    return;
+  }
+  const requestedCharacterIds = normalizeCharacterIds(body.characterIds);
+  try {
+    const validIds = await loadValidCharacterIdSet(pool);
+    if (requestedCharacterIds.length > 0 && validIds.size === 0) {
+      res.status(503).json({
+        ok: false,
+        error: '캐릭터 데이터가 준비되지 않았습니다. 관리자에게 문의해 주세요.',
+      });
+      return;
+    }
+    for (const id of requestedCharacterIds) {
+      if (!validIds.has(id)) {
+        res.status(400).json({
+          ok: false,
+          error: '목록에 없는 캐릭터가 포함되어 있습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.',
+        });
+        return;
+      }
+    }
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM user_owned_characters WHERE user_id = $1::uuid', [userId]);
+      for (const cid of requestedCharacterIds) {
+        await client.query(
+          `INSERT INTO user_owned_characters (user_id, character_id) VALUES ($1, $2::uuid)`,
+          [userId, cid]
+        );
+      }
+      await client.query('COMMIT');
+    } catch (txErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw txErr;
+    } finally {
+      client.release();
+    }
+    res.json({ ok: true, ownedCharacterCount: requestedCharacterIds.length });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
 app.post('/api/login', async (req, res) => {
   if (!requirePool(res)) return;
   const secret = getSessionSecret();

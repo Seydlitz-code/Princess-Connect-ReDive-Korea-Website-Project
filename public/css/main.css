@@ -242,7 +242,8 @@ body {
 }
 
 .modal-sheet--narrow {
-  width: min(420px, 100%);
+  width: min(360px, 92vw);
+  max-width: 380px;
 }
 
 .login-form {
@@ -400,6 +401,13 @@ body.is-mypage-route .site-main {
   min-height: 0;
 }
 
+body.is-mypage-route .mypage-tab-panel[data-mypage-panel='profile'],
+body.is-mypage-route .mypage-characters-panel {
+  padding-inline: clamp(16px, 4vw, 32px);
+  padding-top: 24px;
+  padding-bottom: 32px;
+}
+
 body.is-mypage-route .board-panel--mypage {
   flex: 1 1 auto;
   display: flex;
@@ -505,6 +513,89 @@ body.is-mypage-route .mypage-shell {
 .mypage-char-placeholder {
   margin-top: 8px;
   max-width: 520px;
+}
+
+.mypage-characters-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.btn-mypage-owned-update {
+  flex-shrink: 0;
+}
+
+.mypage-characters-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.mypage-owned-empty {
+  margin: 12px 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.mypage-owned-grid-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 2px 12px;
+}
+
+.character-grid--cols-8 {
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+}
+
+.character-owned-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 0;
+  text-align: center;
+}
+
+.character-thumb--readonly {
+  cursor: default;
+}
+
+.owned-characters-modal-sheet {
+  width: min(960px, 100%);
+  max-height: min(92vh, 880px);
+  display: flex;
+  flex-direction: column;
+}
+
+.owned-characters-modal-scroll {
+  flex: 1;
+  min-height: 200px;
+  max-height: min(52vh, 520px);
+}
+
+.owned-characters-modal-footer {
+  margin-top: 16px;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .character-grid--cols-8 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .character-grid--cols-8 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @keyframes fade-in {

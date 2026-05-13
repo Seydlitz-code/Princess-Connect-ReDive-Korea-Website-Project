@@ -568,9 +568,10 @@
     if (!modal) return;
     await refreshPublicRuntimeConfig();
     if (loginModal && !loginModal.hidden) closeLoginModal();
+    if (ownedCharactersModal && !ownedCharactersModal.hidden) closeOwnedCharactersModal();
     resetSignupFlow();
     modal.hidden = false;
-    document.body.style.overflow = 'hidden';
+    refreshBodyScrollLock();
     signupNext?.focus();
   }
 
@@ -578,7 +579,7 @@
     if (!modal) return;
     resetSignupFlow();
     modal.hidden = true;
-    document.body.style.overflow = '';
+    refreshBodyScrollLock();
     openSignup?.focus();
   }
 
@@ -629,6 +630,38 @@
   const mypageCheckNicknameBtn = document.getElementById('mypage-check-nickname');
   const mypageNicknameFeedbackEl = document.getElementById('mypage-nickname-feedback');
   const mypageProfileApply = document.getElementById('mypage-profile-apply');
+  const mypageOwnedGrid = document.getElementById('mypage-owned-grid');
+  const mypageOwnedEmpty = document.getElementById('mypage-owned-empty');
+  const mypageOwnedGridWrap = document.getElementById('mypage-owned-grid-wrap');
+  const mypageOwnedUpdateOpen = document.getElementById('mypage-owned-update-open');
+  const ownedCharactersModal = document.getElementById('owned-characters-modal');
+  const ownedUpdateGrid = document.getElementById('owned-update-character-grid');
+  const ownedModalScroll = ownedCharactersModal?.querySelector('.owned-characters-modal-scroll');
+  const ownedUpdateSave = document.getElementById('owned-update-save');
+  const ownedUpdateCancel = document.getElementById('owned-update-cancel');
+  const ownedUpdateError = document.getElementById('owned-update-error');
+
+  let ownedUpdateSelection = new Set();
+
+  function refreshBodyScrollLock() {
+    const lock =
+      (profileCropModal && !profileCropModal.hidden) ||
+      (ownedCharactersModal && !ownedCharactersModal.hidden) ||
+      (loginModal && !loginModal.hidden) ||
+      (modal && !modal.hidden);
+    document.body.style.overflow = lock ? 'hidden' : '';
+  }
+
+  function closeOwnedCharactersModal() {
+    if (!ownedCharactersModal) return;
+    ownedCharactersModal.hidden = true;
+    if (ownedUpdateError) {
+      ownedUpdateError.hidden = true;
+      ownedUpdateError.textContent = '';
+    }
+    refreshBodyScrollLock();
+    mypageOwnedUpdateOpen?.focus();
+  }
 
   function renderMypageProfilePreviewFromSrc(src) {
     if (!mypageProfilePreview) return;
@@ -695,6 +728,7 @@
       const on = panel.dataset.mypagePanel === tabId;
       panel.hidden = !on;
     });
+    if (tabId === 'characters') void refreshMypageOwnedList();
   }
 
   document.querySelectorAll('.mypage-nav-btn[data-mypage-tab]').forEach((btn) => {
@@ -922,16 +956,17 @@
   function openLoginModal() {
     if (!loginModal) return;
     clearLoginFormError();
+    if (ownedCharactersModal && !ownedCharactersModal.hidden) closeOwnedCharactersModal();
     loginModal.hidden = false;
-    document.body.style.overflow = 'hidden';
+    refreshBodyScrollLock();
     loginUsernameEl?.focus();
   }
 
   function closeLoginModal() {
     if (!loginModal) return;
     loginModal.hidden = true;
+    refreshBodyScrollLock();
     if (signupModalShows()) return;
-    document.body.style.overflow = '';
     openLoginBtn?.focus();
   }
 
@@ -976,7 +1011,6 @@
       else await refreshSessionHeader();
       loginForm.reset();
       closeLoginModal();
-      document.body.style.overflow = signupModalShows() ? 'hidden' : '';
     } finally {
       loginSubmitBtn.disabled = false;
     }
@@ -1003,9 +1037,13 @@
       e.preventDefault();
       return;
     }
+    if (ownedCharactersModal && !ownedCharactersModal.hidden) {
+      closeOwnedCharactersModal();
+      e.preventDefault();
+      return;
+    }
     if (loginModal && !loginModal.hidden) {
       closeLoginModal();
-      document.body.style.overflow = signupModalShows() ? 'hidden' : '';
       return;
     }
     if (modal && !modal.hidden) closeModal();
@@ -1308,9 +1346,9 @@
     return charactersLoadPromise;
   }
 
-  function renderCharacterGrid(list) {
-    if (!characterGrid) return;
-    characterGrid.innerHTML = '';
+  function renderCharacterPickerInto(gridEl, list, selectionSet) {
+    if (!gridEl) return;
+    gridEl.innerHTML = '';
     list.forEach((c) => {
       const id = String(c.id);
       const btn = document.createElement('button');
@@ -1336,19 +1374,146 @@
       btn.appendChild(nameEl);
 
       const sync = () => {
-        btn.classList.toggle('is-selected', selectedCharacterIds.has(id));
+        btn.classList.toggle('is-selected', selectionSet.has(id));
       };
       sync();
 
       btn.addEventListener('click', () => {
-        if (selectedCharacterIds.has(id)) selectedCharacterIds.delete(id);
-        else selectedCharacterIds.add(id);
+        if (selectionSet.has(id)) selectionSet.delete(id);
+        else selectionSet.add(id);
         sync();
       });
 
-      characterGrid.appendChild(btn);
+      gridEl.appendChild(btn);
     });
   }
+
+  function renderCharacterGrid(list) {
+    renderCharacterPickerInto(characterGrid, list, selectedCharacterIds);
+  }
+
+  function renderOwnedDisplayGrid(container, list) {
+    if (!container) return;
+    container.innerHTML = '';
+    list.forEach((c) => {
+      const id = String(c.id);
+      const cell = document.createElement('div');
+      cell.className = 'character-owned-cell';
+      cell.setAttribute('role', 'listitem');
+
+      const thumb = document.createElement('div');
+      thumb.className = 'character-thumb character-thumb--readonly';
+      const img = document.createElement('img');
+      img.alt = c.name || '캐릭터';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.src = c.imageUrl || `/api/characters/${encodeURIComponent(id)}/image`;
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'character-name';
+      nameEl.textContent = c.name || '';
+
+      thumb.appendChild(img);
+      cell.appendChild(thumb);
+      cell.appendChild(nameEl);
+      container.appendChild(cell);
+    });
+  }
+
+  async function refreshMypageOwnedList() {
+    if (!mypageOwnedGrid || !mypageOwnedEmpty || !mypageOwnedGridWrap) return;
+    try {
+      const res = await fetch('/api/me/owned-characters', { credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        mypageOwnedEmpty.hidden = false;
+        mypageOwnedGridWrap.hidden = true;
+        mypageOwnedGrid.innerHTML = '';
+        return;
+      }
+      const list = Array.isArray(data.characters) ? data.characters : [];
+      if (list.length === 0) {
+        mypageOwnedEmpty.hidden = false;
+        mypageOwnedGridWrap.hidden = true;
+        mypageOwnedGrid.innerHTML = '';
+      } else {
+        mypageOwnedEmpty.hidden = true;
+        mypageOwnedGridWrap.hidden = false;
+        renderOwnedDisplayGrid(mypageOwnedGrid, list);
+      }
+    } catch {
+      mypageOwnedEmpty.hidden = false;
+      mypageOwnedGridWrap.hidden = true;
+      mypageOwnedGrid.innerHTML = '';
+    }
+  }
+
+  async function openOwnedCharactersModal() {
+    if (!ownedCharactersModal || !ownedUpdateGrid) return;
+    if (ownedUpdateError) {
+      ownedUpdateError.hidden = true;
+      ownedUpdateError.textContent = '';
+    }
+    try {
+      const list = await ensureCharactersLoaded();
+      const ownedRes = await fetch('/api/me/owned-characters', { credentials: 'include' });
+      const ownedData = await ownedRes.json().catch(() => ({}));
+      if (!ownedRes.ok) {
+        throw new Error(ownedData.error || '보유 목록을 불러올 수 없습니다.');
+      }
+      ownedUpdateSelection = new Set(
+        (Array.isArray(ownedData.characters) ? ownedData.characters : []).map((c) => String(c.id))
+      );
+      renderCharacterPickerInto(ownedUpdateGrid, list, ownedUpdateSelection);
+      ownedCharactersModal.hidden = false;
+      refreshBodyScrollLock();
+      requestAnimationFrame(() => ownedModalScroll?.focus());
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  mypageOwnedUpdateOpen?.addEventListener('click', () => {
+    void openOwnedCharactersModal();
+  });
+
+  document.getElementById('owned-characters-modal-close')?.addEventListener('click', () => {
+    closeOwnedCharactersModal();
+  });
+  ownedUpdateCancel?.addEventListener('click', () => {
+    closeOwnedCharactersModal();
+  });
+  ownedCharactersModal?.querySelectorAll('[data-close-owned-modal]').forEach((el) => {
+    el.addEventListener('click', () => closeOwnedCharactersModal());
+  });
+  ownedCharactersModal?.addEventListener('click', (e) => {
+    if (e.target === ownedCharactersModal) closeOwnedCharactersModal();
+  });
+
+  ownedUpdateSave?.addEventListener('click', async () => {
+    if (!ownedUpdateSave) return;
+    if (ownedUpdateError) {
+      ownedUpdateError.hidden = true;
+      ownedUpdateError.textContent = '';
+    }
+    ownedUpdateSave.disabled = true;
+    try {
+      await apiJson('/api/me/owned-characters', {
+        method: 'PATCH',
+        credentials: 'include',
+        body: JSON.stringify({ characterIds: Array.from(ownedUpdateSelection) }),
+      });
+      closeOwnedCharactersModal();
+      await refreshMypageOwnedList();
+    } catch (e) {
+      if (ownedUpdateError) {
+        ownedUpdateError.textContent = e instanceof Error ? e.message : String(e);
+        ownedUpdateError.hidden = false;
+      }
+    } finally {
+      ownedUpdateSave.disabled = false;
+    }
+  });
 
   signupNext?.addEventListener('click', async () => {
     const err = getFirstSignupStep1ValidationError();

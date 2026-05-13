@@ -85,7 +85,7 @@
         <div class="mypage-shell">
           <aside class="mypage-sidebar" aria-label="마이페이지 메뉴">
             <button type="button" class="mypage-nav-btn is-active" data-mypage-tab="profile">프로필</button>
-            <button type="button" class="mypage-nav-btn" data-mypage-tab="characters">보유 캐릭터 업데이트</button>
+            <button type="button" class="mypage-nav-btn" data-mypage-tab="characters">보유 캐릭터 보기</button>
           </aside>
           <div class="mypage-main">
             <div class="mypage-tab-panel" data-mypage-panel="profile">
@@ -123,11 +123,19 @@
                 </div>
               </div>
             </div>
-            <div class="mypage-tab-panel" data-mypage-panel="characters" hidden>
-              <h2 class="mypage-panel-title">보유 캐릭터 업데이트</h2>
-              <p class="field-hint mypage-char-placeholder">
-                이 메뉴에서는 보유 캐릭터 목록을 수정할 수 있게 될 예정입니다. (준비 중)
+            <div class="mypage-tab-panel mypage-characters-panel" data-mypage-panel="characters" hidden>
+              <header class="mypage-characters-head">
+                <h2 class="mypage-panel-title">보유 캐릭터</h2>
+                <button type="button" class="btn btn-primary btn-sm btn-mypage-owned-update" id="mypage-owned-update-open">
+                  보유 캐릭터 업데이트
+                </button>
+              </header>
+              <p id="mypage-owned-empty" class="mypage-owned-empty" role="status" hidden>
+                보유 캐릭터를 등록하지 않았습니다.
               </p>
+              <div id="mypage-owned-grid-wrap" class="mypage-owned-grid-wrap" hidden>
+                <div id="mypage-owned-grid" class="character-grid character-grid--cols-8" role="list" aria-label="보유 캐릭터"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -400,6 +408,27 @@
           </div>
           <button type="button" class="profile-crop-tool-btn" id="profile-crop-rotate" aria-label="이미지 회전 90도">⟲</button>
         </div>
+      </div>
+    </div>
+
+    <div class="modal-root" id="owned-characters-modal" role="dialog" aria-modal="true" aria-labelledby="owned-characters-heading" hidden>
+      <div class="modal-backdrop" data-close-owned-modal tabindex="-1"></div>
+      <div class="modal-sheet owned-characters-modal-sheet" role="document">
+        <button type="button" class="modal-back link-back" id="owned-characters-modal-close">
+          <span aria-hidden="true">←</span> 뒤로 가기
+        </button>
+        <header class="modal-head">
+          <h2 id="owned-characters-heading" class="modal-title">보유 캐릭터 업데이트</h2>
+          <p class="modal-sub">보유 중인 캐릭터를 탭하여 선택·해제한 뒤 저장하세요. 추천 파티 등에 반영됩니다.</p>
+        </header>
+        <div class="character-grid-scroll owned-characters-modal-scroll" tabindex="0">
+          <div id="owned-update-character-grid" class="character-grid character-grid--cols-8" role="list" aria-label="캐릭터 선택"></div>
+        </div>
+        <p id="owned-update-error" class="field-hint signup-error" hidden></p>
+        <footer class="modal-footer owned-characters-modal-footer">
+          <button type="button" class="btn btn-outline" id="owned-update-cancel">취소</button>
+          <button type="button" class="btn btn-primary" id="owned-update-save">저장</button>
+        </footer>
       </div>
     </div>
 
