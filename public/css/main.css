@@ -595,7 +595,6 @@ body.is-mypage-route .mypage-shell {
 
 .future-main-table {
   min-width: 980px;
-  border: 1px solid #9d9d9d;
   background: #fff;
 }
 
@@ -756,7 +755,6 @@ button.future-type-badge {
 
 .future-admin-sheet {
   overflow: auto;
-  border: 1px solid #9f9f9f;
   background: #fff;
 }
 
