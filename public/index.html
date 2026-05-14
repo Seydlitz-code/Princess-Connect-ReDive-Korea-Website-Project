@@ -76,7 +76,12 @@
     </header>
 
     <main class="site-main" id="main-content">
-      <section class="board-panel is-visible" data-board-panel="main" aria-label="메인 게시판"></section>
+      <section class="board-panel is-visible main-future-panel" data-board-panel="main" aria-label="메인 게시판">
+        <header class="future-main-head">
+          <h1>프린세스 커넥트 리다이브 한국 서버 미래시</h1>
+        </header>
+        <div id="future-main-sheet" class="future-main-sheet" aria-live="polite"></div>
+      </section>
       <section class="board-panel" data-board-panel="clan" hidden aria-label="클랜전 게시판"></section>
       <section class="board-panel" data-board-panel="stadium" hidden aria-label="배틀 스타디움 게시판"></section>
       <section class="board-panel" data-board-panel="deep" hidden aria-label="심역 퀘스트 게시판"></section>
@@ -86,6 +91,19 @@
           <aside class="mypage-sidebar" aria-label="마이페이지 메뉴">
             <button type="button" class="mypage-nav-btn is-active" data-mypage-tab="profile">프로필</button>
             <button type="button" class="mypage-nav-btn" data-mypage-tab="characters">보유 캐릭터 보기</button>
+            <div class="mypage-nav-group" id="mypage-admin-nav-group" hidden>
+              <button type="button" class="mypage-nav-btn mypage-nav-btn--parent" data-mypage-admin-toggle="site">
+                웹사이트 관리
+              </button>
+              <div class="mypage-subnav" data-mypage-subnav="site" hidden>
+                <button type="button" class="mypage-nav-btn mypage-nav-btn--sub" data-mypage-tab="admin-future">
+                  메인 페이지 미래시
+                </button>
+                <button type="button" class="mypage-nav-btn mypage-nav-btn--sub" data-mypage-tab="admin-board">
+                  게시판 관리
+                </button>
+              </div>
+            </div>
           </aside>
           <div class="mypage-main">
             <div class="mypage-tab-panel" data-mypage-panel="profile">
@@ -136,6 +154,20 @@
               <div id="mypage-owned-grid-wrap" class="mypage-owned-grid-wrap" hidden>
                 <div id="mypage-owned-grid" class="character-grid character-grid--cols-8" role="list" aria-label="보유 캐릭터"></div>
               </div>
+            </div>
+            <div class="mypage-tab-panel mypage-admin-panel" data-mypage-panel="admin-future" hidden>
+              <header class="mypage-characters-head">
+                <h2 class="mypage-panel-title">종합 미래시 업데이트</h2>
+                <button type="button" class="btn btn-primary btn-sm" id="future-admin-save">변경 사항 저장</button>
+              </header>
+              <p id="future-admin-status" class="field-check-feedback" role="status" aria-live="polite"></p>
+              <div id="future-admin-sheet" class="future-admin-sheet"></div>
+            </div>
+            <div class="mypage-tab-panel mypage-admin-panel" data-mypage-panel="admin-board" hidden>
+              <header class="mypage-characters-head">
+                <h2 class="mypage-panel-title">게시판 관리</h2>
+              </header>
+              <p class="mypage-owned-empty">게시판 관리 기능은 추후 확장 예정입니다.</p>
             </div>
           </div>
         </div>
@@ -431,6 +463,51 @@
             <button type="submit" class="btn btn-primary" id="owned-update-save">저장하기</button>
           </footer>
         </form>
+      </div>
+    </div>
+
+    <div class="modal-root" id="future-character-modal" role="dialog" aria-modal="true" aria-labelledby="future-character-heading" hidden>
+      <div class="modal-backdrop" data-close-future-character tabindex="-1"></div>
+      <div class="modal-sheet owned-characters-modal-sheet" role="document">
+        <button type="button" class="modal-back link-back" id="future-character-modal-close">
+          <span aria-hidden="true">←</span> 뒤로 가기
+        </button>
+        <header class="modal-head">
+          <h2 id="future-character-heading" class="modal-title">캐릭터 선택</h2>
+          <p class="modal-sub">미래시에 추가할 캐릭터를 선택하세요.</p>
+        </header>
+        <div class="character-grid-scroll owned-characters-modal-scroll" tabindex="0">
+          <div id="future-character-grid" class="character-grid character-grid--cols-8" role="list" aria-label="미래시 캐릭터 선택"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-root" id="future-type-modal" role="dialog" aria-modal="true" aria-labelledby="future-type-heading" hidden>
+      <div class="modal-backdrop" data-close-future-type tabindex="-1"></div>
+      <div class="modal-sheet modal-sheet--narrow" role="document">
+        <header class="modal-head">
+          <h2 id="future-type-heading" class="modal-title">캐릭터 구분 선택</h2>
+          <p class="modal-sub">선택한 캐릭터의 구분을 저장하세요.</p>
+        </header>
+        <div class="future-type-actions">
+          <button type="button" class="btn btn-primary" data-future-type-choice="limited">한정</button>
+          <button type="button" class="btn btn-outline" data-future-type-choice="permanent">통상</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-root" id="future-info-modal" role="dialog" aria-modal="true" aria-labelledby="future-info-heading" hidden>
+      <div class="modal-backdrop" data-close-future-info tabindex="-1"></div>
+      <div class="modal-sheet modal-sheet--narrow" role="document">
+        <header class="modal-head">
+          <h2 id="future-info-heading" class="modal-title">정보 입력</h2>
+          <p class="modal-sub">미래시에 표시할 추가 정보를 작성하세요.</p>
+        </header>
+        <textarea id="future-info-input" class="future-info-input" rows="7" maxlength="2000"></textarea>
+        <footer class="modal-footer">
+          <button type="button" class="btn btn-outline" id="future-info-cancel">취소</button>
+          <button type="button" class="btn btn-primary" id="future-info-save">저장</button>
+        </footer>
       </div>
     </div>
 

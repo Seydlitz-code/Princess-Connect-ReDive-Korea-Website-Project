@@ -154,6 +154,125 @@ async function loadValidCharacterIdSet(pgPool) {
   return new Set(r.rows.map((row) => String(row.id)));
 }
 
+async function loadCharacterMetaMap(pgPool) {
+  if (characterLibrary) {
+    return new Map(
+      characterLibrary.list.map((c) => [
+        c.id,
+        {
+          id: c.id,
+          name: c.name,
+          imageUrl: c.imageUrl || `/api/characters/${encodeURIComponent(c.id)}/image`,
+        },
+      ])
+    );
+  }
+  const r = await pgPool.query('SELECT id, name FROM characters');
+  return new Map(
+    r.rows.map((row) => {
+      const id = String(row.id);
+      return [id, { id, name: row.name, imageUrl: `/api/characters/${encodeURIComponent(id)}/image` }];
+    })
+  );
+}
+
+async function requireAdminUser(req, res) {
+  if (!requirePool(res)) return null;
+  const secret = getSessionSecret();
+  if (!secret) {
+    res.status(503).json({ ok: false, error: '관리자 기능을 사용할 수 없습니다. SESSION_SECRET 설정이 필요합니다.' });
+    return null;
+  }
+  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
+  if (!userId) {
+    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
+    return null;
+  }
+  const r = await pool.query(
+    `SELECT id, COALESCE(role, 'user') AS role FROM users WHERE id = $1::uuid LIMIT 1`,
+    [userId]
+  );
+  if (r.rowCount === 0 || r.rows[0].role !== 'admin') {
+    res.status(403).json({ ok: false, error: '관리자 권한이 필요합니다.' });
+    return null;
+  }
+  return r.rows[0];
+}
+
+function defaultFutureSightState() {
+  return {
+    version: 1,
+    months: [
+      {
+        id: 'month-1',
+        label: '1월',
+        categories: {
+          new: [],
+          rerun: [],
+          sixStar: [],
+          special: [],
+        },
+        info: '',
+      },
+    ],
+  };
+}
+
+function normalizeFutureSightState(value) {
+  const rawMonths = value && typeof value === 'object' && Array.isArray(value.months) ? value.months : [];
+  const months = rawMonths.slice(0, 36).map((month, index) => {
+    const src = month && typeof month === 'object' ? month : {};
+    const categories = src.categories && typeof src.categories === 'object' ? src.categories : {};
+    const normalizeEntries = (items) =>
+      (Array.isArray(items) ? items : []).slice(0, 24).map((item) => {
+        const obj = item && typeof item === 'object' ? item : {};
+        const type = obj.type === 'limited' ? 'limited' : 'permanent';
+        return {
+          characterId: String(obj.characterId || '').trim(),
+          type,
+        };
+      });
+    return {
+      id: String(src.id || `month-${index + 1}`).trim() || `month-${index + 1}`,
+      label: String(src.label || `${index + 1}월`).trim() || `${index + 1}월`,
+      categories: {
+        new: normalizeEntries(categories.new),
+        rerun: normalizeEntries(categories.rerun),
+        sixStar: normalizeEntries(categories.sixStar),
+        special: normalizeEntries(categories.special),
+      },
+      info: String(src.info || '').slice(0, 2000),
+    };
+  });
+  return { version: 1, months: months.length > 0 ? months : defaultFutureSightState().months };
+}
+
+async function hydrateFutureSightState(pgPool, state) {
+  const metaMap = await loadCharacterMetaMap(pgPool);
+  const normalized = normalizeFutureSightState(state);
+  const hydrateEntries = (items) =>
+    items
+      .map((item) => {
+        const meta = metaMap.get(item.characterId);
+        if (!meta) return null;
+        return { ...item, ...meta };
+      })
+      .filter(Boolean);
+
+  return {
+    version: normalized.version,
+    months: normalized.months.map((month) => ({
+      ...month,
+      categories: {
+        new: hydrateEntries(month.categories.new),
+        rerun: hydrateEntries(month.categories.rerun),
+        sixStar: hydrateEntries(month.categories.sixStar),
+        special: hydrateEntries(month.categories.special),
+      },
+    })),
+  };
+}
+
 async function ensureSchema(client) {
   await client.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -184,6 +303,14 @@ async function ensureSchema(client) {
       character_id UUID NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       PRIMARY KEY (user_id, character_id)
+    );
+  `);
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS site_future_sight (
+      id SMALLINT PRIMARY KEY DEFAULT 1,
+      data JSONB NOT NULL DEFAULT '{"version":1,"months":[]}'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT site_future_sight_singleton CHECK (id = 1)
     );
   `);
 }
@@ -1168,6 +1295,61 @@ app.post('/api/register', async (req, res) => {
     res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
   } finally {
     client.release();
+  }
+});
+
+app.get('/api/future-sight', async (req, res) => {
+  if (!requirePool(res)) return;
+  try {
+    const r = await pool.query('SELECT data, updated_at AS "updatedAt" FROM site_future_sight WHERE id = 1 LIMIT 1');
+    const raw = r.rowCount > 0 ? r.rows[0].data : defaultFutureSightState();
+    const data = await hydrateFutureSightState(pool, raw);
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.json({ ok: true, data, updatedAt: r.rows[0]?.updatedAt || null });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+app.put('/api/admin/future-sight', async (req, res) => {
+  let admin;
+  try {
+    admin = await requireAdminUser(req, res);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+    return;
+  }
+  if (!admin) return;
+
+  try {
+    const state = normalizeFutureSightState(req.body && req.body.data);
+    const validIds = await loadValidCharacterIdSet(pool);
+    for (const month of state.months) {
+      for (const entries of Object.values(month.categories)) {
+        for (const entry of entries) {
+          if (!validIds.has(entry.characterId)) {
+            res.status(400).json({
+              ok: false,
+              error: '목록에 없는 캐릭터가 포함되어 있습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.',
+            });
+            return;
+          }
+        }
+      }
+    }
+    await pool.query(
+      `INSERT INTO site_future_sight (id, data, updated_at)
+       VALUES (1, $1::jsonb, NOW())
+       ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
+      [JSON.stringify(state)]
+    );
+    const data = await hydrateFutureSightState(pool, state);
+    res.json({ ok: true, data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
   }
 });
 

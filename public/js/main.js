@@ -640,8 +640,34 @@
   const ownedUpdateForm = document.getElementById('owned-update-form');
   const ownedUpdateCancel = document.getElementById('owned-update-cancel');
   const ownedUpdateError = document.getElementById('owned-update-error');
+  const futureMainSheet = document.getElementById('future-main-sheet');
+  const adminNavGroup = document.getElementById('mypage-admin-nav-group');
+  const adminSubnav = document.querySelector('[data-mypage-subnav="site"]');
+  const adminToggle = document.querySelector('[data-mypage-admin-toggle="site"]');
+  const futureAdminSheet = document.getElementById('future-admin-sheet');
+  const futureAdminSave = document.getElementById('future-admin-save');
+  const futureAdminStatus = document.getElementById('future-admin-status');
+  const futureCharacterModal = document.getElementById('future-character-modal');
+  const futureCharacterGrid = document.getElementById('future-character-grid');
+  const futureTypeModal = document.getElementById('future-type-modal');
+  const futureInfoModal = document.getElementById('future-info-modal');
+  const futureInfoInput = document.getElementById('future-info-input');
+  const futureInfoSave = document.getElementById('future-info-save');
+  const futureInfoCancel = document.getElementById('future-info-cancel');
 
   let ownedUpdateSelection = new Set();
+  let sessionUserRole = 'guest';
+  let futureSightState = null;
+  let futureCharacterTarget = null;
+  let futureTypeTarget = null;
+  let futureInfoMonthId = null;
+
+  const FUTURE_CATEGORIES = [
+    { id: 'new', label: '신규 캐릭터' },
+    { id: 'rerun', label: '복각 캐릭터' },
+    { id: 'sixStar', label: '6성 개화' },
+    { id: 'special', label: '전용장비/이벤트' },
+  ];
 
   const MYPAGE_OWNED_EMPTY_DEFAULT = '보유 캐릭터를 등록하지 않았습니다.';
 
@@ -663,6 +689,9 @@
     const lock =
       (profileCropModal && !profileCropModal.hidden) ||
       (ownedCharactersModal && !ownedCharactersModal.hidden) ||
+      (futureCharacterModal && !futureCharacterModal.hidden) ||
+      (futureTypeModal && !futureTypeModal.hidden) ||
+      (futureInfoModal && !futureInfoModal.hidden) ||
       (loginModal && !loginModal.hidden) ||
       (modal && !modal.hidden);
     document.body.style.overflow = lock ? 'hidden' : '';
@@ -736,6 +765,9 @@
   }
 
   function setMypageTab(tabId) {
+    const adminTabSelected = tabId === 'admin-future' || tabId === 'admin-board';
+    if (adminSubnav) adminSubnav.hidden = !adminTabSelected;
+    if (adminToggle) adminToggle.classList.toggle('is-active', adminTabSelected);
     document.querySelectorAll('.mypage-nav-btn[data-mypage-tab]').forEach((btn) => {
       const on = btn.dataset.mypageTab === tabId;
       btn.classList.toggle('is-active', on);
@@ -745,10 +777,475 @@
       panel.hidden = !on;
     });
     if (tabId === 'characters') void refreshMypageOwnedList();
+    if (tabId === 'admin-future') void loadFutureSightForAdmin();
   }
+
+  function setAdminNavigationVisible(show) {
+    if (!adminNavGroup) return;
+    adminNavGroup.hidden = !show;
+    if (!show && adminSubnav) adminSubnav.hidden = true;
+    if (adminToggle) adminToggle.classList.toggle('is-active', show && adminSubnav && !adminSubnav.hidden);
+  }
+
+  function cloneFutureState(state) {
+    return JSON.parse(JSON.stringify(state || { version: 1, months: [] }));
+  }
+
+  function makeFutureMonth(index) {
+    return {
+      id: `month-${Date.now()}-${index}`,
+      label: `${index + 1}월`,
+      categories: { new: [], rerun: [], sixStar: [], special: [] },
+      info: '',
+    };
+  }
+
+  function ensureFutureState(state) {
+    const src = state && typeof state === 'object' ? state : {};
+    const months = Array.isArray(src.months) ? src.months : [];
+    const normalized = months.map((month, idx) => {
+      const categories = month.categories && typeof month.categories === 'object' ? month.categories : {};
+      const normalizeEntries = (items) =>
+        (Array.isArray(items) ? items : []).map((item) => ({
+          characterId: String(item.characterId || item.id || '').trim(),
+          id: String(item.id || item.characterId || '').trim(),
+          name: String(item.name || ''),
+          imageUrl: String(item.imageUrl || ''),
+          type: item.type === 'limited' ? 'limited' : 'permanent',
+        })).filter((item) => item.characterId || item.id);
+      return {
+        id: String(month.id || `month-${idx + 1}`),
+        label: String(month.label || `${idx + 1}월`),
+        categories: {
+          new: normalizeEntries(categories.new),
+          rerun: normalizeEntries(categories.rerun),
+          sixStar: normalizeEntries(categories.sixStar),
+          special: normalizeEntries(categories.special),
+        },
+        info: String(month.info || ''),
+      };
+    });
+    return { version: 1, months: months.length > 0 ? normalized : [makeFutureMonth(0)] };
+  }
+
+  function futureTypeLabel(type) {
+    return type === 'limited' ? '한정' : '통상';
+  }
+
+  function findFutureMonth(monthId) {
+    if (!futureSightState) return null;
+    return futureSightState.months.find((month) => month.id === monthId) || null;
+  }
+
+  function futurePayloadForSave() {
+    const state = ensureFutureState(futureSightState);
+    return {
+      version: 1,
+      months: state.months.map((month) => ({
+        id: month.id,
+        label: month.label,
+        categories: Object.fromEntries(
+          FUTURE_CATEGORIES.map((cat) => [
+            cat.id,
+            (month.categories[cat.id] || []).map((entry) => ({
+              characterId: entry.characterId || entry.id,
+              type: entry.type === 'limited' ? 'limited' : 'permanent',
+            })),
+          ])
+        ),
+        info: month.info || '',
+      })),
+    };
+  }
+
+  function renderFutureCharactersLine(entries, readonly, monthId, categoryId) {
+    const wrap = document.createElement('div');
+    wrap.className = 'future-char-line';
+    entries.forEach((entry, index) => {
+      const item = document.createElement('div');
+      if (!readonly) {
+        item.setAttribute('role', 'button');
+        item.tabIndex = 0;
+        item.dataset.futureAction = 'replace-character';
+        item.dataset.monthId = monthId;
+        item.dataset.categoryId = categoryId;
+        item.dataset.index = String(index);
+      }
+      item.className = 'future-char-card';
+
+      const img = document.createElement('img');
+      img.alt = entry.name || '캐릭터';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.src = entry.imageUrl || `/api/characters/${encodeURIComponent(entry.characterId || entry.id)}/image`;
+
+      const name = document.createElement('span');
+      name.className = 'future-char-name';
+      name.textContent = entry.name || '캐릭터';
+
+      const type = document.createElement(readonly ? 'span' : 'button');
+      type.className = `future-type-badge is-${entry.type === 'limited' ? 'limited' : 'permanent'}`;
+      type.textContent = futureTypeLabel(entry.type);
+      if (!readonly) {
+        type.type = 'button';
+        type.dataset.futureAction = 'type';
+        type.dataset.monthId = monthId;
+        type.dataset.categoryId = categoryId;
+        type.dataset.index = String(index);
+        type.addEventListener('click', (e) => e.stopPropagation());
+      }
+
+      item.append(img, name, type);
+      wrap.appendChild(item);
+    });
+    return wrap;
+  }
+
+  function renderFutureMain(state) {
+    if (!futureMainSheet) return;
+    const data = ensureFutureState(state);
+    futureMainSheet.innerHTML = '';
+    if (data.months.length === 0) {
+      futureMainSheet.textContent = '등록된 미래시가 없습니다.';
+      return;
+    }
+    data.months.forEach((month) => {
+      const card = document.createElement('article');
+      card.className = 'future-month-card';
+      const title = document.createElement('h2');
+      title.textContent = month.label;
+      card.appendChild(title);
+      FUTURE_CATEGORIES.forEach((cat) => {
+        const entries = month.categories[cat.id] || [];
+        if (entries.length === 0) return;
+        const row = document.createElement('section');
+        row.className = 'future-main-row';
+        const label = document.createElement('h3');
+        label.textContent = cat.label;
+        row.appendChild(label);
+        row.appendChild(renderFutureCharactersLine(entries, true, month.id, cat.id));
+        card.appendChild(row);
+      });
+      if (month.info) {
+        const info = document.createElement('p');
+        info.className = 'future-month-info';
+        info.textContent = month.info;
+        card.appendChild(info);
+      }
+      futureMainSheet.appendChild(card);
+    });
+  }
+
+  function renderFutureAdmin() {
+    if (!futureAdminSheet) return;
+    futureSightState = ensureFutureState(futureSightState);
+    futureAdminSheet.innerHTML = '';
+
+    const table = document.createElement('div');
+    table.className = 'future-admin-table';
+    table.style.setProperty('--future-month-count', String(futureSightState.months.length));
+
+    const header = document.createElement('div');
+    header.className = 'future-admin-row future-admin-row--head';
+    header.appendChild(document.createElement('div'));
+    futureSightState.months.forEach((month, index) => {
+      const cell = document.createElement('div');
+      cell.className = 'future-admin-month-head';
+      const input = document.createElement('input');
+      input.className = 'future-month-label-input';
+      input.value = month.label;
+      input.ariaLabel = '월 이름';
+      input.addEventListener('input', () => {
+        month.label = input.value.trim() || `${index + 1}월`;
+      });
+      cell.appendChild(input);
+      header.appendChild(cell);
+    });
+    const addHead = document.createElement('div');
+    addHead.className = 'future-admin-add-month';
+    const addMonthBtn = document.createElement('button');
+    addMonthBtn.type = 'button';
+    addMonthBtn.className = 'btn btn-outline btn-sm';
+    addMonthBtn.textContent = '달 추가';
+    addMonthBtn.addEventListener('click', () => {
+      futureSightState.months.push(makeFutureMonth(futureSightState.months.length));
+      renderFutureAdmin();
+    });
+    addHead.appendChild(addMonthBtn);
+    header.appendChild(addHead);
+    table.appendChild(header);
+
+    FUTURE_CATEGORIES.forEach((cat) => {
+      const row = document.createElement('div');
+      row.className = 'future-admin-row';
+      const label = document.createElement('div');
+      label.className = 'future-admin-label';
+      label.textContent = cat.label;
+      row.appendChild(label);
+      futureSightState.months.forEach((month) => {
+        const cell = document.createElement('div');
+        cell.className = 'future-admin-cell';
+        cell.appendChild(renderFutureCharactersLine(month.categories[cat.id] || [], false, month.id, cat.id));
+        const actions = document.createElement('div');
+        actions.className = 'future-cell-actions';
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'future-mini-btn';
+        addBtn.textContent = '추가';
+        addBtn.dataset.futureAction = 'add-character';
+        addBtn.dataset.monthId = month.id;
+        addBtn.dataset.categoryId = cat.id;
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'future-mini-btn';
+        delBtn.textContent = '삭제';
+        delBtn.dataset.futureAction = 'delete-character';
+        delBtn.dataset.monthId = month.id;
+        delBtn.dataset.categoryId = cat.id;
+        actions.append(addBtn, delBtn);
+        cell.appendChild(actions);
+        row.appendChild(cell);
+      });
+      row.appendChild(document.createElement('div'));
+      table.appendChild(row);
+    });
+
+    const infoRow = document.createElement('div');
+    infoRow.className = 'future-admin-row';
+    const infoLabel = document.createElement('div');
+    infoLabel.className = 'future-admin-label';
+    infoLabel.textContent = '정보 입력';
+    infoRow.appendChild(infoLabel);
+    futureSightState.months.forEach((month) => {
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'future-info-cell';
+      cell.dataset.futureAction = 'info';
+      cell.dataset.monthId = month.id;
+      cell.textContent = month.info || '클릭하여 정보 입력';
+      infoRow.appendChild(cell);
+    });
+    infoRow.appendChild(document.createElement('div'));
+    table.appendChild(infoRow);
+    futureAdminSheet.appendChild(table);
+  }
+
+  async function loadFutureSight() {
+    try {
+      const data = await apiJson('/api/future-sight', { credentials: 'include', cache: 'no-store' });
+      futureSightState = ensureFutureState(data.data);
+      renderFutureMain(futureSightState);
+      if (sessionUserRole === 'admin') renderFutureAdmin();
+    } catch {
+      renderFutureMain(defaultFutureSightState);
+    }
+  }
+
+  async function loadFutureSightForAdmin() {
+    if (sessionUserRole !== 'admin') return;
+    if (!futureSightState) await loadFutureSight();
+    renderFutureAdmin();
+  }
+
+  async function openFutureCharacterPicker(target) {
+    if (!futureCharacterModal || !futureCharacterGrid) return;
+    futureCharacterTarget = target;
+    const list = await ensureCharactersLoaded();
+    futureCharacterGrid.innerHTML = '';
+    list.forEach((c) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'character-picker-btn';
+      btn.dataset.characterId = c.id;
+      const thumb = document.createElement('div');
+      thumb.className = 'character-thumb';
+      const img = document.createElement('img');
+      img.alt = c.name || '캐릭터';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.src = c.imageUrl || `/api/characters/${encodeURIComponent(c.id)}/image`;
+      const name = document.createElement('div');
+      name.className = 'character-name';
+      name.textContent = c.name || '';
+      thumb.appendChild(img);
+      btn.append(thumb, name);
+      btn.addEventListener('click', () => {
+        applyFutureCharacter(c);
+        closeFutureCharacterPicker();
+      });
+      futureCharacterGrid.appendChild(btn);
+    });
+    futureCharacterModal.hidden = false;
+    refreshBodyScrollLock();
+  }
+
+  function closeFutureCharacterPicker() {
+    if (!futureCharacterModal) return;
+    futureCharacterModal.hidden = true;
+    futureCharacterTarget = null;
+    refreshBodyScrollLock();
+  }
+
+  function applyFutureCharacter(character) {
+    if (!futureCharacterTarget || !futureSightState) return;
+    const month = findFutureMonth(futureCharacterTarget.monthId);
+    if (!month) return;
+    const list = month.categories[futureCharacterTarget.categoryId] || [];
+    const entry = {
+      characterId: character.id,
+      id: character.id,
+      name: character.name,
+      imageUrl: character.imageUrl,
+      type: 'permanent',
+    };
+    if (typeof futureCharacterTarget.index === 'number') list[futureCharacterTarget.index] = entry;
+    else list.push(entry);
+    month.categories[futureCharacterTarget.categoryId] = list;
+    renderFutureAdmin();
+  }
+
+  function openFutureTypePicker(target) {
+    futureTypeTarget = target;
+    if (!futureTypeModal) return;
+    futureTypeModal.hidden = false;
+    refreshBodyScrollLock();
+  }
+
+  function closeFutureTypePicker() {
+    if (!futureTypeModal) return;
+    futureTypeModal.hidden = true;
+    futureTypeTarget = null;
+    refreshBodyScrollLock();
+  }
+
+  function applyFutureType(type) {
+    if (!futureTypeTarget) return;
+    const month = findFutureMonth(futureTypeTarget.monthId);
+    const entry = month?.categories?.[futureTypeTarget.categoryId]?.[futureTypeTarget.index];
+    if (!entry) return;
+    entry.type = type === 'limited' ? 'limited' : 'permanent';
+    closeFutureTypePicker();
+    renderFutureAdmin();
+  }
+
+  function openFutureInfoEditor(monthId) {
+    const month = findFutureMonth(monthId);
+    if (!futureInfoModal || !futureInfoInput || !month) return;
+    futureInfoMonthId = monthId;
+    futureInfoInput.value = month.info || '';
+    futureInfoModal.hidden = false;
+    refreshBodyScrollLock();
+    futureInfoInput.focus();
+  }
+
+  function closeFutureInfoEditor() {
+    if (!futureInfoModal) return;
+    futureInfoModal.hidden = true;
+    futureInfoMonthId = null;
+    refreshBodyScrollLock();
+  }
+
+  function saveFutureInfoEditor() {
+    const month = futureInfoMonthId ? findFutureMonth(futureInfoMonthId) : null;
+    if (month && futureInfoInput) {
+      month.info = futureInfoInput.value.trim();
+      renderFutureAdmin();
+    }
+    closeFutureInfoEditor();
+  }
+
+  const defaultFutureSightState = ensureFutureState(null);
 
   document.querySelectorAll('.mypage-nav-btn[data-mypage-tab]').forEach((btn) => {
     btn.addEventListener('click', () => setMypageTab(btn.dataset.mypageTab || 'profile'));
+  });
+
+  adminToggle?.addEventListener('click', () => {
+    const willOpen = Boolean(adminSubnav?.hidden);
+    if (adminSubnav) adminSubnav.hidden = !willOpen;
+    adminToggle.classList.toggle('is-active', willOpen);
+    if (willOpen) setMypageTab('admin-future');
+  });
+
+  futureAdminSheet?.addEventListener('click', (e) => {
+    const target = e.target instanceof Element ? e.target.closest('[data-future-action]') : null;
+    if (!target) return;
+    const action = target.dataset.futureAction;
+    const monthId = target.dataset.monthId || '';
+    const categoryId = target.dataset.categoryId || '';
+    const indexRaw = target.dataset.index;
+    const index = typeof indexRaw === 'string' ? Number(indexRaw) : NaN;
+    if (action === 'add-character') {
+      void openFutureCharacterPicker({ monthId, categoryId });
+    } else if (action === 'replace-character' && Number.isInteger(index)) {
+      void openFutureCharacterPicker({ monthId, categoryId, index });
+    } else if (action === 'delete-character') {
+      const month = findFutureMonth(monthId);
+      const list = month?.categories?.[categoryId];
+      if (Array.isArray(list)) {
+        list.pop();
+        renderFutureAdmin();
+      }
+    } else if (action === 'type' && Number.isInteger(index)) {
+      openFutureTypePicker({ monthId, categoryId, index });
+    } else if (action === 'info') {
+      openFutureInfoEditor(monthId);
+    }
+  });
+
+  futureAdminSave?.addEventListener('click', async () => {
+    if (sessionUserRole !== 'admin') return;
+    futureAdminSave.disabled = true;
+    if (futureAdminStatus) {
+      futureAdminStatus.textContent = '저장 중입니다...';
+      futureAdminStatus.classList.remove('is-ok', 'is-warn');
+    }
+    try {
+      const data = await apiJson('/api/admin/future-sight', {
+        method: 'PUT',
+        credentials: 'include',
+        body: JSON.stringify({ data: futurePayloadForSave() }),
+      });
+      futureSightState = ensureFutureState(data.data);
+      renderFutureAdmin();
+      renderFutureMain(futureSightState);
+      if (futureAdminStatus) {
+        futureAdminStatus.textContent = '변경 사항이 저장되었습니다.';
+        futureAdminStatus.classList.add('is-ok');
+      }
+    } catch (err) {
+      if (futureAdminStatus) {
+        futureAdminStatus.textContent = err instanceof Error ? err.message : String(err);
+        futureAdminStatus.classList.add('is-warn');
+      }
+    } finally {
+      futureAdminSave.disabled = false;
+    }
+  });
+
+  document.getElementById('future-character-modal-close')?.addEventListener('click', closeFutureCharacterPicker);
+  futureCharacterModal?.querySelectorAll('[data-close-future-character]').forEach((el) => {
+    el.addEventListener('click', closeFutureCharacterPicker);
+  });
+  futureCharacterModal?.addEventListener('click', (e) => {
+    if (e.target === futureCharacterModal) closeFutureCharacterPicker();
+  });
+  futureTypeModal?.querySelectorAll('[data-close-future-type]').forEach((el) => {
+    el.addEventListener('click', closeFutureTypePicker);
+  });
+  futureTypeModal?.addEventListener('click', (e) => {
+    if (e.target === futureTypeModal) closeFutureTypePicker();
+  });
+  futureTypeModal?.querySelectorAll('[data-future-type-choice]').forEach((btn) => {
+    btn.addEventListener('click', () => applyFutureType(btn.dataset.futureTypeChoice || 'permanent'));
+  });
+  futureInfoCancel?.addEventListener('click', closeFutureInfoEditor);
+  futureInfoSave?.addEventListener('click', saveFutureInfoEditor);
+  futureInfoModal?.querySelectorAll('[data-close-future-info]').forEach((el) => {
+    el.addEventListener('click', closeFutureInfoEditor);
+  });
+  futureInfoModal?.addEventListener('click', (e) => {
+    if (e.target === futureInfoModal) closeFutureInfoEditor();
   });
 
   headerOpenMypage?.addEventListener('click', () => {
@@ -906,6 +1403,8 @@
 
   function renderLoggedOutHeader() {
     mypageSessionUserId = '';
+    sessionUserRole = 'guest';
+    setAdminNavigationVisible(false);
     setHeaderActionsSlotMode(false);
     if (headerGuest) {
       headerGuest.hidden = false;
@@ -939,6 +1438,8 @@
     }
     if (headerUserNicknameEl) headerUserNicknameEl.textContent = user.nickname || '—';
     mypageSessionUserId = user.id;
+    sessionUserRole = user.role === 'admin' ? 'admin' : 'user';
+    setAdminNavigationVisible(sessionUserRole === 'admin');
 
     const imgSrc = typeof user.profileImage === 'string' ? user.profileImage : '';
     if (imgSrc && /^data:image\//.test(imgSrc)) {
@@ -1045,6 +1546,7 @@
   window.addEventListener('load', () => {
     refreshSessionHeader();
     refreshPublicRuntimeConfig();
+    loadFutureSight();
   });
 
   document.addEventListener('keydown', (e) => {
@@ -1056,6 +1558,21 @@
     }
     if (ownedCharactersModal && !ownedCharactersModal.hidden) {
       closeOwnedCharactersModal();
+      e.preventDefault();
+      return;
+    }
+    if (futureCharacterModal && !futureCharacterModal.hidden) {
+      closeFutureCharacterPicker();
+      e.preventDefault();
+      return;
+    }
+    if (futureTypeModal && !futureTypeModal.hidden) {
+      closeFutureTypePicker();
+      e.preventDefault();
+      return;
+    }
+    if (futureInfoModal && !futureInfoModal.hidden) {
+      closeFutureInfoEditor();
       e.preventDefault();
       return;
     }
