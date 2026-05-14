@@ -417,22 +417,43 @@ app.get('/api/me/owned-characters', async (req, res) => {
   }
   if (!requirePool(res)) return;
   try {
-    const r = await pool.query(
-      `SELECT c.id, c.name
-       FROM user_owned_characters uoc
-       INNER JOIN characters c ON c.id = uoc.character_id
-       WHERE uoc.user_id = $1::uuid
-       ORDER BY c.name ASC`,
-      [userId]
-    );
-    const characters = r.rows.map((row) => {
-      const id = String(row.id);
-      return {
-        id,
-        name: row.name,
-        imageUrl: `/api/characters/${id}/image`,
-      };
-    });
+    let characters;
+    if (characterLibrary) {
+      const r = await pool.query(
+        `SELECT character_id AS id FROM user_owned_characters WHERE user_id = $1::uuid`,
+        [userId]
+      );
+      characters = [];
+      for (const row of r.rows) {
+        const id = String(row.id);
+        const entry = characterLibrary.byId.get(id);
+        if (!entry) continue;
+        characters.push({
+          id,
+          name: entry.name,
+          imageUrl: entry.imageUrl || `/api/characters/${id}/image`,
+        });
+      }
+      characters.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+    } else {
+      const r = await pool.query(
+        `SELECT c.id, c.name
+         FROM user_owned_characters uoc
+         INNER JOIN characters c ON c.id = uoc.character_id
+         WHERE uoc.user_id = $1::uuid
+         ORDER BY c.name ASC`,
+        [userId]
+      );
+      characters = r.rows.map((row) => {
+        const id = String(row.id);
+        return {
+          id,
+          name: row.name,
+          imageUrl: `/api/characters/${id}/image`,
+        };
+      });
+    }
+    res.setHeader('Cache-Control', 'private, no-store');
     res.json({ ok: true, characters });
   } catch (err) {
     console.error(err);

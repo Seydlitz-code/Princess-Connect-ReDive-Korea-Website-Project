@@ -638,11 +638,26 @@
   const ownedUpdateGrid = document.getElementById('owned-update-character-grid');
   const ownedModalScroll = ownedCharactersModal?.querySelector('.owned-characters-modal-scroll');
   const ownedUpdateForm = document.getElementById('owned-update-form');
-  const ownedUpdateSave = document.getElementById('owned-update-save');
   const ownedUpdateCancel = document.getElementById('owned-update-cancel');
   const ownedUpdateError = document.getElementById('owned-update-error');
 
   let ownedUpdateSelection = new Set();
+
+  const MYPAGE_OWNED_EMPTY_DEFAULT = '보유 캐릭터를 등록하지 않았습니다.';
+
+  /** 선택 상태는 UI(`is-selected`)가 단일 출처. Set 불일치 시에도 저장이 비지 않도록 DOM에서 수집한다. */
+  function ownedUpdateSelectedIdsFromDom() {
+    if (!ownedUpdateGrid) return [];
+    const out = [];
+    const seen = new Set();
+    ownedUpdateGrid.querySelectorAll('.character-picker-btn.is-selected').forEach((btn) => {
+      const id = String(btn.dataset.characterId || '').trim();
+      if (!id || seen.has(id)) return;
+      seen.add(id);
+      out.push(id);
+    });
+    return out;
+  }
 
   function refreshBodyScrollLock() {
     const lock =
@@ -1430,14 +1445,23 @@
   async function refreshMypageOwnedList() {
     if (!mypageOwnedGrid || !mypageOwnedEmpty || !mypageOwnedGridWrap) return;
     try {
-      const res = await fetch('/api/me/owned-characters', { credentials: 'include' });
+      const res = await fetch('/api/me/owned-characters', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        const errText =
+          data && typeof data.error === 'string' && data.error.trim()
+            ? data.error
+            : `보유 목록을 불러오지 못했습니다. (${res.status})`;
+        mypageOwnedEmpty.textContent = errText;
         mypageOwnedEmpty.hidden = false;
         mypageOwnedGridWrap.hidden = true;
         mypageOwnedGrid.innerHTML = '';
         return;
       }
+      mypageOwnedEmpty.textContent = MYPAGE_OWNED_EMPTY_DEFAULT;
       const list = Array.isArray(data.characters) ? data.characters : [];
       if (list.length === 0) {
         mypageOwnedEmpty.hidden = false;
@@ -1449,6 +1473,7 @@
         renderOwnedDisplayGrid(mypageOwnedGrid, list);
       }
     } catch {
+      mypageOwnedEmpty.textContent = '보유 목록을 불러오는 중 네트워크 오류가 발생했습니다.';
       mypageOwnedEmpty.hidden = false;
       mypageOwnedGridWrap.hidden = true;
       mypageOwnedGrid.innerHTML = '';
@@ -1463,7 +1488,10 @@
     }
     try {
       const list = await ensureCharactersLoaded();
-      const ownedRes = await fetch('/api/me/owned-characters', { credentials: 'include' });
+      const ownedRes = await fetch('/api/me/owned-characters', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
       const ownedData = await ownedRes.json().catch(() => ({}));
       if (!ownedRes.ok) {
         throw new Error(ownedData.error || '보유 목록을 불러올 수 없습니다.');
@@ -1506,7 +1534,8 @@
 
     if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
 
-    const characterIds = [...ownedUpdateSelection];
+    const characterIds = ownedUpdateSelectedIdsFromDom();
+    ownedUpdateSelection = new Set(characterIds);
     const originalLabel = saveBtn.textContent;
     saveBtn.disabled = true;
     saveBtn.textContent = '저장 중…';
@@ -1515,6 +1544,7 @@
       const res = await fetch('/api/me/owned-characters', {
         method: 'PATCH',
         credentials: 'include',
+        cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ characterIds }),
       });
@@ -1540,11 +1570,11 @@
     }
   }
 
-  /* 버튼 직접 클릭 */
-  ownedUpdateSave?.addEventListener('click', () => { void handleOwnedUpdateSave(); });
-
-  /* 혹시 form submit이 발생하더라도 페이지 이동 방지 */
-  ownedUpdateForm?.addEventListener('submit', (e) => { e.preventDefault(); });
+  /* 저장은 폼 submit 한 경로로만 처리(Enter·접근성·버튼 타입 실수에 대비) */
+  ownedUpdateForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    void handleOwnedUpdateSave();
+  });
 
   signupNext?.addEventListener('click', async () => {
     const err = getFirstSignupStep1ValidationError();
