@@ -787,14 +787,30 @@
     if (adminToggle) adminToggle.classList.toggle('is-active', show && adminSubnav && !adminSubnav.hidden);
   }
 
-  function cloneFutureState(state) {
-    return JSON.parse(JSON.stringify(state || { version: 1, months: [] }));
+  function currentMonthNumber() {
+    return new Date().getMonth() + 1;
   }
 
-  function makeFutureMonth(index) {
+  function normalizeMonthNumber(value) {
+    const n = Number(value);
+    return Number.isInteger(n) && n >= 1 && n <= 12 ? n : null;
+  }
+
+  function parseMonthNumber(label) {
+    const m = String(label || '').match(/(\d{1,2})\s*월/);
+    return m ? normalizeMonthNumber(m[1]) : null;
+  }
+
+  function addMonthsNumber(baseMonth, offset) {
+    return ((baseMonth - 1 + offset) % 12) + 1;
+  }
+
+  function makeFutureMonth(index, baseMonth = currentMonthNumber()) {
+    const monthNumber = addMonthsNumber(baseMonth, index);
     return {
       id: `month-${Date.now()}-${index}`,
-      label: `${index + 1}월`,
+      monthNumber,
+      label: `${monthNumber}월`,
       categories: { new: [], rerun: [], sixStar: [], special: [] },
       info: '',
     };
@@ -805,6 +821,10 @@
     const months = Array.isArray(src.months) ? src.months : [];
     const normalized = months.map((month, idx) => {
       const categories = month.categories && typeof month.categories === 'object' ? month.categories : {};
+      const monthNumber =
+        normalizeMonthNumber(month.monthNumber) ||
+        parseMonthNumber(month.label) ||
+        addMonthsNumber(currentMonthNumber(), idx);
       const normalizeEntries = (items) =>
         (Array.isArray(items) ? items : []).map((item) => ({
           characterId: String(item.characterId || item.id || '').trim(),
@@ -815,7 +835,8 @@
         })).filter((item) => item.characterId || item.id);
       return {
         id: String(month.id || `month-${idx + 1}`),
-        label: String(month.label || `${idx + 1}월`),
+        monthNumber,
+        label: String(month.label || `${monthNumber}월`),
         categories: {
           new: normalizeEntries(categories.new),
           rerun: normalizeEntries(categories.rerun),
@@ -843,6 +864,7 @@
       version: 1,
       months: state.months.map((month) => ({
         id: month.id,
+        monthNumber: month.monthNumber,
         label: month.label,
         categories: Object.fromEntries(
           FUTURE_CATEGORIES.map((cat) => [
@@ -909,31 +931,45 @@
       futureMainSheet.textContent = '등록된 미래시가 없습니다.';
       return;
     }
+    const table = document.createElement('div');
+    table.className = 'future-main-table';
+
+    const header = document.createElement('div');
+    header.className = 'future-main-table-row future-main-table-row--head';
+    const monthHead = document.createElement('div');
+    monthHead.textContent = '월';
+    header.appendChild(monthHead);
+    FUTURE_CATEGORIES.forEach((cat) => {
+      const cell = document.createElement('div');
+      cell.textContent = cat.label;
+      header.appendChild(cell);
+    });
+    const infoHead = document.createElement('div');
+    infoHead.textContent = '정보';
+    header.appendChild(infoHead);
+    table.appendChild(header);
+
     data.months.forEach((month) => {
-      const card = document.createElement('article');
-      card.className = 'future-month-card';
-      const title = document.createElement('h2');
-      title.textContent = month.label;
-      card.appendChild(title);
+      const row = document.createElement('article');
+      row.className = 'future-main-table-row';
+      const monthCell = document.createElement('h2');
+      monthCell.className = 'future-main-month';
+      monthCell.textContent = month.label;
+      row.appendChild(monthCell);
       FUTURE_CATEGORIES.forEach((cat) => {
         const entries = month.categories[cat.id] || [];
-        if (entries.length === 0) return;
-        const row = document.createElement('section');
-        row.className = 'future-main-row';
-        const label = document.createElement('h3');
-        label.textContent = cat.label;
-        row.appendChild(label);
-        row.appendChild(renderFutureCharactersLine(entries, true, month.id, cat.id));
-        card.appendChild(row);
+        const cell = document.createElement('section');
+        cell.className = 'future-main-cell';
+        if (entries.length > 0) cell.appendChild(renderFutureCharactersLine(entries, true, month.id, cat.id));
+        row.appendChild(cell);
       });
-      if (month.info) {
-        const info = document.createElement('p');
-        info.className = 'future-month-info';
-        info.textContent = month.info;
-        card.appendChild(info);
-      }
-      futureMainSheet.appendChild(card);
+      const info = document.createElement('p');
+      info.className = 'future-month-info';
+      info.textContent = month.info || '';
+      row.appendChild(info);
+      table.appendChild(row);
     });
+    futureMainSheet.appendChild(table);
   }
 
   function renderFutureAdmin() {
@@ -943,46 +979,41 @@
 
     const table = document.createElement('div');
     table.className = 'future-admin-table';
-    table.style.setProperty('--future-month-count', String(futureSightState.months.length));
 
     const header = document.createElement('div');
     header.className = 'future-admin-row future-admin-row--head';
-    header.appendChild(document.createElement('div'));
-    futureSightState.months.forEach((month, index) => {
+    const monthHead = document.createElement('div');
+    monthHead.textContent = '달';
+    header.appendChild(monthHead);
+    FUTURE_CATEGORIES.forEach((cat) => {
       const cell = document.createElement('div');
-      cell.className = 'future-admin-month-head';
+      cell.textContent = cat.label;
+      header.appendChild(cell);
+    });
+    const infoHead = document.createElement('div');
+    infoHead.textContent = '정보 입력';
+    header.appendChild(infoHead);
+    table.appendChild(header);
+
+    futureSightState.months.forEach((month, index) => {
+      const row = document.createElement('div');
+      row.className = 'future-admin-row';
+
+      const monthCell = document.createElement('div');
+      monthCell.className = 'future-admin-month-head';
       const input = document.createElement('input');
       input.className = 'future-month-label-input';
       input.value = month.label;
       input.ariaLabel = '월 이름';
       input.addEventListener('input', () => {
-        month.label = input.value.trim() || `${index + 1}월`;
+        const nextLabel = input.value.trim() || `${month.monthNumber || addMonthsNumber(currentMonthNumber(), index)}월`;
+        month.label = nextLabel;
+        month.monthNumber = parseMonthNumber(nextLabel) || month.monthNumber;
       });
-      cell.appendChild(input);
-      header.appendChild(cell);
-    });
-    const addHead = document.createElement('div');
-    addHead.className = 'future-admin-add-month';
-    const addMonthBtn = document.createElement('button');
-    addMonthBtn.type = 'button';
-    addMonthBtn.className = 'btn btn-outline btn-sm';
-    addMonthBtn.textContent = '달 추가';
-    addMonthBtn.addEventListener('click', () => {
-      futureSightState.months.push(makeFutureMonth(futureSightState.months.length));
-      renderFutureAdmin();
-    });
-    addHead.appendChild(addMonthBtn);
-    header.appendChild(addHead);
-    table.appendChild(header);
+      monthCell.appendChild(input);
+      row.appendChild(monthCell);
 
-    FUTURE_CATEGORIES.forEach((cat) => {
-      const row = document.createElement('div');
-      row.className = 'future-admin-row';
-      const label = document.createElement('div');
-      label.className = 'future-admin-label';
-      label.textContent = cat.label;
-      row.appendChild(label);
-      futureSightState.months.forEach((month) => {
+      FUTURE_CATEGORIES.forEach((cat) => {
         const cell = document.createElement('div');
         cell.className = 'future-admin-cell';
         cell.appendChild(renderFutureCharactersLine(month.categories[cat.id] || [], false, month.id, cat.id));
@@ -1006,27 +1037,37 @@
         cell.appendChild(actions);
         row.appendChild(cell);
       });
-      row.appendChild(document.createElement('div'));
+
+      const infoCell = document.createElement('button');
+      infoCell.type = 'button';
+      infoCell.className = 'future-info-cell';
+      infoCell.dataset.futureAction = 'info';
+      infoCell.dataset.monthId = month.id;
+      infoCell.textContent = month.info || '클릭하여 정보 입력';
+      row.appendChild(infoCell);
       table.appendChild(row);
     });
 
-    const infoRow = document.createElement('div');
-    infoRow.className = 'future-admin-row';
-    const infoLabel = document.createElement('div');
-    infoLabel.className = 'future-admin-label';
-    infoLabel.textContent = '정보 입력';
-    infoRow.appendChild(infoLabel);
-    futureSightState.months.forEach((month) => {
-      const cell = document.createElement('button');
-      cell.type = 'button';
-      cell.className = 'future-info-cell';
-      cell.dataset.futureAction = 'info';
-      cell.dataset.monthId = month.id;
-      cell.textContent = month.info || '클릭하여 정보 입력';
-      infoRow.appendChild(cell);
+    const addRow = document.createElement('div');
+    addRow.className = 'future-admin-row future-admin-row--add';
+    const addCell = document.createElement('div');
+    addCell.className = 'future-admin-add-month';
+    addCell.textContent = '월 추가 구역';
+    const addAction = document.createElement('div');
+    addAction.className = 'future-admin-add-action';
+    const addMonthBtn = document.createElement('button');
+    addMonthBtn.type = 'button';
+    addMonthBtn.className = 'btn btn-outline btn-sm';
+    addMonthBtn.textContent = '달 추가';
+    addMonthBtn.addEventListener('click', () => {
+      const lastMonth = futureSightState.months[futureSightState.months.length - 1];
+      const baseMonth = normalizeMonthNumber(lastMonth?.monthNumber) || parseMonthNumber(lastMonth?.label) || currentMonthNumber();
+      futureSightState.months.push(makeFutureMonth(1, baseMonth));
+      renderFutureAdmin();
     });
-    infoRow.appendChild(document.createElement('div'));
-    table.appendChild(infoRow);
+    addAction.appendChild(addMonthBtn);
+    addRow.append(addCell, addAction);
+    table.appendChild(addRow);
     futureAdminSheet.appendChild(table);
   }
 
@@ -1547,6 +1588,9 @@
     refreshSessionHeader();
     refreshPublicRuntimeConfig();
     loadFutureSight();
+    window.setInterval(() => {
+      void loadFutureSight();
+    }, 24 * 60 * 60 * 1000);
   });
 
   document.addEventListener('keydown', (e) => {

@@ -88,9 +88,33 @@ let lastDbInitError = null;
 let characterLibrary = null;
 
 const MAX_OWNED_CHARACTERS_PER_REGISTER = 500;
+const FUTURE_SIGHT_MONTH_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 function nicknameCodepointLen(s) {
   return [...String(s || '')].length;
+}
+
+function currentKoreanMonthNumber(now = new Date()) {
+  return now.getMonth() + 1;
+}
+
+function normalizeMonthNumber(value) {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > 12) return null;
+  return n;
+}
+
+function parseMonthNumber(label) {
+  const m = String(label || '').match(/(\d{1,2})\s*월/);
+  return m ? normalizeMonthNumber(m[1]) : null;
+}
+
+function addMonthsNumber(baseMonth, offset) {
+  return ((baseMonth - 1 + offset) % 12) + 1;
+}
+
+function monthLabel(monthNumber) {
+  return `${monthNumber}월`;
 }
 
 async function loadAdminUserRows(pgPool) {
@@ -200,12 +224,15 @@ async function requireAdminUser(req, res) {
 }
 
 function defaultFutureSightState() {
+  const monthNumber = currentKoreanMonthNumber();
   return {
     version: 1,
+    lastMonthCheckedAt: null,
     months: [
       {
         id: 'month-1',
-        label: '1월',
+        monthNumber,
+        label: monthLabel(monthNumber),
         categories: {
           new: [],
           rerun: [],
@@ -223,6 +250,10 @@ function normalizeFutureSightState(value) {
   const months = rawMonths.slice(0, 36).map((month, index) => {
     const src = month && typeof month === 'object' ? month : {};
     const categories = src.categories && typeof src.categories === 'object' ? src.categories : {};
+    const monthNumber =
+      normalizeMonthNumber(src.monthNumber) ||
+      parseMonthNumber(src.label) ||
+      addMonthsNumber(currentKoreanMonthNumber(), index);
     const normalizeEntries = (items) =>
       (Array.isArray(items) ? items : []).slice(0, 24).map((item) => {
         const obj = item && typeof item === 'object' ? item : {};
@@ -234,7 +265,8 @@ function normalizeFutureSightState(value) {
       });
     return {
       id: String(src.id || `month-${index + 1}`).trim() || `month-${index + 1}`,
-      label: String(src.label || `${index + 1}월`).trim() || `${index + 1}월`,
+      monthNumber,
+      label: String(src.label || monthLabel(monthNumber)).trim() || monthLabel(monthNumber),
       categories: {
         new: normalizeEntries(categories.new),
         rerun: normalizeEntries(categories.rerun),
@@ -244,7 +276,48 @@ function normalizeFutureSightState(value) {
       info: String(src.info || '').slice(0, 2000),
     };
   });
-  return { version: 1, months: months.length > 0 ? months : defaultFutureSightState().months };
+  const lastMonthCheckedAt =
+    value && typeof value === 'object' && typeof value.lastMonthCheckedAt === 'string'
+      ? value.lastMonthCheckedAt
+      : null;
+  return { version: 1, lastMonthCheckedAt, months: months.length > 0 ? months : defaultFutureSightState().months };
+}
+
+function applyFutureSightMonthMaintenance(value, now = new Date()) {
+  const state = normalizeFutureSightState(value);
+  const lastCheckedMs = state.lastMonthCheckedAt ? Date.parse(state.lastMonthCheckedAt) : NaN;
+  if (Number.isFinite(lastCheckedMs) && now.getTime() - lastCheckedMs < FUTURE_SIGHT_MONTH_CHECK_INTERVAL_MS) {
+    return { state, changed: false };
+  }
+
+  const currentMonth = currentKoreanMonthNumber(now);
+  let months = state.months;
+  const currentIndex = months.findIndex((month) => month.monthNumber === currentMonth || parseMonthNumber(month.label) === currentMonth);
+
+  if (currentIndex > 0) {
+    months = months.slice(currentIndex);
+  } else if (currentIndex === -1) {
+    months = months.map((month, index) => ({
+      ...month,
+      monthNumber: addMonthsNumber(currentMonth, index),
+      label: monthLabel(addMonthsNumber(currentMonth, index)),
+    }));
+  }
+
+  if (months.length === 0) months = defaultFutureSightState().months;
+  months = months.map((month, index) => {
+    const monthNumber = addMonthsNumber(currentMonth, index);
+    return {
+      ...month,
+      monthNumber,
+      label: monthLabel(monthNumber),
+    };
+  });
+
+  return {
+    state: { version: 1, lastMonthCheckedAt: now.toISOString(), months },
+    changed: true,
+  };
 }
 
 async function hydrateFutureSightState(pgPool, state) {
@@ -1303,7 +1376,16 @@ app.get('/api/future-sight', async (req, res) => {
   try {
     const r = await pool.query('SELECT data, updated_at AS "updatedAt" FROM site_future_sight WHERE id = 1 LIMIT 1');
     const raw = r.rowCount > 0 ? r.rows[0].data : defaultFutureSightState();
-    const data = await hydrateFutureSightState(pool, raw);
+    const maintained = applyFutureSightMonthMaintenance(raw);
+    if (maintained.changed || r.rowCount === 0) {
+      await pool.query(
+        `INSERT INTO site_future_sight (id, data, updated_at)
+         VALUES (1, $1::jsonb, NOW())
+         ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
+        [JSON.stringify(maintained.state)]
+      );
+    }
+    const data = await hydrateFutureSightState(pool, maintained.state);
     res.setHeader('Cache-Control', 'private, no-store');
     res.json({ ok: true, data, updatedAt: r.rows[0]?.updatedAt || null });
   } catch (err) {
@@ -1324,7 +1406,7 @@ app.put('/api/admin/future-sight', async (req, res) => {
   if (!admin) return;
 
   try {
-    const state = normalizeFutureSightState(req.body && req.body.data);
+    const state = applyFutureSightMonthMaintenance(req.body && req.body.data).state;
     const validIds = await loadValidCharacterIdSet(pool);
     for (const month of state.months) {
       for (const entries of Object.values(month.categories)) {

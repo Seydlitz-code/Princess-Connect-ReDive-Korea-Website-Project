@@ -590,50 +590,66 @@ body.is-mypage-route .mypage-shell {
 }
 
 .future-main-sheet {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.future-month-card {
-  border: 1px solid #bdbdbd;
-  background: #fff;
-  padding: 12px;
   overflow-x: auto;
 }
 
-.future-month-card h2 {
-  margin: 0 0 10px;
-  font-size: 1.05rem;
+.future-main-table {
+  min-width: 980px;
+  border: 1px solid #9d9d9d;
+  background: #fff;
+}
+
+.future-main-table-row {
+  display: grid;
+  grid-template-columns: 74px repeat(4, minmax(178px, 1fr)) minmax(190px, 1.1fr);
+  min-height: 112px;
+  border-bottom: 1px solid #9d9d9d;
+}
+
+.future-main-table-row:last-child {
+  border-bottom: none;
+}
+
+.future-main-table-row > * {
+  border-right: 1px solid #9d9d9d;
+  min-width: 0;
+}
+
+.future-main-table-row > *:last-child {
+  border-right: none;
+}
+
+.future-main-table-row--head {
+  min-height: auto;
+  background: #ececec;
   font-weight: 900;
   text-align: center;
-  border-bottom: 2px solid #111;
-  padding-bottom: 6px;
 }
 
-.future-main-row {
-  display: grid;
-  grid-template-columns: 128px minmax(0, 1fr);
-  gap: 10px;
-  align-items: start;
-  border-top: 1px solid #d7d7d7;
-  padding: 8px 0;
+.future-main-table-row--head > * {
+  padding: 7px 6px;
 }
 
-.future-main-row h3 {
+.future-main-month {
   margin: 0;
-  font-size: 0.82rem;
+  display: grid;
+  place-items: center;
+  background: #efefef;
+  font-size: 0.95rem;
   font-weight: 900;
-  word-break: keep-all;
+}
+
+.future-main-cell {
+  padding: 8px;
 }
 
 .future-char-line {
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   min-width: 0;
-  overflow-x: auto;
+  overflow: visible;
   padding-bottom: 2px;
 }
 
@@ -700,7 +716,8 @@ button.future-type-badge {
 }
 
 .future-month-info {
-  margin: 8px 0 0;
+  margin: 0;
+  padding: 8px;
   white-space: pre-wrap;
   font-size: 0.82rem;
   color: #333;
@@ -750,7 +767,7 @@ button.future-type-badge {
 
 .future-admin-row {
   display: grid;
-  grid-template-columns: 120px repeat(var(--future-month-count, 1), minmax(150px, 1fr)) 96px;
+  grid-template-columns: 78px repeat(4, minmax(168px, 1fr)) minmax(190px, 1.1fr);
   border-bottom: 1px solid #bdbdbd;
 }
 
@@ -766,6 +783,11 @@ button.future-type-badge {
 .future-admin-row--head {
   background: #f5f5f5;
   font-weight: 900;
+  text-align: center;
+}
+
+.future-admin-row--head > * {
+  padding: 8px;
 }
 
 .future-admin-month-head,
@@ -795,7 +817,7 @@ button.future-type-badge {
 
 .future-admin-cell {
   padding: 8px;
-  min-height: 116px;
+  min-height: 132px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -831,6 +853,25 @@ button.future-type-badge {
   cursor: pointer;
   font: inherit;
   font-size: 0.8rem;
+}
+
+.future-admin-row--add {
+  grid-template-columns: 78px 1fr;
+  min-height: auto;
+}
+
+.future-admin-add-month {
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  background: #fafafa;
+}
+
+.future-admin-add-action {
+  grid-column: 2 / -1;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
 }
 
 .future-info-cell:empty::before {
