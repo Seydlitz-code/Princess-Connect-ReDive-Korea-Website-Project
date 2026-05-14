@@ -42,6 +42,39 @@ const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 72;
 const MAX_PROFILE_DATA_URL_LENGTH = 600_000;
 
+/** 회원가입 시 업로드가 없으면 DB에 저장할 데이터 URL (`scripts/default-profile.png`) */
+let defaultSignupProfileDataUrlCache = null;
+let defaultSignupProfileDataUrlTried = false;
+
+function getDefaultSignupProfileDataUrl() {
+  if (defaultSignupProfileDataUrlTried) return defaultSignupProfileDataUrlCache;
+  defaultSignupProfileDataUrlTried = true;
+  const abs = path.join(__dirname, 'scripts', 'default-profile.png');
+  try {
+    if (!fs.existsSync(abs)) {
+      console.warn('[signup] 기본 프로필 이미지 파일이 없습니다:', abs);
+      defaultSignupProfileDataUrlCache = null;
+      return null;
+    }
+    const buf = fs.readFileSync(abs);
+    const dataUrl = `data:image/png;base64,${buf.toString('base64')}`;
+    if (dataUrl.length > MAX_PROFILE_DATA_URL_LENGTH) {
+      console.warn('[signup] 기본 프로필 이미지가 허용 크기를 초과해 사용하지 않습니다.');
+      defaultSignupProfileDataUrlCache = null;
+      return null;
+    }
+    defaultSignupProfileDataUrlCache = dataUrl;
+    return dataUrl;
+  } catch (err) {
+    console.warn(
+      '[signup] 기본 프로필 이미지를 읽지 못했습니다:',
+      err && err.message ? err.message : err
+    );
+    defaultSignupProfileDataUrlCache = null;
+    return null;
+  }
+}
+
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -977,7 +1010,8 @@ app.post('/api/register', async (req, res) => {
   const username = String(body.username || '').trim();
   const nickname = String(body.nickname || '').trim();
   const password = String(body.password || '');
-  const profileImage = body.profileImage == null ? null : String(body.profileImage);
+  const profileImageRaw = body.profileImage == null ? '' : String(body.profileImage).trim();
+  const profileImage = profileImageRaw === '' ? null : profileImageRaw;
 
   if (!USERNAME_RE.test(username)) {
     res.status(400).json({
@@ -1089,6 +1123,7 @@ app.post('/api/register', async (req, res) => {
     const nb = nicknameBlindIndex(nickname);
     const uCipher = encryptUtf8(normalizeUsername(username));
     const nCipher = encryptUtf8(nickname.trim());
+    const profileForInsert = profileImage || getDefaultSignupProfileDataUrl();
 
     await client.query('BEGIN');
     let userRow;
@@ -1097,7 +1132,7 @@ app.post('/api/register', async (req, res) => {
         `INSERT INTO users (username, nickname, username_blind, nickname_blind, username_cipher, nickname_cipher, password_hash, profile_image)
          VALUES (NULL, NULL, $1, $2, $3, $4, $5, $6)
          RETURNING id, username_cipher, nickname_cipher, created_at AS "createdAt"`,
-        [ub, nb, uCipher, nCipher, passwordHash, profileImage || null]
+        [ub, nb, uCipher, nCipher, passwordHash, profileForInsert || null]
       );
       userRow = ins.rows[0];
 

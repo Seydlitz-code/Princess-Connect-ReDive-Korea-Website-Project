@@ -1035,10 +1035,11 @@
   headerLogoutBtn?.addEventListener('click', async () => {
     try {
       await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-    } finally {
-      renderLoggedOutHeader();
-      openLoginBtn?.focus();
+    } catch {
+      /* 네트워크 오류: 세션 쿠키 제거 응답을 못 받았을 수 있음. 이동 후 /api/me 기준으로 다시 판별 */
     }
+    /* 서버가 Set-Cookie로 세션을 지운 뒤, 메인 게시판 기준으로 문서 전체를 다시 로드해 로그아웃 UI를 확실히 반영 */
+    window.location.assign('/');
   });
 
   window.addEventListener('load', () => {
