@@ -868,7 +868,28 @@ button.future-type-badge {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+}
+
+/* 캐릭터가 없어도 상단에 배치 구역 유지, 하단에 추가·삭제 */
+.future-admin-char-slot {
+  flex: 1 1 auto;
+  min-height: 84px;
+  box-sizing: border-box;
+  border: 1px dashed #cfcfcf;
+  border-radius: 6px;
+  background: #fafafa;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.future-admin-char-slot .future-char-line {
+  flex: 0 1 auto;
+  min-height: 0;
+  width: 100%;
 }
 
 .future-admin-cell .future-char-line {
@@ -897,21 +918,58 @@ button.future-type-badge {
 
 .future-cell-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   justify-content: center;
-  margin-top: auto;
   flex-shrink: 0;
+  margin-top: auto;
+  padding-top: 2px;
 }
 
 .future-mini-btn {
-  border: 1px solid #bdbdbd;
-  background: #f7f7f7;
-  border-radius: 4px;
-  padding: 3px 7px;
+  border-radius: 6px;
+  padding: 4px 10px;
   font: inherit;
   font-size: 0.72rem;
   font-weight: 800;
   cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.future-mini-btn--add {
+  border: 1px solid var(--pink);
+  color: var(--pink);
+  background: #fff;
+}
+
+.future-mini-btn--add:hover {
+  background: var(--pink);
+  color: #fff;
+  border-color: var(--pink);
+}
+
+.future-mini-btn--add:focus-visible {
+  outline: 2px solid var(--pink);
+  outline-offset: 2px;
+}
+
+.future-mini-btn--delete {
+  border: 1px solid #c62828;
+  color: #c62828;
+  background: #fff;
+}
+
+.future-mini-btn--delete:hover {
+  background: #c62828;
+  color: #fff;
+  border-color: #c62828;
+}
+
+.future-mini-btn--delete:focus-visible {
+  outline: 2px solid #c62828;
+  outline-offset: 2px;
 }
 
 .future-info-cell {
@@ -1911,6 +1969,11 @@ button.future-type-badge {
   font: inherit;
   color: inherit;
   text-align: center;
+}
+
+/* display가 지정된 버튼은 UA [hidden]보다 우선할 수 있어 검색 필터용 숨김은 !important 로 고정 */
+.character-picker-btn.character-picker-btn--filtered-out {
+  display: none !important;
 }
 
 .character-picker-btn:focus-visible {

@@ -649,8 +649,6 @@
   const futureAdminStatus = document.getElementById('future-admin-status');
   const futureCharacterModal = document.getElementById('future-character-modal');
   const futureCharacterGrid = document.getElementById('future-character-grid');
-  const futureCharacterSearch = document.getElementById('future-character-search');
-  const futureCharacterSearchEmpty = document.getElementById('future-character-search-empty');
   const futureTypeModal = document.getElementById('future-type-modal');
   const futureInfoModal = document.getElementById('future-info-modal');
   const futureInfoInput = document.getElementById('future-info-input');
@@ -1029,19 +1027,22 @@
       FUTURE_CATEGORIES.forEach((cat) => {
         const cell = document.createElement('div');
         cell.className = 'future-admin-cell';
-        cell.appendChild(renderFutureCharactersLine(month.categories[cat.id] || [], false, month.id, cat.id));
+        const slot = document.createElement('div');
+        slot.className = 'future-admin-char-slot';
+        slot.appendChild(renderFutureCharactersLine(month.categories[cat.id] || [], false, month.id, cat.id));
+        cell.appendChild(slot);
         const actions = document.createElement('div');
         actions.className = 'future-cell-actions';
         const addBtn = document.createElement('button');
         addBtn.type = 'button';
-        addBtn.className = 'future-mini-btn';
+        addBtn.className = 'future-mini-btn future-mini-btn--add';
         addBtn.textContent = '추가';
         addBtn.dataset.futureAction = 'add-character';
         addBtn.dataset.monthId = month.id;
         addBtn.dataset.categoryId = cat.id;
         const delBtn = document.createElement('button');
         delBtn.type = 'button';
-        delBtn.className = 'future-mini-btn';
+        delBtn.className = 'future-mini-btn future-mini-btn--delete';
         delBtn.textContent = '삭제';
         delBtn.dataset.futureAction = 'delete-character';
         delBtn.dataset.monthId = month.id;
@@ -1146,44 +1147,72 @@
     }
   }
 
+  let futureCharacterSearchListenersBound = false;
+
   function normalizeCharacterSearchText(s) {
-    return String(s || '')
-      .normalize('NFC')
-      .toLowerCase();
+    try {
+      return String(s || '')
+        .normalize('NFC')
+        .toLowerCase();
+    } catch {
+      return String(s || '').toLowerCase();
+    }
+  }
+
+  function getFutureCharacterSearchInput() {
+    return document.getElementById('future-character-search');
+  }
+
+  function bindFutureCharacterSearchListeners() {
+    if (futureCharacterSearchListenersBound || !futureCharacterModal) return;
+    futureCharacterSearchListenersBound = true;
+    const onFilter = () => applyFutureCharacterSearchFilter();
+    futureCharacterModal.addEventListener('input', (e) => {
+      const t = e.target instanceof Element ? e.target : null;
+      if (t?.id === 'future-character-search') onFilter();
+    });
+    futureCharacterModal.addEventListener('search', (e) => {
+      const t = e.target instanceof Element ? e.target : null;
+      if (t?.id === 'future-character-search') onFilter();
+    });
+    futureCharacterModal.addEventListener('compositionend', (e) => {
+      const t = e.target instanceof Element ? e.target : null;
+      if (t?.id === 'future-character-search') onFilter();
+    });
   }
 
   function applyFutureCharacterSearchFilter() {
     if (!futureCharacterGrid) return;
-    const raw = futureCharacterSearch?.value ?? '';
+    const inputEl = getFutureCharacterSearchInput();
+    const raw = inputEl?.value ?? '';
     const q = normalizeCharacterSearchText(raw.trim());
     let visible = 0;
     futureCharacterGrid.querySelectorAll('.character-picker-btn').forEach((btn) => {
       const hay = btn.dataset.characterSearchName || '';
       const match = q.length === 0 || hay.includes(q);
-      btn.hidden = !match;
+      btn.classList.toggle('character-picker-btn--filtered-out', !match);
       if (match) visible += 1;
     });
     const selected = futureCharacterGrid.querySelector('.character-picker-btn.is-selected');
-    if (selected && selected.hidden) {
+    if (selected && selected.classList.contains('character-picker-btn--filtered-out')) {
       selected.classList.remove('is-selected');
       futureCharacterPickSelected = null;
     }
-    if (futureCharacterSearchEmpty) {
-      futureCharacterSearchEmpty.hidden = !(q.length > 0 && visible === 0);
+    const emptyEl = document.getElementById('future-character-search-empty');
+    if (emptyEl) {
+      emptyEl.hidden = !(q.length > 0 && visible === 0);
     }
-  }
-
-  function onFutureCharacterSearchInput(e) {
-    if (e && e.isComposing) return;
-    applyFutureCharacterSearchFilter();
   }
 
   async function openFutureCharacterPicker(target) {
     if (!futureCharacterModal || !futureCharacterGrid) return;
+    bindFutureCharacterSearchListeners();
     futureCharacterTarget = target;
     futureCharacterPickSelected = null;
-    if (futureCharacterSearch) futureCharacterSearch.value = '';
-    if (futureCharacterSearchEmpty) futureCharacterSearchEmpty.hidden = true;
+    const searchInput = getFutureCharacterSearchInput();
+    if (searchInput) searchInput.value = '';
+    const emptyEl = document.getElementById('future-character-search-empty');
+    if (emptyEl) emptyEl.hidden = true;
     const list = await ensureCharactersLoaded();
     futureCharacterGrid.innerHTML = '';
     list.forEach((c) => {
@@ -1216,7 +1245,7 @@
     applyFutureCharacterSearchFilter();
     futureCharacterModal.hidden = false;
     refreshBodyScrollLock();
-    futureCharacterSearch?.focus();
+    getFutureCharacterSearchInput()?.focus();
   }
 
   function closeFutureCharacterPicker() {
@@ -1371,8 +1400,7 @@
 
   document.getElementById('future-character-add')?.addEventListener('click', () => confirmFutureCharacterAdd());
   document.getElementById('future-character-modal-close')?.addEventListener('click', closeFutureCharacterPicker);
-  futureCharacterSearch?.addEventListener('input', onFutureCharacterSearchInput);
-  futureCharacterSearch?.addEventListener('compositionend', applyFutureCharacterSearchFilter);
+  bindFutureCharacterSearchListeners();
   futureCharacterModal?.querySelectorAll('[data-close-future-character]').forEach((el) => {
     el.addEventListener('click', closeFutureCharacterPicker);
   });
