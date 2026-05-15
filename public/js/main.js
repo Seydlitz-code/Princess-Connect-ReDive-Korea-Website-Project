@@ -2005,12 +2005,8 @@
     if (!loginModal) return;
     loginModal.hidden = true;
     refreshBodyScrollLock();
-    if (signupModalShows()) return;
+    if (modal && !modal.hidden) return;
     openLoginBtn?.focus();
-  }
-
-  function signupModalShows() {
-    return modal ? !modal.hidden : false;
   }
 
   loginModalCloseBtn?.addEventListener('click', closeLoginModal);
@@ -2453,10 +2449,6 @@
     });
   }
 
-  function renderCharacterGrid(list) {
-    renderCharacterPickerInto(characterGrid, list, () => selectedCharacterIds);
-  }
-
   function renderOwnedDisplayGrid(container, list) {
     if (!container) return;
     container.innerHTML = '';
@@ -2658,7 +2650,7 @@
         void loadSignupCaptcha();
         return;
       }
-      renderCharacterGrid(list);
+      renderCharacterPickerInto(characterGrid, list, () => selectedCharacterIds);
       if (characterLoadError) {
         if (list.length === 0) {
           characterLoadError.textContent =

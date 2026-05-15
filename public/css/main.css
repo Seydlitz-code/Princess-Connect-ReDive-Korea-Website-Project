@@ -811,6 +811,18 @@ body.is-mypage-route .mypage-shell {
   padding: 20px 0 48px;
 }
 
+/* 메인 미래시: 제목·표를 감싸는 분홍 테두리(표 높이·너비에 맞춰 확장) */
+.future-main-frame {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: clamp(18px, 2.2vw, 28px) clamp(16px, 2vw, 26px) clamp(20px, 2.4vw, 30px);
+  border: 6px solid var(--pink);
+  border-radius: 22px;
+  background: #fff;
+}
+
 .future-main-head {
   text-align: center;
   margin-bottom: 18px;
@@ -838,7 +850,7 @@ body.is-mypage-route .mypage-shell {
 
 .future-main-table-row {
   display: grid;
-  align-items: start;
+  align-items: stretch;
   grid-template-columns: 46px repeat(6, minmax(0, 1fr)) minmax(0, 1.02fr);
   border-bottom: 1px solid #9d9d9d;
 }
@@ -858,6 +870,7 @@ body.is-mypage-route .mypage-shell {
 
 .future-main-table-row--head {
   min-height: auto;
+  align-items: stretch;
   background: #ececec;
   font-weight: 900;
   text-align: center;
@@ -875,6 +888,7 @@ body.is-mypage-route .mypage-shell {
   align-items: center;
   justify-content: center;
   align-self: stretch;
+  min-height: min-content;
   font-size: 0.82rem;
   font-weight: 900;
   padding: 4px 2px;
@@ -891,9 +905,14 @@ body.is-mypage-route .mypage-shell {
 
 .future-main-cell {
   padding: 2px 3px;
+  min-width: 0;
+  min-height: min-content;
+  display: flex;
+  flex-direction: column;
 }
 
 .future-main-char-slot {
+  flex: 1 1 auto;
   min-height: 84px;
   box-sizing: border-box;
   width: 100%;
@@ -901,10 +920,20 @@ body.is-mypage-route .mypage-shell {
   border-radius: 6px;
   background: #fff;
   padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.future-main-char-slot .future-category-stack {
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: min-content;
 }
 
 .future-main-char-slot .future-char-line {
-  min-height: 0;
+  min-height: min-content;
   width: 100%;
 }
 
@@ -1031,9 +1060,10 @@ button.future-type-badge {
 .future-month-info {
   margin: 0;
   padding: 3px 5px;
-  align-self: start;
+  align-self: stretch;
   box-sizing: border-box;
   min-height: 84px;
+  min-width: 0;
   white-space: pre-wrap;
   font-size: 0.74rem;
   line-height: 1.35;
@@ -1085,7 +1115,7 @@ button.future-type-badge {
 
 .future-admin-row {
   display: grid;
-  align-items: start;
+  align-items: stretch;
   grid-template-columns: 52px repeat(6, minmax(0, 1fr)) minmax(0, 1.02fr);
   border-bottom: 1px solid #bdbdbd;
 }
@@ -1100,6 +1130,7 @@ button.future-type-badge {
 }
 
 .future-admin-row--head {
+  align-items: stretch;
   background: #f5f5f5;
   font-weight: 900;
   text-align: center;
@@ -1116,6 +1147,11 @@ button.future-type-badge {
   padding: 4px 2px;
   box-sizing: border-box;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  min-height: min-content;
 }
 
 .future-admin-label {
@@ -1155,7 +1191,8 @@ button.future-type-badge {
 
 .future-admin-cell {
   padding: 3px 4px;
-  min-height: 0;
+  min-height: min-content;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1176,9 +1213,15 @@ button.future-type-badge {
   justify-content: flex-start;
 }
 
+.future-admin-char-slot .future-category-stack {
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: min-content;
+}
+
 .future-admin-char-slot .future-char-line {
   flex: 0 1 auto;
-  min-height: 0;
+  min-height: min-content;
   width: 100%;
 }
 
@@ -1270,6 +1313,7 @@ button.future-type-badge {
   appearance: none;
   border: none;
   background: #fff;
+  align-self: stretch;
   min-height: 88px;
   padding: 8px;
   text-align: left;
