@@ -472,13 +472,34 @@
         <button type="button" class="modal-back link-back" id="future-character-modal-close">
           <span aria-hidden="true">←</span> 뒤로 가기
         </button>
-        <header class="modal-head">
-          <h2 id="future-character-heading" class="modal-title">캐릭터 선택</h2>
-          <p class="modal-sub">미래시에 추가할 캐릭터를 선택하세요.</p>
+        <header class="modal-head future-character-modal-head">
+          <div class="future-character-modal-head-top">
+            <div class="future-character-modal-head-text">
+              <h2 id="future-character-heading" class="modal-title">캐릭터 선택</h2>
+              <p class="modal-sub">캐릭터를 선택한 뒤 아래 «추가»를 누르세요. 신규·복각 열에서는 한정/통상을 이어서 선택합니다.</p>
+            </div>
+            <div class="future-character-search-wrap">
+              <label class="visually-hidden" for="future-character-search">캐릭터 이름 검색</label>
+              <input
+                type="search"
+                id="future-character-search"
+                class="future-character-search"
+                placeholder="이름 검색…"
+                autocomplete="off"
+                spellcheck="false"
+                enterkeyhint="search"
+              />
+            </div>
+          </div>
         </header>
         <div class="character-grid-scroll owned-characters-modal-scroll" tabindex="0">
           <div id="future-character-grid" class="character-grid character-grid--cols-8" role="list" aria-label="미래시 캐릭터 선택"></div>
+          <p id="future-character-search-empty" class="future-character-search-empty" hidden role="status">검색 결과가 없습니다.</p>
         </div>
+        <footer class="modal-footer future-character-modal-footer">
+          <button type="button" class="btn btn-outline" id="future-character-cancel" data-close-future-character>취소</button>
+          <button type="button" class="btn btn-primary" id="future-character-add">추가</button>
+        </footer>
       </div>
     </div>
 

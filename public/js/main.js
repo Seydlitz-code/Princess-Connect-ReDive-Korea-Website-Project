@@ -649,6 +649,8 @@
   const futureAdminStatus = document.getElementById('future-admin-status');
   const futureCharacterModal = document.getElementById('future-character-modal');
   const futureCharacterGrid = document.getElementById('future-character-grid');
+  const futureCharacterSearch = document.getElementById('future-character-search');
+  const futureCharacterSearchEmpty = document.getElementById('future-character-search-empty');
   const futureTypeModal = document.getElementById('future-type-modal');
   const futureInfoModal = document.getElementById('future-info-modal');
   const futureInfoInput = document.getElementById('future-info-input');
@@ -659,14 +661,18 @@
   let sessionUserRole = 'guest';
   let futureSightState = null;
   let futureCharacterTarget = null;
-  let futureTypeTarget = null;
+  /** @type {{ kind: 'edit', monthId: string, categoryId: string, index: number } | { kind: 'pick', character: object, monthId: string, categoryId: string, index?: number } | null} */
+  let futureTypeContext = null;
+  let futureCharacterPickSelected = null;
   let futureInfoMonthId = null;
 
   const FUTURE_CATEGORIES = [
     { id: 'new', label: '신규 캐릭터' },
     { id: 'rerun', label: '복각 캐릭터' },
-    { id: 'sixStar', label: '6성 개화' },
-    { id: 'special', label: '전용장비/이벤트' },
+    { id: 'sixStar', label: '6성개화' },
+    { id: 'unique1', label: '전용장비1' },
+    { id: 'unique2', label: '전용장비2' },
+    { id: 'event', label: '이벤트' },
   ];
 
   const MYPAGE_OWNED_EMPTY_DEFAULT = '보유 캐릭터를 등록하지 않았습니다.';
@@ -811,7 +817,7 @@
       id: `month-${Date.now()}-${index}`,
       monthNumber,
       label: `${monthNumber}월`,
-      categories: { new: [], rerun: [], sixStar: [], special: [] },
+      categories: { new: [], rerun: [], sixStar: [], unique1: [], unique2: [], event: [] },
       info: '',
     };
   }
@@ -841,7 +847,9 @@
           new: normalizeEntries(categories.new),
           rerun: normalizeEntries(categories.rerun),
           sixStar: normalizeEntries(categories.sixStar),
-          special: normalizeEntries(categories.special),
+          unique1: normalizeEntries(categories.unique1),
+          unique2: normalizeEntries(categories.unique2),
+          event: [...normalizeEntries(categories.event), ...normalizeEntries(categories.special)],
         },
         info: String(month.info || ''),
       };
@@ -881,6 +889,7 @@
   }
 
   function renderFutureCharactersLine(entries, readonly, monthId, categoryId) {
+    const showType = categoryId === 'new' || categoryId === 'rerun';
     const wrap = document.createElement('div');
     wrap.className = 'future-char-line';
     entries.forEach((entry, index) => {
@@ -895,29 +904,33 @@
       }
       item.className = 'future-char-card';
 
+      const name = document.createElement('span');
+      name.className = 'future-char-name';
+      name.textContent = entry.name || '캐릭터';
+
       const img = document.createElement('img');
       img.alt = entry.name || '캐릭터';
       img.loading = 'lazy';
       img.decoding = 'async';
       img.src = entry.imageUrl || `/api/characters/${encodeURIComponent(entry.characterId || entry.id)}/image`;
 
-      const name = document.createElement('span');
-      name.className = 'future-char-name';
-      name.textContent = entry.name || '캐릭터';
+      item.append(name, img);
 
-      const type = document.createElement(readonly ? 'span' : 'button');
-      type.className = `future-type-badge is-${entry.type === 'limited' ? 'limited' : 'permanent'}`;
-      type.textContent = futureTypeLabel(entry.type);
-      if (!readonly) {
-        type.type = 'button';
-        type.dataset.futureAction = 'type';
-        type.dataset.monthId = monthId;
-        type.dataset.categoryId = categoryId;
-        type.dataset.index = String(index);
-        type.addEventListener('click', (e) => e.stopPropagation());
+      if (showType) {
+        const type = document.createElement(readonly ? 'span' : 'button');
+        type.className = `future-type-badge is-${entry.type === 'limited' ? 'limited' : 'permanent'}`;
+        type.textContent = futureTypeLabel(entry.type);
+        if (!readonly) {
+          type.type = 'button';
+          type.dataset.futureAction = 'type';
+          type.dataset.monthId = monthId;
+          type.dataset.categoryId = categoryId;
+          type.dataset.index = String(index);
+          type.addEventListener('click', (e) => e.stopPropagation());
+        }
+        item.appendChild(type);
       }
 
-      item.append(img, name, type);
       wrap.appendChild(item);
     });
     return wrap;
@@ -991,7 +1004,7 @@
       header.appendChild(cell);
     });
     const infoHead = document.createElement('div');
-    infoHead.textContent = '정보 입력';
+    infoHead.textContent = '정보';
     header.appendChild(infoHead);
     table.appendChild(header);
 
@@ -1088,46 +1101,7 @@
     renderFutureAdmin();
   }
 
-  async function openFutureCharacterPicker(target) {
-    if (!futureCharacterModal || !futureCharacterGrid) return;
-    futureCharacterTarget = target;
-    const list = await ensureCharactersLoaded();
-    futureCharacterGrid.innerHTML = '';
-    list.forEach((c) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'character-picker-btn';
-      btn.dataset.characterId = c.id;
-      const thumb = document.createElement('div');
-      thumb.className = 'character-thumb';
-      const img = document.createElement('img');
-      img.alt = c.name || '캐릭터';
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.src = c.imageUrl || `/api/characters/${encodeURIComponent(c.id)}/image`;
-      const name = document.createElement('div');
-      name.className = 'character-name';
-      name.textContent = c.name || '';
-      thumb.appendChild(img);
-      btn.append(thumb, name);
-      btn.addEventListener('click', () => {
-        applyFutureCharacter(c);
-        closeFutureCharacterPicker();
-      });
-      futureCharacterGrid.appendChild(btn);
-    });
-    futureCharacterModal.hidden = false;
-    refreshBodyScrollLock();
-  }
-
-  function closeFutureCharacterPicker() {
-    if (!futureCharacterModal) return;
-    futureCharacterModal.hidden = true;
-    futureCharacterTarget = null;
-    refreshBodyScrollLock();
-  }
-
-  function applyFutureCharacter(character) {
+  function applyFutureCharacterDirect(character) {
     if (!futureCharacterTarget || !futureSightState) return;
     const month = findFutureMonth(futureCharacterTarget.monthId);
     if (!month) return;
@@ -1145,8 +1119,109 @@
     renderFutureAdmin();
   }
 
-  function openFutureTypePicker(target) {
-    futureTypeTarget = target;
+  function confirmFutureCharacterAdd() {
+    if (!futureCharacterTarget || !futureSightState) return;
+    const c = futureCharacterPickSelected;
+    if (!c) {
+      window.alert('캐릭터를 선택해 주세요.');
+      return;
+    }
+    const cat = futureCharacterTarget.categoryId;
+    const needType = cat === 'new' || cat === 'rerun';
+    if (needType) {
+      futureTypeContext = {
+        kind: 'pick',
+        character: c,
+        monthId: futureCharacterTarget.monthId,
+        categoryId: cat,
+        index: futureCharacterTarget.index,
+      };
+      closeFutureCharacterPicker();
+      if (!futureTypeModal) return;
+      futureTypeModal.hidden = false;
+      refreshBodyScrollLock();
+    } else {
+      applyFutureCharacterDirect(c);
+      closeFutureCharacterPicker();
+    }
+  }
+
+  function applyFutureCharacterSearchFilter() {
+    if (!futureCharacterGrid) return;
+    const q = (futureCharacterSearch?.value || '').trim().toLowerCase();
+    let visible = 0;
+    futureCharacterGrid.querySelectorAll('.character-picker-btn').forEach((btn) => {
+      const hay = btn.dataset.characterSearchName || '';
+      const match = !q || hay.includes(q);
+      btn.hidden = !match;
+      if (match) visible += 1;
+    });
+    const selected = futureCharacterGrid.querySelector('.character-picker-btn.is-selected');
+    if (selected && selected.hidden) {
+      selected.classList.remove('is-selected');
+      futureCharacterPickSelected = null;
+    }
+    if (futureCharacterSearchEmpty) {
+      futureCharacterSearchEmpty.hidden = !(q && visible === 0);
+    }
+  }
+
+  async function openFutureCharacterPicker(target) {
+    if (!futureCharacterModal || !futureCharacterGrid) return;
+    futureCharacterTarget = target;
+    futureCharacterPickSelected = null;
+    if (futureCharacterSearch) futureCharacterSearch.value = '';
+    if (futureCharacterSearchEmpty) futureCharacterSearchEmpty.hidden = true;
+    const list = await ensureCharactersLoaded();
+    futureCharacterGrid.innerHTML = '';
+    list.forEach((c) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'character-picker-btn';
+      btn.dataset.characterId = c.id;
+      const rawName = String(c.name || '');
+      btn.dataset.characterSearchName = rawName.toLowerCase();
+      const thumb = document.createElement('div');
+      thumb.className = 'character-thumb';
+      const img = document.createElement('img');
+      img.alt = rawName || '캐릭터';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.src = c.imageUrl || `/api/characters/${encodeURIComponent(c.id)}/image`;
+      const name = document.createElement('div');
+      name.className = 'character-name';
+      name.textContent = rawName;
+      thumb.appendChild(img);
+      btn.append(thumb, name);
+      btn.addEventListener('click', () => {
+        futureCharacterPickSelected = c;
+        futureCharacterGrid.querySelectorAll('.character-picker-btn').forEach((b) => {
+          b.classList.toggle('is-selected', b === btn);
+        });
+      });
+      futureCharacterGrid.appendChild(btn);
+    });
+    applyFutureCharacterSearchFilter();
+    futureCharacterModal.hidden = false;
+    refreshBodyScrollLock();
+    futureCharacterSearch?.focus();
+  }
+
+  function closeFutureCharacterPicker() {
+    if (!futureCharacterModal) return;
+    futureCharacterModal.hidden = true;
+    futureCharacterTarget = null;
+    futureCharacterPickSelected = null;
+    refreshBodyScrollLock();
+  }
+
+  function openFutureTypePickerForEdit(target) {
+    futureTypeContext = {
+      kind: 'edit',
+      monthId: target.monthId,
+      categoryId: target.categoryId,
+      index: target.index,
+    };
     if (!futureTypeModal) return;
     futureTypeModal.hidden = false;
     refreshBodyScrollLock();
@@ -1155,16 +1230,34 @@
   function closeFutureTypePicker() {
     if (!futureTypeModal) return;
     futureTypeModal.hidden = true;
-    futureTypeTarget = null;
+    futureTypeContext = null;
     refreshBodyScrollLock();
   }
 
   function applyFutureType(type) {
-    if (!futureTypeTarget) return;
-    const month = findFutureMonth(futureTypeTarget.monthId);
-    const entry = month?.categories?.[futureTypeTarget.categoryId]?.[futureTypeTarget.index];
-    if (!entry) return;
-    entry.type = type === 'limited' ? 'limited' : 'permanent';
+    const ctx = futureTypeContext;
+    if (!ctx || !futureSightState) return;
+    const t = type === 'limited' ? 'limited' : 'permanent';
+    if (ctx.kind === 'edit') {
+      const month = findFutureMonth(ctx.monthId);
+      const entry = month?.categories?.[ctx.categoryId]?.[ctx.index];
+      if (entry) entry.type = t;
+    } else if (ctx.kind === 'pick') {
+      const month = findFutureMonth(ctx.monthId);
+      if (!month) return;
+      const list = month.categories[ctx.categoryId] || [];
+      const c = ctx.character;
+      const entry = {
+        characterId: c.id,
+        id: c.id,
+        name: c.name,
+        imageUrl: c.imageUrl,
+        type: t,
+      };
+      if (typeof ctx.index === 'number') list[ctx.index] = entry;
+      else list.push(entry);
+      month.categories[ctx.categoryId] = list;
+    }
     closeFutureTypePicker();
     renderFutureAdmin();
   }
@@ -1228,7 +1321,7 @@
         renderFutureAdmin();
       }
     } else if (action === 'type' && Number.isInteger(index)) {
-      openFutureTypePicker({ monthId, categoryId, index });
+      openFutureTypePickerForEdit({ monthId, categoryId, index });
     } else if (action === 'info') {
       openFutureInfoEditor(monthId);
     }
@@ -1264,7 +1357,9 @@
     }
   });
 
+  document.getElementById('future-character-add')?.addEventListener('click', () => confirmFutureCharacterAdd());
   document.getElementById('future-character-modal-close')?.addEventListener('click', closeFutureCharacterPicker);
+  futureCharacterSearch?.addEventListener('input', applyFutureCharacterSearchFilter);
   futureCharacterModal?.querySelectorAll('[data-close-future-character]').forEach((el) => {
     el.addEventListener('click', closeFutureCharacterPicker);
   });

@@ -237,7 +237,9 @@ function defaultFutureSightState() {
           new: [],
           rerun: [],
           sixStar: [],
-          special: [],
+          unique1: [],
+          unique2: [],
+          event: [],
         },
         info: '',
       },
@@ -263,6 +265,8 @@ function normalizeFutureSightState(value) {
           type,
         };
       });
+    const legacySpecial = normalizeEntries(categories.special);
+    const eventCombined = [...normalizeEntries(categories.event), ...legacySpecial].slice(0, 24);
     return {
       id: String(src.id || `month-${index + 1}`).trim() || `month-${index + 1}`,
       monthNumber,
@@ -271,7 +275,9 @@ function normalizeFutureSightState(value) {
         new: normalizeEntries(categories.new),
         rerun: normalizeEntries(categories.rerun),
         sixStar: normalizeEntries(categories.sixStar),
-        special: normalizeEntries(categories.special),
+        unique1: normalizeEntries(categories.unique1),
+        unique2: normalizeEntries(categories.unique2),
+        event: eventCombined,
       },
       info: String(src.info || '').slice(0, 2000),
     };
@@ -340,7 +346,9 @@ async function hydrateFutureSightState(pgPool, state) {
         new: hydrateEntries(month.categories.new),
         rerun: hydrateEntries(month.categories.rerun),
         sixStar: hydrateEntries(month.categories.sixStar),
-        special: hydrateEntries(month.categories.special),
+        unique1: hydrateEntries(month.categories.unique1),
+        unique2: hydrateEntries(month.categories.unique2),
+        event: hydrateEntries(month.categories.event),
       },
     })),
   };
