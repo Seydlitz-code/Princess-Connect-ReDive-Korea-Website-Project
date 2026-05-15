@@ -974,7 +974,10 @@
         const entries = month.categories[cat.id] || [];
         const cell = document.createElement('section');
         cell.className = 'future-main-cell';
-        if (entries.length > 0) cell.appendChild(renderFutureCharactersLine(entries, true, month.id, cat.id));
+        const slot = document.createElement('div');
+        slot.className = 'future-main-char-slot';
+        slot.appendChild(renderFutureCharactersLine(entries, true, month.id, cat.id));
+        cell.appendChild(slot);
         row.appendChild(cell);
       });
       const info = document.createElement('p');
@@ -1428,7 +1431,8 @@
     if (e.target === futureInfoModal) closeFutureInfoEditor();
   });
 
-  headerOpenMypage?.addEventListener('click', () => {
+  headerOpenMypage?.addEventListener('click', (e) => {
+    e.preventDefault();
     setActiveBoard('mypage');
     setMypageTab('profile');
     window.scrollTo(0, 0);

@@ -174,8 +174,55 @@ body {
   box-shadow: 0 1px 5px rgba(255, 93, 162, 0.28);
 }
 
-.header-actions-logged .btn-signup.btn-logout-header {
+.header-actions-logged .btn-logout-header {
   flex-shrink: 0;
+  padding: 6px 11px;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid var(--pink);
+  background: rgba(255, 93, 162, 0.16);
+  color: var(--pink);
+  box-shadow: none;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.header-mypage-link {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 4px 6px;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--nav-active);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.header-mypage-link:hover {
+  color: var(--pink);
+}
+
+.header-mypage-link:focus-visible {
+  outline: 2px solid var(--nav-active);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.header-actions-logged .btn-logout-header:hover {
+  background: var(--pink);
+  color: #fff;
+  border-color: var(--pink);
+}
+
+.header-actions-logged .btn-logout-header:focus-visible {
+  outline: 2px solid var(--pink);
+  outline-offset: 2px;
 }
 
 .user-bar {
@@ -191,11 +238,6 @@ body {
   gap: 10px;
   min-width: 0;
   flex: 1;
-}
-
-.btn-header-mypage {
-  flex-shrink: 0;
-  white-space: nowrap;
 }
 
 .user-avatar-wrap {
@@ -606,6 +648,7 @@ body.is-mypage-route .mypage-shell {
   min-width: 0;
   box-sizing: border-box;
   background: #fff;
+  border: 1px solid #9d9d9d;
 }
 
 .future-main-table-row {
@@ -655,6 +698,21 @@ body.is-mypage-route .mypage-shell {
 
 .future-main-cell {
   padding: 2px 3px;
+}
+
+.future-main-char-slot {
+  min-height: 84px;
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px dashed #e0e0e0;
+  border-radius: 6px;
+  background: #fafafa;
+  padding: 4px;
+}
+
+.future-main-char-slot .future-char-line {
+  min-height: 0;
+  width: 100%;
 }
 
 /* 메인 표: 카드 축소(칸당 3열·이미지·이름·통/한 뱃지에 행 높이 밀착) */
@@ -781,6 +839,8 @@ button.future-type-badge {
   margin: 0;
   padding: 3px 5px;
   align-self: start;
+  box-sizing: border-box;
+  min-height: 84px;
   white-space: pre-wrap;
   font-size: 0.74rem;
   line-height: 1.35;
