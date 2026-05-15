@@ -666,6 +666,8 @@
   let futureCharacterPickMap = new Map();
   /** 동시복각 다중 선택: characterId → character */
   let futureCharacterSimultaneousMap = new Map();
+  /** 체크박스와 동기화: 다중 선택 모드(그리드 클릭 로직이 항상 올바른 Map을 쓰도록 함) */
+  let futureCharacterBulkMode = /** @type {'none' | 'prize' | 'simultaneous'} */ ('none');
   let futureInfoMonthId = null;
 
   const FUTURE_CATEGORIES = [
@@ -1229,7 +1231,9 @@
     const label = String(ch.name || '캐릭터');
     img.alt = label;
     const url = ch.imageUrl || `/api/characters/${encodeURIComponent(charId)}/image`;
+    img.dataset.futureTypeBindId = charId;
     const runFit = () => {
+      if (String(img.dataset.futureTypeBindId) !== charId) return;
       const cur = getFutureTypeModalCharacter(futureTypeContext);
       if (!cur || String(cur.id) !== charId) return;
       fitFutureTypeNameToOneLine(nameEl, String(cur.name || '캐릭터'));
@@ -1256,6 +1260,7 @@
       if (sub) sub.hidden = true;
       return;
     }
+    fitFutureTypeNameToOneLine(nameEl, String(ch.name || '캐릭터'));
     bindFutureTypeImgAndName(img, nameEl, ch);
 
     if (sub) {
@@ -1408,19 +1413,29 @@
     closeFutureTypePicker();
   }
 
+  function syncFutureCharacterBulkModeFromCheckboxes() {
+    const prizeCb = document.getElementById('future-character-prize-checkbox');
+    const simCb = document.getElementById('future-character-simultaneous-checkbox');
+    if (prizeCb?.checked) {
+      futureCharacterBulkMode = 'prize';
+    } else if (simCb?.checked) {
+      futureCharacterBulkMode = 'simultaneous';
+    } else {
+      futureCharacterBulkMode = 'none';
+    }
+  }
+
   function isFuturePrizeGachaPickMode() {
-    const el = document.getElementById('future-character-prize-checkbox');
-    return Boolean(el?.checked);
+    return futureCharacterBulkMode === 'prize';
   }
 
   function isFutureSimultaneousRerunPickMode() {
-    const el = document.getElementById('future-character-simultaneous-checkbox');
-    return Boolean(el?.checked);
+    return futureCharacterBulkMode === 'simultaneous';
   }
 
   function getActiveFutureCharacterBulkPickMap() {
-    if (isFuturePrizeGachaPickMode()) return futureCharacterPickMap;
-    if (isFutureSimultaneousRerunPickMode()) return futureCharacterSimultaneousMap;
+    if (futureCharacterBulkMode === 'prize') return futureCharacterPickMap;
+    if (futureCharacterBulkMode === 'simultaneous') return futureCharacterSimultaneousMap;
     return null;
   }
 
@@ -1434,12 +1449,14 @@
   function syncFutureBulkCheckboxExclusivity(changedId) {
     const prizeCb = document.getElementById('future-character-prize-checkbox');
     const simCb = document.getElementById('future-character-simultaneous-checkbox');
-    if (!prizeCb || !simCb) return;
-    if (changedId === 'future-character-prize-checkbox' && prizeCb.checked) {
-      simCb.checked = false;
-    } else if (changedId === 'future-character-simultaneous-checkbox' && simCb.checked) {
-      prizeCb.checked = false;
+    if (prizeCb && simCb) {
+      if (changedId === 'future-character-prize-checkbox' && prizeCb.checked) {
+        simCb.checked = false;
+      } else if (changedId === 'future-character-simultaneous-checkbox' && simCb.checked) {
+        prizeCb.checked = false;
+      }
     }
+    syncFutureCharacterBulkModeFromCheckboxes();
   }
 
   function applyFutureCharacterDirect(character) {
@@ -1468,6 +1485,7 @@
 
   function confirmFutureCharacterAdd() {
     if (!futureCharacterTarget || !futureSightState) return;
+    syncFutureCharacterBulkModeFromCheckboxes();
     const prizeMode = isFuturePrizeGachaPickMode();
     const simultaneousMode = isFutureSimultaneousRerunPickMode();
     if (prizeMode || simultaneousMode) {
@@ -1483,7 +1501,11 @@
       if (needType) {
         futureTypeContext = {
           kind: 'pick-batch-queue',
-          characters: chars,
+          characters: chars.map((c) => ({
+            id: c.id,
+            name: c.name,
+            imageUrl: c.imageUrl,
+          })),
           index: 0,
           resolved: [],
           monthId: futureCharacterTarget.monthId,
@@ -1587,6 +1609,7 @@
 
   function applyFutureCharacterSearchFilter() {
     if (!futureCharacterGrid) return;
+    syncFutureCharacterBulkModeFromCheckboxes();
     const inputEl = getFutureCharacterSearchInput();
     const raw = inputEl?.value ?? '';
     const q = normalizeCharacterSearchText(raw.trim());
@@ -1631,6 +1654,7 @@
     if (prizeCb) prizeCb.checked = false;
     const simCb = document.getElementById('future-character-simultaneous-checkbox');
     if (simCb) simCb.checked = false;
+    syncFutureCharacterBulkModeFromCheckboxes();
     const searchInput = getFutureCharacterSearchInput();
     if (searchInput) searchInput.value = '';
     const emptyEl = document.getElementById('future-character-search-empty');
@@ -1657,6 +1681,7 @@
       thumb.appendChild(img);
       btn.append(thumb, name);
       btn.addEventListener('click', () => {
+        syncFutureCharacterBulkModeFromCheckboxes();
         if (isFuturePrizeGachaPickMode()) {
           const id = String(c.id);
           if (futureCharacterPickMap.has(id)) {
@@ -1703,6 +1728,7 @@
     if (prizeCb) prizeCb.checked = false;
     const simCb = document.getElementById('future-character-simultaneous-checkbox');
     if (simCb) simCb.checked = false;
+    syncFutureCharacterBulkModeFromCheckboxes();
     refreshBodyScrollLock();
   }
 
