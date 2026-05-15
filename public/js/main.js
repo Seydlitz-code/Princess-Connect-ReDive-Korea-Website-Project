@@ -1146,13 +1146,20 @@
     }
   }
 
+  function normalizeCharacterSearchText(s) {
+    return String(s || '')
+      .normalize('NFC')
+      .toLowerCase();
+  }
+
   function applyFutureCharacterSearchFilter() {
     if (!futureCharacterGrid) return;
-    const q = (futureCharacterSearch?.value || '').trim().toLowerCase();
+    const raw = futureCharacterSearch?.value ?? '';
+    const q = normalizeCharacterSearchText(raw.trim());
     let visible = 0;
     futureCharacterGrid.querySelectorAll('.character-picker-btn').forEach((btn) => {
       const hay = btn.dataset.characterSearchName || '';
-      const match = !q || hay.includes(q);
+      const match = q.length === 0 || hay.includes(q);
       btn.hidden = !match;
       if (match) visible += 1;
     });
@@ -1162,8 +1169,13 @@
       futureCharacterPickSelected = null;
     }
     if (futureCharacterSearchEmpty) {
-      futureCharacterSearchEmpty.hidden = !(q && visible === 0);
+      futureCharacterSearchEmpty.hidden = !(q.length > 0 && visible === 0);
     }
+  }
+
+  function onFutureCharacterSearchInput(e) {
+    if (e && e.isComposing) return;
+    applyFutureCharacterSearchFilter();
   }
 
   async function openFutureCharacterPicker(target) {
@@ -1180,7 +1192,7 @@
       btn.className = 'character-picker-btn';
       btn.dataset.characterId = c.id;
       const rawName = String(c.name || '');
-      btn.dataset.characterSearchName = rawName.toLowerCase();
+      btn.dataset.characterSearchName = normalizeCharacterSearchText(rawName);
       const thumb = document.createElement('div');
       thumb.className = 'character-thumb';
       const img = document.createElement('img');
@@ -1359,7 +1371,8 @@
 
   document.getElementById('future-character-add')?.addEventListener('click', () => confirmFutureCharacterAdd());
   document.getElementById('future-character-modal-close')?.addEventListener('click', closeFutureCharacterPicker);
-  futureCharacterSearch?.addEventListener('input', applyFutureCharacterSearchFilter);
+  futureCharacterSearch?.addEventListener('input', onFutureCharacterSearchInput);
+  futureCharacterSearch?.addEventListener('compositionend', applyFutureCharacterSearchFilter);
   futureCharacterModal?.querySelectorAll('[data-close-future-character]').forEach((el) => {
     el.addEventListener('click', closeFutureCharacterPicker);
   });
