@@ -2157,6 +2157,13 @@ button.future-type-badge {
   width: 100%;
 }
 
+.future-character-bulk-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 20px;
+}
+
 .future-character-prize-label {
   display: inline-flex;
   align-items: center;
@@ -2166,6 +2173,21 @@ button.future-type-badge {
   cursor: pointer;
   user-select: none;
   color: var(--text);
+}
+
+.future-character-simultaneous-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  user-select: none;
+  color: var(--pink);
+}
+
+.future-character-simultaneous-label input[type='checkbox'] {
+  accent-color: var(--pink);
 }
 
 .future-character-modal-footer-actions {
@@ -2202,6 +2224,32 @@ button.future-type-badge {
 .future-main-char-slot .future-prize-guide,
 .future-admin-char-slot .future-prize-guide {
   margin-top: 2px;
+}
+
+.future-simultaneous-guide {
+  background: color-mix(in srgb, var(--pink) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pink) 45%, transparent);
+  border-radius: 14px;
+  padding: 8px 10px 10px;
+  box-sizing: border-box;
+}
+
+.future-simultaneous-guide-title {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: var(--pink);
+  margin: 0 0 6px;
+}
+
+.future-main-char-slot .future-simultaneous-guide,
+.future-admin-char-slot .future-simultaneous-guide {
+  margin-top: 2px;
+}
+
+.future-char-card--simultaneous-rerun {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pink) 35%, transparent);
 }
 
 .future-character-search-empty {

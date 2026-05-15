@@ -659,11 +659,13 @@
   let sessionUserRole = 'guest';
   let futureSightState = null;
   let futureCharacterTarget = null;
-  /** @type {{ kind: 'edit', monthId: string, categoryId: string, index: number } | { kind: 'pick', character: object, monthId: string, categoryId: string, index?: number } | { kind: 'pick-batch-queue', characters: object[], index: number, resolved: { character: object, type: 'limited'|'permanent'|'pass' }[], monthId: string, categoryId: string } | null} */
+  /** @type {{ kind: 'edit', monthId: string, categoryId: string, index: number } | { kind: 'pick', character: object, monthId: string, categoryId: string, index?: number } | { kind: 'pick-batch-queue', characters: object[], index: number, resolved: { character: object, type: 'limited'|'permanent'|'pass' }[], monthId: string, categoryId: string, specialSlot?: 'prize' | 'simultaneous' } | null} */
   let futureTypeContext = null;
   let futureCharacterPickSelected = null;
   /** 프라이즈 뽑기 다중 선택: characterId → character */
   let futureCharacterPickMap = new Map();
+  /** 동시복각 다중 선택: characterId → character */
+  let futureCharacterSimultaneousMap = new Map();
   let futureInfoMonthId = null;
 
   const FUTURE_CATEGORIES = [
@@ -842,6 +844,7 @@
             imageUrl: String(item.imageUrl || ''),
             type: t,
             ...(item.prizeGacha === true ? { prizeGacha: true } : {}),
+            ...(item.simultaneousRerun === true ? { simultaneousRerun: true } : {}),
           };
         }).filter((item) => item.characterId || item.id);
       return {
@@ -887,6 +890,7 @@
               characterId: entry.characterId || entry.id,
               type: entry.type === 'pass' ? 'pass' : entry.type === 'limited' ? 'limited' : 'permanent',
               ...(entry.prizeGacha === true ? { prizeGacha: true } : {}),
+              ...(entry.simultaneousRerun === true ? { simultaneousRerun: true } : {}),
             })),
           ])
         ),
@@ -907,7 +911,8 @@
       item.dataset.index = String(globalIndex);
     }
     item.className = 'future-char-card';
-    if (entry.prizeGacha) item.classList.add('future-char-card--prize');
+    if (entry.prizeGacha && !entry.simultaneousRerun) item.classList.add('future-char-card--prize');
+    if (entry.simultaneousRerun) item.classList.add('future-char-card--simultaneous-rerun');
 
     const nameWrap = document.createElement('div');
     nameWrap.className = 'future-char-name';
@@ -944,7 +949,7 @@
     return item;
   }
 
-  /** 일반 캐릭터 줄 + 프라이즈 가이드(해당 시) */
+  /** 일반 캐릭터 줄 + 프라이즈 가이드 + 동시복각 가이드(해당 시) */
   function renderFutureCategoryContent(entries, readonly, monthId, categoryId) {
     const list = Array.isArray(entries) ? entries : [];
     const stack = document.createElement('div');
@@ -953,7 +958,7 @@
     const normalLine = document.createElement('div');
     normalLine.className = 'future-char-line';
     list.forEach((entry, globalIndex) => {
-      if (entry.prizeGacha) return;
+      if (entry.prizeGacha || entry.simultaneousRerun) return;
       normalLine.appendChild(buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId));
     });
     stack.appendChild(normalLine);
@@ -961,7 +966,7 @@
     const prizeLine = document.createElement('div');
     prizeLine.className = 'future-char-line future-prize-guide-line';
     list.forEach((entry, globalIndex) => {
-      if (!entry.prizeGacha) return;
+      if (!entry.prizeGacha || entry.simultaneousRerun) return;
       prizeLine.appendChild(buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId));
     });
     if (prizeLine.childElementCount > 0) {
@@ -972,6 +977,23 @@
       titleEl.textContent = '프라이즈 가이드';
       guide.appendChild(titleEl);
       guide.appendChild(prizeLine);
+      stack.appendChild(guide);
+    }
+
+    const simLine = document.createElement('div');
+    simLine.className = 'future-char-line future-simultaneous-guide-line';
+    list.forEach((entry, globalIndex) => {
+      if (!entry.simultaneousRerun) return;
+      simLine.appendChild(buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId));
+    });
+    if (simLine.childElementCount > 0) {
+      const guide = document.createElement('div');
+      guide.className = 'future-simultaneous-guide';
+      const titleEl = document.createElement('div');
+      titleEl.className = 'future-simultaneous-guide-title';
+      titleEl.textContent = '동시복각 가이드';
+      guide.appendChild(titleEl);
+      guide.appendChild(simLine);
       stack.appendChild(guide);
     }
 
@@ -1277,6 +1299,7 @@
     const month = findFutureMonth(ctx.monthId);
     if (!month) return;
     const list = month.categories[ctx.categoryId] || [];
+    const isSimultaneous = ctx.specialSlot === 'simultaneous';
     for (const { character: ch, type: ty } of ctx.resolved) {
       list.push({
         characterId: ch.id,
@@ -1284,7 +1307,7 @@
         name: ch.name,
         imageUrl: ch.imageUrl,
         type: ty,
-        prizeGacha: true,
+        ...(isSimultaneous ? { simultaneousRerun: true } : { prizeGacha: true }),
       });
     }
     month.categories[ctx.categoryId] = list;
@@ -1307,6 +1330,7 @@
     if (typeof ctx.index === 'number') {
       const prev = list[ctx.index];
       if (prev?.prizeGacha === true) entry.prizeGacha = true;
+      if (prev?.simultaneousRerun === true) entry.simultaneousRerun = true;
       list[ctx.index] = entry;
     } else {
       list.push(entry);
@@ -1389,6 +1413,35 @@
     return Boolean(el?.checked);
   }
 
+  function isFutureSimultaneousRerunPickMode() {
+    const el = document.getElementById('future-character-simultaneous-checkbox');
+    return Boolean(el?.checked);
+  }
+
+  function getActiveFutureCharacterBulkPickMap() {
+    if (isFuturePrizeGachaPickMode()) return futureCharacterPickMap;
+    if (isFutureSimultaneousRerunPickMode()) return futureCharacterSimultaneousMap;
+    return null;
+  }
+
+  function resetFutureCharacterBulkSelectionUi() {
+    futureCharacterPickMap = new Map();
+    futureCharacterSimultaneousMap = new Map();
+    futureCharacterPickSelected = null;
+    futureCharacterGrid?.querySelectorAll('.character-picker-btn').forEach((b) => b.classList.remove('is-selected'));
+  }
+
+  function syncFutureBulkCheckboxExclusivity(changedId) {
+    const prizeCb = document.getElementById('future-character-prize-checkbox');
+    const simCb = document.getElementById('future-character-simultaneous-checkbox');
+    if (!prizeCb || !simCb) return;
+    if (changedId === 'future-character-prize-checkbox' && prizeCb.checked) {
+      simCb.checked = false;
+    } else if (changedId === 'future-character-simultaneous-checkbox' && simCb.checked) {
+      prizeCb.checked = false;
+    }
+  }
+
   function applyFutureCharacterDirect(character) {
     if (!futureCharacterTarget || !futureSightState) return;
     const month = findFutureMonth(futureCharacterTarget.monthId);
@@ -1404,6 +1457,7 @@
     if (typeof futureCharacterTarget.index === 'number') {
       const prev = list[futureCharacterTarget.index];
       if (prev?.prizeGacha === true) entry.prizeGacha = true;
+      if (prev?.simultaneousRerun === true) entry.simultaneousRerun = true;
       list[futureCharacterTarget.index] = entry;
     } else {
       list.push(entry);
@@ -1415,8 +1469,11 @@
   function confirmFutureCharacterAdd() {
     if (!futureCharacterTarget || !futureSightState) return;
     const prizeMode = isFuturePrizeGachaPickMode();
-    if (prizeMode) {
-      const chars = [...futureCharacterPickMap.values()];
+    const simultaneousMode = isFutureSimultaneousRerunPickMode();
+    if (prizeMode || simultaneousMode) {
+      const bulkMap = prizeMode ? futureCharacterPickMap : futureCharacterSimultaneousMap;
+      const chars = [...bulkMap.values()];
+      const specialSlot = prizeMode ? 'prize' : 'simultaneous';
       if (chars.length === 0) {
         window.alert('추가할 캐릭터를 한 명 이상 선택해 주세요.');
         return;
@@ -1431,6 +1488,7 @@
           resolved: [],
           monthId: futureCharacterTarget.monthId,
           categoryId: cat,
+          specialSlot,
         };
         closeFutureCharacterPicker();
         if (!futureTypeModal) return;
@@ -1449,7 +1507,7 @@
             name: c.name,
             imageUrl: c.imageUrl,
             type: 'permanent',
-            prizeGacha: true,
+            ...(specialSlot === 'simultaneous' ? { simultaneousRerun: true } : { prizeGacha: true }),
           });
         }
         month.categories[cat] = list;
@@ -1519,10 +1577,9 @@
     });
     futureCharacterModal.addEventListener('change', (e) => {
       const t = e.target instanceof Element ? e.target : null;
-      if (t?.id === 'future-character-prize-checkbox') {
-        futureCharacterPickMap = new Map();
-        futureCharacterPickSelected = null;
-        futureCharacterGrid?.querySelectorAll('.character-picker-btn').forEach((b) => b.classList.remove('is-selected'));
+      if (t?.id === 'future-character-prize-checkbox' || t?.id === 'future-character-simultaneous-checkbox') {
+        syncFutureBulkCheckboxExclusivity(t.id);
+        resetFutureCharacterBulkSelectionUi();
       }
     });
     document.getElementById('future-character-search-submit')?.addEventListener('click', () => applyFutureCharacterSearchFilter());
@@ -1541,12 +1598,13 @@
       if (match) visible += 1;
     });
     const selectedButtons = futureCharacterGrid.querySelectorAll('.character-picker-btn.is-selected');
-    if (isFuturePrizeGachaPickMode()) {
+    const bulkMap = getActiveFutureCharacterBulkPickMap();
+    if (bulkMap) {
       selectedButtons.forEach((btn) => {
         if (btn.classList.contains('character-picker-btn--filtered-out')) {
           btn.classList.remove('is-selected');
           const id = String(btn.dataset.characterId || '');
-          if (id) futureCharacterPickMap.delete(id);
+          if (id) bulkMap.delete(id);
         }
       });
     } else {
@@ -1568,8 +1626,11 @@
     futureCharacterTarget = target;
     futureCharacterPickSelected = null;
     futureCharacterPickMap = new Map();
+    futureCharacterSimultaneousMap = new Map();
     const prizeCb = document.getElementById('future-character-prize-checkbox');
     if (prizeCb) prizeCb.checked = false;
+    const simCb = document.getElementById('future-character-simultaneous-checkbox');
+    if (simCb) simCb.checked = false;
     const searchInput = getFutureCharacterSearchInput();
     if (searchInput) searchInput.value = '';
     const emptyEl = document.getElementById('future-character-search-empty');
@@ -1605,9 +1666,19 @@
             futureCharacterPickMap.set(id, c);
             btn.classList.add('is-selected');
           }
+        } else if (isFutureSimultaneousRerunPickMode()) {
+          const id = String(c.id);
+          if (futureCharacterSimultaneousMap.has(id)) {
+            futureCharacterSimultaneousMap.delete(id);
+            btn.classList.remove('is-selected');
+          } else {
+            futureCharacterSimultaneousMap.set(id, c);
+            btn.classList.add('is-selected');
+          }
         } else {
           futureCharacterPickSelected = c;
           futureCharacterPickMap.clear();
+          futureCharacterSimultaneousMap.clear();
           futureCharacterGrid.querySelectorAll('.character-picker-btn').forEach((b) => {
             b.classList.toggle('is-selected', b === btn);
           });
@@ -1627,8 +1698,11 @@
     futureCharacterTarget = null;
     futureCharacterPickSelected = null;
     futureCharacterPickMap = new Map();
+    futureCharacterSimultaneousMap = new Map();
     const prizeCb = document.getElementById('future-character-prize-checkbox');
     if (prizeCb) prizeCb.checked = false;
+    const simCb = document.getElementById('future-character-simultaneous-checkbox');
+    if (simCb) simCb.checked = false;
     refreshBodyScrollLock();
   }
 
