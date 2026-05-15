@@ -659,9 +659,11 @@
   let sessionUserRole = 'guest';
   let futureSightState = null;
   let futureCharacterTarget = null;
-  /** @type {{ kind: 'edit', monthId: string, categoryId: string, index: number } | { kind: 'pick', character: object, monthId: string, categoryId: string, index?: number } | null} */
+  /** @type {{ kind: 'edit', monthId: string, categoryId: string, index: number } | { kind: 'pick', character: object, monthId: string, categoryId: string, index?: number } | { kind: 'pick-batch', characters: object[], monthId: string, categoryId: string } | null} */
   let futureTypeContext = null;
   let futureCharacterPickSelected = null;
+  /** 프라이즈 뽑기 다중 선택: characterId → character */
+  let futureCharacterPickMap = new Map();
   let futureInfoMonthId = null;
 
   const FUTURE_CATEGORIES = [
@@ -836,6 +838,7 @@
           name: String(item.name || ''),
           imageUrl: String(item.imageUrl || ''),
           type: item.type === 'limited' ? 'limited' : 'permanent',
+          ...(item.prizeGacha === true ? { prizeGacha: true } : {}),
         })).filter((item) => item.characterId || item.id);
       return {
         id: String(month.id || `month-${idx + 1}`),
@@ -878,6 +881,7 @@
             (month.categories[cat.id] || []).map((entry) => ({
               characterId: entry.characterId || entry.id,
               type: entry.type === 'limited' ? 'limited' : 'permanent',
+              ...(entry.prizeGacha === true ? { prizeGacha: true } : {}),
             })),
           ])
         ),
@@ -886,55 +890,85 @@
     };
   }
 
-  function renderFutureCharactersLine(entries, readonly, monthId, categoryId) {
+  function buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId) {
     const showType = categoryId === 'new' || categoryId === 'rerun';
-    const wrap = document.createElement('div');
-    wrap.className = 'future-char-line';
-    entries.forEach((entry, index) => {
-      const item = document.createElement('div');
+    const item = document.createElement('div');
+    if (!readonly) {
+      item.setAttribute('role', 'button');
+      item.tabIndex = 0;
+      item.dataset.futureAction = 'replace-character';
+      item.dataset.monthId = monthId;
+      item.dataset.categoryId = categoryId;
+      item.dataset.index = String(globalIndex);
+    }
+    item.className = 'future-char-card';
+    if (entry.prizeGacha) item.classList.add('future-char-card--prize');
+
+    const nameWrap = document.createElement('div');
+    nameWrap.className = 'future-char-name';
+    const nameText = document.createElement('span');
+    nameText.className = 'future-char-name-text';
+    nameText.textContent = entry.name || '캐릭터';
+    nameWrap.appendChild(nameText);
+
+    const img = document.createElement('img');
+    img.alt = entry.name || '캐릭터';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.src = entry.imageUrl || `/api/characters/${encodeURIComponent(entry.characterId || entry.id)}/image`;
+
+    item.append(nameWrap, img);
+
+    if (showType) {
+      const type = document.createElement(readonly ? 'span' : 'button');
+      type.className = `future-type-badge is-${entry.type === 'limited' ? 'limited' : 'permanent'}`;
+      type.textContent = futureTypeLabel(entry.type);
       if (!readonly) {
-        item.setAttribute('role', 'button');
-        item.tabIndex = 0;
-        item.dataset.futureAction = 'replace-character';
-        item.dataset.monthId = monthId;
-        item.dataset.categoryId = categoryId;
-        item.dataset.index = String(index);
+        type.type = 'button';
+        type.dataset.futureAction = 'type';
+        type.dataset.monthId = monthId;
+        type.dataset.categoryId = categoryId;
+        type.dataset.index = String(globalIndex);
+        type.addEventListener('click', (e) => e.stopPropagation());
       }
-      item.className = 'future-char-card';
+      item.appendChild(type);
+    }
 
-      const nameWrap = document.createElement('div');
-      nameWrap.className = 'future-char-name';
-      const nameText = document.createElement('span');
-      nameText.className = 'future-char-name-text';
-      nameText.textContent = entry.name || '캐릭터';
-      nameWrap.appendChild(nameText);
+    return item;
+  }
 
-      const img = document.createElement('img');
-      img.alt = entry.name || '캐릭터';
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.src = entry.imageUrl || `/api/characters/${encodeURIComponent(entry.characterId || entry.id)}/image`;
+  /** 일반 캐릭터 줄 + 프라이즈 가이드(해당 시) */
+  function renderFutureCategoryContent(entries, readonly, monthId, categoryId) {
+    const list = Array.isArray(entries) ? entries : [];
+    const stack = document.createElement('div');
+    stack.className = 'future-category-stack';
 
-      item.append(nameWrap, img);
-
-      if (showType) {
-        const type = document.createElement(readonly ? 'span' : 'button');
-        type.className = `future-type-badge is-${entry.type === 'limited' ? 'limited' : 'permanent'}`;
-        type.textContent = futureTypeLabel(entry.type);
-        if (!readonly) {
-          type.type = 'button';
-          type.dataset.futureAction = 'type';
-          type.dataset.monthId = monthId;
-          type.dataset.categoryId = categoryId;
-          type.dataset.index = String(index);
-          type.addEventListener('click', (e) => e.stopPropagation());
-        }
-        item.appendChild(type);
-      }
-
-      wrap.appendChild(item);
+    const normalLine = document.createElement('div');
+    normalLine.className = 'future-char-line';
+    list.forEach((entry, globalIndex) => {
+      if (entry.prizeGacha) return;
+      normalLine.appendChild(buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId));
     });
-    return wrap;
+    stack.appendChild(normalLine);
+
+    const prizeLine = document.createElement('div');
+    prizeLine.className = 'future-char-line future-prize-guide-line';
+    list.forEach((entry, globalIndex) => {
+      if (!entry.prizeGacha) return;
+      prizeLine.appendChild(buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId));
+    });
+    if (prizeLine.childElementCount > 0) {
+      const guide = document.createElement('div');
+      guide.className = 'future-prize-guide';
+      const titleEl = document.createElement('div');
+      titleEl.className = 'future-prize-guide-title';
+      titleEl.textContent = '프라이즈 가이드';
+      guide.appendChild(titleEl);
+      guide.appendChild(prizeLine);
+      stack.appendChild(guide);
+    }
+
+    return stack;
   }
 
   function renderFutureMain(state) {
@@ -971,12 +1005,11 @@
       monthCell.textContent = month.label;
       row.appendChild(monthCell);
       FUTURE_CATEGORIES.forEach((cat) => {
-        const entries = month.categories[cat.id] || [];
         const cell = document.createElement('section');
         cell.className = 'future-main-cell';
         const slot = document.createElement('div');
         slot.className = 'future-main-char-slot';
-        slot.appendChild(renderFutureCharactersLine(entries, true, month.id, cat.id));
+        slot.appendChild(renderFutureCategoryContent(month.categories[cat.id] || [], true, month.id, cat.id));
         cell.appendChild(slot);
         row.appendChild(cell);
       });
@@ -1035,7 +1068,7 @@
         cell.className = 'future-admin-cell';
         const slot = document.createElement('div');
         slot.className = 'future-admin-char-slot';
-        slot.appendChild(renderFutureCharactersLine(month.categories[cat.id] || [], false, month.id, cat.id));
+        slot.appendChild(renderFutureCategoryContent(month.categories[cat.id] || [], false, month.id, cat.id));
         cell.appendChild(slot);
         const actions = document.createElement('div');
         actions.className = 'future-cell-actions';
@@ -1072,7 +1105,7 @@
     addRow.className = 'future-admin-row future-admin-row--add';
     const addCell = document.createElement('div');
     addCell.className = 'future-admin-add-month';
-    addCell.textContent = '월 추가 구역';
+    addCell.textContent = '월 추가';
     const addAction = document.createElement('div');
     addAction.className = 'future-admin-add-action';
     const addMonthBtn = document.createElement('button');
@@ -1108,6 +1141,11 @@
     renderFutureAdmin();
   }
 
+  function isFuturePrizeGachaPickMode() {
+    const el = document.getElementById('future-character-prize-checkbox');
+    return Boolean(el?.checked);
+  }
+
   function applyFutureCharacterDirect(character) {
     if (!futureCharacterTarget || !futureSightState) return;
     const month = findFutureMonth(futureCharacterTarget.monthId);
@@ -1120,14 +1158,59 @@
       imageUrl: character.imageUrl,
       type: 'permanent',
     };
-    if (typeof futureCharacterTarget.index === 'number') list[futureCharacterTarget.index] = entry;
-    else list.push(entry);
+    if (typeof futureCharacterTarget.index === 'number') {
+      const prev = list[futureCharacterTarget.index];
+      if (prev?.prizeGacha === true) entry.prizeGacha = true;
+      list[futureCharacterTarget.index] = entry;
+    } else {
+      list.push(entry);
+    }
     month.categories[futureCharacterTarget.categoryId] = list;
     renderFutureAdmin();
   }
 
   function confirmFutureCharacterAdd() {
     if (!futureCharacterTarget || !futureSightState) return;
+    const prizeMode = isFuturePrizeGachaPickMode();
+    if (prizeMode) {
+      const chars = [...futureCharacterPickMap.values()];
+      if (chars.length === 0) {
+        window.alert('추가할 캐릭터를 한 명 이상 선택해 주세요.');
+        return;
+      }
+      const cat = futureCharacterTarget.categoryId;
+      const needType = cat === 'new' || cat === 'rerun';
+      if (needType) {
+        futureTypeContext = {
+          kind: 'pick-batch',
+          characters: chars,
+          monthId: futureCharacterTarget.monthId,
+          categoryId: cat,
+        };
+        closeFutureCharacterPicker();
+        if (!futureTypeModal) return;
+        futureTypeModal.hidden = false;
+        refreshBodyScrollLock();
+      } else {
+        const month = findFutureMonth(futureCharacterTarget.monthId);
+        if (!month) return;
+        const list = month.categories[cat] || [];
+        for (const c of chars) {
+          list.push({
+            characterId: c.id,
+            id: c.id,
+            name: c.name,
+            imageUrl: c.imageUrl,
+            type: 'permanent',
+            prizeGacha: true,
+          });
+        }
+        month.categories[cat] = list;
+        closeFutureCharacterPicker();
+        renderFutureAdmin();
+      }
+      return;
+    }
     const c = futureCharacterPickSelected;
     if (!c) {
       window.alert('캐릭터를 선택해 주세요.');
@@ -1185,6 +1268,15 @@
       const t = e.target instanceof Element ? e.target : null;
       if (t?.id === 'future-character-search') onFilter();
     });
+    futureCharacterModal.addEventListener('change', (e) => {
+      const t = e.target instanceof Element ? e.target : null;
+      if (t?.id === 'future-character-prize-checkbox') {
+        futureCharacterPickMap = new Map();
+        futureCharacterPickSelected = null;
+        futureCharacterGrid?.querySelectorAll('.character-picker-btn').forEach((b) => b.classList.remove('is-selected'));
+      }
+    });
+    document.getElementById('future-character-search-submit')?.addEventListener('click', () => applyFutureCharacterSearchFilter());
   }
 
   function applyFutureCharacterSearchFilter() {
@@ -1199,10 +1291,21 @@
       btn.classList.toggle('character-picker-btn--filtered-out', !match);
       if (match) visible += 1;
     });
-    const selected = futureCharacterGrid.querySelector('.character-picker-btn.is-selected');
-    if (selected && selected.classList.contains('character-picker-btn--filtered-out')) {
-      selected.classList.remove('is-selected');
-      futureCharacterPickSelected = null;
+    const selectedButtons = futureCharacterGrid.querySelectorAll('.character-picker-btn.is-selected');
+    if (isFuturePrizeGachaPickMode()) {
+      selectedButtons.forEach((btn) => {
+        if (btn.classList.contains('character-picker-btn--filtered-out')) {
+          btn.classList.remove('is-selected');
+          const id = String(btn.dataset.characterId || '');
+          if (id) futureCharacterPickMap.delete(id);
+        }
+      });
+    } else {
+      const selected = futureCharacterGrid.querySelector('.character-picker-btn.is-selected');
+      if (selected && selected.classList.contains('character-picker-btn--filtered-out')) {
+        selected.classList.remove('is-selected');
+        futureCharacterPickSelected = null;
+      }
     }
     const emptyEl = document.getElementById('future-character-search-empty');
     if (emptyEl) {
@@ -1215,6 +1318,9 @@
     bindFutureCharacterSearchListeners();
     futureCharacterTarget = target;
     futureCharacterPickSelected = null;
+    futureCharacterPickMap = new Map();
+    const prizeCb = document.getElementById('future-character-prize-checkbox');
+    if (prizeCb) prizeCb.checked = false;
     const searchInput = getFutureCharacterSearchInput();
     if (searchInput) searchInput.value = '';
     const emptyEl = document.getElementById('future-character-search-empty');
@@ -1241,10 +1347,22 @@
       thumb.appendChild(img);
       btn.append(thumb, name);
       btn.addEventListener('click', () => {
-        futureCharacterPickSelected = c;
-        futureCharacterGrid.querySelectorAll('.character-picker-btn').forEach((b) => {
-          b.classList.toggle('is-selected', b === btn);
-        });
+        if (isFuturePrizeGachaPickMode()) {
+          const id = String(c.id);
+          if (futureCharacterPickMap.has(id)) {
+            futureCharacterPickMap.delete(id);
+            btn.classList.remove('is-selected');
+          } else {
+            futureCharacterPickMap.set(id, c);
+            btn.classList.add('is-selected');
+          }
+        } else {
+          futureCharacterPickSelected = c;
+          futureCharacterPickMap.clear();
+          futureCharacterGrid.querySelectorAll('.character-picker-btn').forEach((b) => {
+            b.classList.toggle('is-selected', b === btn);
+          });
+        }
       });
       futureCharacterGrid.appendChild(btn);
     });
@@ -1259,6 +1377,9 @@
     futureCharacterModal.hidden = true;
     futureCharacterTarget = null;
     futureCharacterPickSelected = null;
+    futureCharacterPickMap = new Map();
+    const prizeCb = document.getElementById('future-character-prize-checkbox');
+    if (prizeCb) prizeCb.checked = false;
     refreshBodyScrollLock();
   }
 
@@ -1301,8 +1422,28 @@
         imageUrl: c.imageUrl,
         type: t,
       };
-      if (typeof ctx.index === 'number') list[ctx.index] = entry;
-      else list.push(entry);
+      if (typeof ctx.index === 'number') {
+        const prev = list[ctx.index];
+        if (prev?.prizeGacha === true) entry.prizeGacha = true;
+        list[ctx.index] = entry;
+      } else {
+        list.push(entry);
+      }
+      month.categories[ctx.categoryId] = list;
+    } else if (ctx.kind === 'pick-batch') {
+      const month = findFutureMonth(ctx.monthId);
+      if (!month) return;
+      const list = month.categories[ctx.categoryId] || [];
+      for (const c of ctx.characters) {
+        list.push({
+          characterId: c.id,
+          id: c.id,
+          name: c.name,
+          imageUrl: c.imageUrl,
+          type: t,
+          prizeGacha: true,
+        });
+      }
       month.categories[ctx.categoryId] = list;
     }
     closeFutureTypePicker();

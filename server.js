@@ -260,10 +260,12 @@ function normalizeFutureSightState(value) {
       (Array.isArray(items) ? items : []).slice(0, 24).map((item) => {
         const obj = item && typeof item === 'object' ? item : {};
         const type = obj.type === 'limited' ? 'limited' : 'permanent';
-        return {
+        const base = {
           characterId: String(obj.characterId || '').trim(),
           type,
         };
+        if (obj.prizeGacha === true) base.prizeGacha = true;
+        return base;
       });
     const legacySpecial = normalizeEntries(categories.special);
     const eventCombined = [...normalizeEntries(categories.event), ...legacySpecial].slice(0, 24);

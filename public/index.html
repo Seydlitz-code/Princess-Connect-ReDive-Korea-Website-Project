@@ -213,24 +213,24 @@
 
               <div class="field-group">
                 <label class="field-label" for="nickname">닉네임</label>
+                <p class="field-hint">한글·영문 등 2~10자, 중복 확인 후 다음 단계로 진행할 수 있습니다.</p>
                 <div class="field-row field-row--check">
                   <input id="nickname" type="text" class="input" placeholder="2~10자 닉네임" autocomplete="nickname" />
                   <button type="button" class="btn btn-secondary btn-compact" id="check-nickname">닉네임 중복 확인</button>
                 </div>
                 <p id="nickname-check-feedback" class="field-check-feedback" role="status" aria-live="polite"></p>
-                <p class="field-hint">한글·영문 등 2~10자, 중복 확인 후 다음 단계로 진행할 수 있습니다.</p>
               </div>
             </div>
 
             <div class="signup-col signup-col--right">
               <div class="field-group">
                 <label class="field-label" for="userid">아이디</label>
+                <p class="field-hint">8~20자, 영문·숫자·밑줄(_)만 사용할 수 있습니다.</p>
                 <div class="field-row field-row--check">
                   <input id="userid" type="text" class="input" placeholder="8~20자 영문·숫자·밑줄" autocomplete="username" />
                   <button type="button" class="btn btn-secondary btn-compact" id="check-userid">아이디 중복 확인</button>
                 </div>
                 <p id="userid-check-feedback" class="field-check-feedback" role="status" aria-live="polite"></p>
-                <p class="field-hint">8~20자, 영문·숫자·밑줄(_)만 사용할 수 있습니다.</p>
               </div>
 
               <div class="field-group">
@@ -473,23 +473,31 @@
           <span aria-hidden="true">←</span> 뒤로 가기
         </button>
         <header class="modal-head future-character-modal-head">
-          <div class="future-character-modal-head-top">
-            <div class="future-character-modal-head-text">
-              <h2 id="future-character-heading" class="modal-title">캐릭터 선택</h2>
-              <p class="modal-sub">캐릭터를 선택한 뒤 아래 «추가»를 누르세요. 신규·복각 열에서는 한정/통상을 이어서 선택합니다.</p>
-            </div>
-            <div class="future-character-search-wrap">
-              <label class="visually-hidden" for="future-character-search">캐릭터 이름 검색</label>
-              <input
-                type="search"
-                id="future-character-search"
-                class="future-character-search"
-                placeholder="이름 검색…"
-                autocomplete="off"
-                spellcheck="false"
-                enterkeyhint="search"
-              />
-            </div>
+          <h2 id="future-character-heading" class="modal-title future-character-modal-centered-title">
+            프리코네 한국서버 미래시 캐릭터 추가
+          </h2>
+          <p class="modal-sub future-character-modal-centered-sub">
+            캐릭터를 선택한 뒤 «추가»를 누르세요. 신규·복각 열에서는 한정/통상을 이어서 선택합니다. 프라이즈 뽑기를 켜면 여러 명을 한 번에 추가할 수 있습니다.
+          </p>
+          <div class="future-character-search-row">
+            <label class="visually-hidden" for="future-character-search">캐릭터 이름 검색</label>
+            <input
+              type="search"
+              id="future-character-search"
+              class="future-character-search"
+              placeholder="캐릭터 명을 입력하세요"
+              autocomplete="off"
+              spellcheck="false"
+              enterkeyhint="search"
+            />
+            <button type="button" class="future-character-search-submit" id="future-character-search-submit" aria-label="검색">
+              <svg class="future-character-search-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 4 10.99 4 7.5S7.01 1 9.5 1 15 3.01 15 7.5 12.99 14 9.5 14z"
+                />
+              </svg>
+            </button>
           </div>
         </header>
         <div class="character-grid-scroll owned-characters-modal-scroll" tabindex="0">
@@ -497,8 +505,16 @@
           <p id="future-character-search-empty" class="future-character-search-empty" hidden role="status">검색 결과가 없습니다.</p>
         </div>
         <footer class="modal-footer future-character-modal-footer">
-          <button type="button" class="btn btn-outline" id="future-character-cancel" data-close-future-character>취소</button>
-          <button type="button" class="btn btn-primary" id="future-character-add">추가</button>
+          <div class="future-character-modal-footer-inner">
+            <label class="future-character-prize-label">
+              <input type="checkbox" id="future-character-prize-checkbox" />
+              프라이즈 뽑기
+            </label>
+            <div class="future-character-modal-footer-actions">
+              <button type="button" class="btn btn-outline" id="future-character-cancel" data-close-future-character>취소</button>
+              <button type="button" class="btn btn-primary" id="future-character-add">추가</button>
+            </div>
+          </div>
         </footer>
       </div>
     </div>
