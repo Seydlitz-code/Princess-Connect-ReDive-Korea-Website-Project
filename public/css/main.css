@@ -412,47 +412,6 @@ body {
   line-height: 1.2;
 }
 
-.future-type-pass-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 10px 0 0;
-  cursor: pointer;
-  font-size: 0.88rem;
-  font-weight: 800;
-  user-select: none;
-}
-
-.future-type-pass-input {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  accent-color: var(--pink);
-  cursor: pointer;
-}
-
-.future-type-pass-text {
-  line-height: 1.2;
-  color: var(--text);
-}
-
-.future-pass-tag {
-  display: inline-block;
-  margin-top: 3px;
-  box-sizing: border-box;
-  max-width: 100%;
-  padding: 1px 5px;
-  border: 1px solid var(--pink);
-  border-radius: 999px;
-  background: rgba(255, 93, 162, 0.22);
-  font-size: 0.44rem;
-  font-weight: 900;
-  color: #c7156c;
-  letter-spacing: -0.04em;
-  text-align: center;
-  line-height: 1.2;
-}
-
 .future-type-footer {
   display: flex;
   justify-content: flex-end;
@@ -1096,6 +1055,12 @@ button.future-type-badge {
 .future-type-badge.is-permanent {
   background: #e0f2fe;
   color: #075985;
+}
+
+.future-type-badge.is-pass {
+  border: 1px solid var(--pink);
+  background: rgba(255, 93, 162, 0.22);
+  color: #c7156c;
 }
 
 .future-month-info {

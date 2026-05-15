@@ -259,13 +259,13 @@ function normalizeFutureSightState(value) {
     const normalizeEntries = (items) =>
       (Array.isArray(items) ? items : []).slice(0, 24).map((item) => {
         const obj = item && typeof item === 'object' ? item : {};
-        const type = obj.type === 'limited' ? 'limited' : 'permanent';
+        let type = obj.type === 'pass' ? 'pass' : obj.type === 'limited' ? 'limited' : 'permanent';
+        if (obj.princessPass === true) type = 'pass';
         const base = {
           characterId: String(obj.characterId || '').trim(),
           type,
         };
         if (obj.prizeGacha === true) base.prizeGacha = true;
-        if (obj.princessPass === true) base.princessPass = true;
         return base;
       });
     const legacySpecial = normalizeEntries(categories.special);
