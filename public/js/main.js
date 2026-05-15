@@ -902,9 +902,12 @@
       }
       item.className = 'future-char-card';
 
-      const name = document.createElement('span');
-      name.className = 'future-char-name';
-      name.textContent = entry.name || '캐릭터';
+      const nameWrap = document.createElement('div');
+      nameWrap.className = 'future-char-name';
+      const nameText = document.createElement('span');
+      nameText.className = 'future-char-name-text';
+      nameText.textContent = entry.name || '캐릭터';
+      nameWrap.appendChild(nameText);
 
       const img = document.createElement('img');
       img.alt = entry.name || '캐릭터';
@@ -912,7 +915,7 @@
       img.decoding = 'async';
       img.src = entry.imageUrl || `/api/characters/${encodeURIComponent(entry.characterId || entry.id)}/image`;
 
-      item.append(name, img);
+      item.append(nameWrap, img);
 
       if (showType) {
         const type = document.createElement(readonly ? 'span' : 'button');

@@ -672,8 +672,12 @@ body.is-mypage-route .mypage-shell {
 }
 
 .future-main-cell .future-char-name {
-  min-height: 0;
+  min-height: calc(2 * 1.1em);
+  max-height: calc(2 * 1.1em);
   font-size: 0.45rem;
+}
+
+.future-main-cell .future-char-name-text {
   line-height: 1.1;
 }
 
@@ -723,15 +727,31 @@ body.is-mypage-route .mypage-shell {
 
 .future-char-name {
   order: -1;
-  min-height: 2.1em;
-  font-size: 0.52rem;
-  line-height: 1.15;
-  font-weight: 800;
-  word-break: keep-all;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(2 * 1.15em);
+  max-height: calc(2 * 1.15em);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
+  padding: 0 1px;
+  font-size: 0.52rem;
+  font-weight: 800;
+}
+
+.future-char-name-text {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  overflow: hidden;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+  text-align: center;
+  font-size: inherit;
+  font-weight: inherit;
+  max-width: 100%;
 }
 
 .future-type-badge {
@@ -906,8 +926,12 @@ button.future-type-badge {
 }
 
 .future-admin-cell .future-char-name {
-  min-height: 0;
+  min-height: calc(2 * 1.1em);
+  max-height: calc(2 * 1.1em);
   font-size: 0.46rem;
+}
+
+.future-admin-cell .future-char-name-text {
   line-height: 1.1;
 }
 
