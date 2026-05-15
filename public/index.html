@@ -521,15 +521,37 @@
 
     <div class="modal-root" id="future-type-modal" role="dialog" aria-modal="true" aria-labelledby="future-type-heading" hidden>
       <div class="modal-backdrop" data-close-future-type tabindex="-1"></div>
-      <div class="modal-sheet modal-sheet--narrow" role="document">
-        <header class="modal-head">
-          <h2 id="future-type-heading" class="modal-title">캐릭터 구분 선택</h2>
-          <p class="modal-sub">선택한 캐릭터의 구분을 저장하세요.</p>
+      <div class="modal-sheet modal-sheet--future-type" role="document">
+        <header class="modal-head modal-head--future-type">
+          <h2 id="future-type-heading" class="modal-title">캐릭터 한정 여부 선택</h2>
+          <p id="future-type-sub" class="modal-sub modal-sub--future-type" hidden></p>
         </header>
-        <div class="future-type-actions">
-          <button type="button" class="btn btn-primary" data-future-type-choice="limited">한정</button>
-          <button type="button" class="btn btn-outline" data-future-type-choice="permanent">통상</button>
+        <div class="future-type-body">
+          <div class="future-type-preview">
+            <div class="future-type-thumb-wrap">
+              <img id="future-type-img" class="future-type-img" src="" alt="" width="96" height="96" />
+            </div>
+            <div class="future-type-name-wrap">
+              <p id="future-type-name" class="future-type-name-single"></p>
+            </div>
+          </div>
+          <div class="future-type-choices" role="radiogroup" aria-labelledby="future-type-heading">
+            <label class="future-type-option">
+              <input type="radio" name="future-type-choice" value="limited" class="future-type-choice-input" />
+              <span class="future-type-option-ui" aria-hidden="true"></span>
+              <span class="future-type-option-label">한정</span>
+            </label>
+            <label class="future-type-option">
+              <input type="radio" name="future-type-choice" value="permanent" class="future-type-choice-input" />
+              <span class="future-type-option-ui" aria-hidden="true"></span>
+              <span class="future-type-option-label">통상</span>
+            </label>
+          </div>
         </div>
+        <footer class="future-type-footer">
+          <button type="button" class="future-type-btn-back" id="future-type-back">뒤로</button>
+          <button type="button" class="future-type-btn-next" id="future-type-next" disabled>다음</button>
+        </footer>
       </div>
     </div>
 

@@ -288,6 +288,191 @@ body {
   max-width: 380px;
 }
 
+.modal-head--future-type {
+  margin-bottom: 12px;
+}
+
+.modal-head--future-type .modal-title {
+  font-size: 1.05rem;
+}
+
+.modal-sub--future-type {
+  margin-top: 6px;
+  margin-bottom: 0;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.future-type-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px 16px;
+  align-items: start;
+}
+
+.future-type-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.future-type-thumb-wrap {
+  width: 96px;
+  height: 96px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.future-type-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.future-type-name-wrap {
+  width: 100%;
+  min-width: 0;
+}
+
+.future-type-name-single {
+  margin: 0;
+  text-align: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+.future-type-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  min-height: 96px;
+}
+
+.future-type-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 800;
+  min-height: 40px;
+  user-select: none;
+}
+
+.future-type-choice-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.future-type-option-ui {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #141414;
+  border-radius: 4px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.future-type-choice-input:checked + .future-type-option-ui {
+  background: var(--pink);
+  border-color: var(--pink);
+  box-shadow: inset 0 0 0 2px #fff;
+}
+
+.future-type-choice-input:focus-visible + .future-type-option-ui {
+  outline: 2px solid var(--pink);
+  outline-offset: 2px;
+}
+
+.future-type-option-label {
+  line-height: 1.2;
+}
+
+.future-type-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 4px;
+}
+
+.future-type-btn-back {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  border: 2px solid #141414;
+  color: #141414;
+  background: #fff;
+  font-weight: 800;
+  border-radius: 8px;
+  padding: 8px 18px;
+}
+
+.future-type-btn-back:hover {
+  background: #f6f6f6;
+}
+
+.future-type-btn-back:focus-visible {
+  outline: 2px solid #141414;
+  outline-offset: 2px;
+}
+
+.future-type-btn-next {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  border: 2px solid var(--pink);
+  color: #fff;
+  background: var(--pink);
+  font-weight: 800;
+  border-radius: 8px;
+  padding: 8px 18px;
+}
+
+.future-type-btn-next:hover:not(:disabled) {
+  background: var(--pink-hover);
+  border-color: var(--pink-hover);
+}
+
+.future-type-btn-next:focus-visible:not(:disabled) {
+  outline: 2px solid var(--pink);
+  outline-offset: 2px;
+}
+
+.future-type-btn-next:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.future-type-btn-next:disabled:hover {
+  background: var(--pink);
+  border-color: var(--pink);
+}
+
 .login-form {
   display: flex;
   flex-direction: column;
@@ -714,7 +899,7 @@ body.is-mypage-route .mypage-shell {
   width: 100%;
   border: 1px dashed #e0e0e0;
   border-radius: 6px;
-  background: #fafafa;
+  background: #fff;
   padding: 4px;
 }
 
@@ -983,7 +1168,7 @@ button.future-type-badge {
   box-sizing: border-box;
   border: 1px dashed #cfcfcf;
   border-radius: 6px;
-  background: #fafafa;
+  background: #fff;
   padding: 4px;
   display: flex;
   flex-direction: column;
@@ -1125,12 +1310,6 @@ button.future-type-badge {
   color: var(--muted);
 }
 
-.future-type-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
 .future-info-input {
   width: 100%;
   resize: vertical;
@@ -1235,6 +1414,12 @@ button.future-type-badge {
   border-radius: 18px;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
   padding: 22px 26px 26px;
+}
+
+.modal-sheet.modal-sheet--future-type {
+  width: min(400px, 94vw);
+  max-width: 420px;
+  padding: 18px 20px 16px;
 }
 
 .signup-modal-sheet {

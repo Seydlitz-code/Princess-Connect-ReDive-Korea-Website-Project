@@ -659,7 +659,7 @@
   let sessionUserRole = 'guest';
   let futureSightState = null;
   let futureCharacterTarget = null;
-  /** @type {{ kind: 'edit', monthId: string, categoryId: string, index: number } | { kind: 'pick', character: object, monthId: string, categoryId: string, index?: number } | { kind: 'pick-batch', characters: object[], monthId: string, categoryId: string } | null} */
+  /** @type {{ kind: 'edit', monthId: string, categoryId: string, index: number } | { kind: 'pick', character: object, monthId: string, categoryId: string, index?: number } | { kind: 'pick-batch-queue', characters: object[], index: number, resolved: { character: object, type: string }[], monthId: string, categoryId: string } | null} */
   let futureTypeContext = null;
   let futureCharacterPickSelected = null;
   /** 프라이즈 뽑기 다중 선택: characterId → character */
@@ -1141,6 +1141,235 @@
     renderFutureAdmin();
   }
 
+  function getFutureTypeModalCharacter(ctx) {
+    if (!ctx) return null;
+    if (ctx.kind === 'pick') return ctx.character;
+    if (ctx.kind === 'pick-batch-queue') return ctx.characters[ctx.index];
+    if (ctx.kind === 'edit') {
+      const month = findFutureMonth(ctx.monthId);
+      const entry = month?.categories?.[ctx.categoryId]?.[ctx.index];
+      if (!entry) return null;
+      return {
+        id: entry.characterId ?? entry.id,
+        name: entry.name,
+        imageUrl: entry.imageUrl,
+      };
+    }
+    return null;
+  }
+
+  function clearFutureTypeRadios() {
+    futureTypeModal?.querySelectorAll('input[name="future-type-choice"]').forEach((r) => {
+      r.checked = false;
+    });
+  }
+
+  function setFutureTypeRadios(value) {
+    clearFutureTypeRadios();
+    if (value === 'limited' || value === 'permanent') {
+      const el = futureTypeModal?.querySelector(`input[name="future-type-choice"][value="${value}"]`);
+      if (el) el.checked = true;
+    }
+  }
+
+  function syncFutureTypeNextEnabled() {
+    const next = document.getElementById('future-type-next');
+    if (!next) return;
+    const picked = futureTypeModal?.querySelector('input[name="future-type-choice"]:checked');
+    next.disabled = !picked;
+  }
+
+  function fitFutureTypeNameToOneLine(el, rawName) {
+    if (!el) return;
+    el.textContent = String(rawName || '캐릭터');
+    el.style.removeProperty('font-size');
+    const maxPx = 15;
+    const minPx = 9;
+    let px = maxPx;
+    el.style.fontSize = `${px}px`;
+    void el.offsetWidth;
+    while (px > minPx && el.scrollWidth > el.clientWidth) {
+      px -= 0.5;
+      el.style.fontSize = `${px}px`;
+    }
+  }
+
+  function bindFutureTypeImgAndName(img, nameEl, ch) {
+    if (!img || !nameEl || !ch) return;
+    const charId = String(ch.id);
+    const label = String(ch.name || '캐릭터');
+    img.alt = label;
+    const url = ch.imageUrl || `/api/characters/${encodeURIComponent(charId)}/image`;
+    const runFit = () => {
+      const cur = getFutureTypeModalCharacter(futureTypeContext);
+      if (!cur || String(cur.id) !== charId) return;
+      fitFutureTypeNameToOneLine(nameEl, String(cur.name || '캐릭터'));
+    };
+    img.addEventListener('load', runFit, { once: true });
+    img.src = url;
+    if (img.complete) requestAnimationFrame(() => requestAnimationFrame(runFit));
+    else requestAnimationFrame(() => requestAnimationFrame(runFit));
+  }
+
+  /** @param {{ restoreType?: 'limited'|'permanent' }} [opts] */
+  function syncFutureTypeModalUI(opts) {
+    const restoreType = opts?.restoreType;
+    const ctx = futureTypeContext;
+    const sub = document.getElementById('future-type-sub');
+    const img = document.getElementById('future-type-img');
+    const nameEl = document.getElementById('future-type-name');
+    if (!ctx) {
+      if (sub) sub.hidden = true;
+      return;
+    }
+    const ch = getFutureTypeModalCharacter(ctx);
+    if (!ch) {
+      if (sub) sub.hidden = true;
+      return;
+    }
+    bindFutureTypeImgAndName(img, nameEl, ch);
+
+    if (sub) {
+      if (ctx.kind === 'pick-batch-queue' && ctx.characters.length > 1) {
+        sub.hidden = false;
+        sub.textContent = `${ctx.index + 1} / ${ctx.characters.length}`;
+      } else {
+        sub.hidden = true;
+      }
+    }
+
+    if (restoreType === 'limited' || restoreType === 'permanent') {
+      setFutureTypeRadios(restoreType);
+    } else if (ctx.kind === 'edit') {
+      const month = findFutureMonth(ctx.monthId);
+      const entry = month?.categories?.[ctx.categoryId]?.[ctx.index];
+      const t = entry?.type === 'limited' ? 'limited' : 'permanent';
+      setFutureTypeRadios(t);
+    } else {
+      clearFutureTypeRadios();
+    }
+    syncFutureTypeNextEnabled();
+  }
+
+  function syncFutureTypeNavLabels() {
+    const back = document.getElementById('future-type-back');
+    const next = document.getElementById('future-type-next');
+    const ctx = futureTypeContext;
+    if (!back || !next || !ctx) return;
+    if (ctx.kind === 'pick-batch-queue') {
+      back.textContent = ctx.index === 0 ? '취소' : '뒤로';
+      next.textContent = ctx.index >= ctx.characters.length - 1 ? '완료' : '다음';
+    } else {
+      back.textContent = '취소';
+      next.textContent = '완료';
+    }
+  }
+
+  function flushPickBatchResolvedToMonth(ctx) {
+    const month = findFutureMonth(ctx.monthId);
+    if (!month) return;
+    const list = month.categories[ctx.categoryId] || [];
+    for (const { character: ch, type: ty } of ctx.resolved) {
+      list.push({
+        characterId: ch.id,
+        id: ch.id,
+        name: ch.name,
+        imageUrl: ch.imageUrl,
+        type: ty,
+        prizeGacha: true,
+      });
+    }
+    month.categories[ctx.categoryId] = list;
+  }
+
+  function applyFutureTypePickSingle(t) {
+    const ctx = futureTypeContext;
+    if (!ctx || ctx.kind !== 'pick' || !futureSightState) return;
+    const c = ctx.character;
+    const month = findFutureMonth(ctx.monthId);
+    if (!month) return;
+    const list = month.categories[ctx.categoryId] || [];
+    const entry = {
+      characterId: c.id,
+      id: c.id,
+      name: c.name,
+      imageUrl: c.imageUrl,
+      type: t,
+    };
+    if (typeof ctx.index === 'number') {
+      const prev = list[ctx.index];
+      if (prev?.prizeGacha === true) entry.prizeGacha = true;
+      list[ctx.index] = entry;
+    } else {
+      list.push(entry);
+    }
+    month.categories[ctx.categoryId] = list;
+  }
+
+  function applyFutureTypeEdit(t) {
+    const ctx = futureTypeContext;
+    if (!ctx || ctx.kind !== 'edit' || !futureSightState) return;
+    const month = findFutureMonth(ctx.monthId);
+    const entry = month?.categories?.[ctx.categoryId]?.[ctx.index];
+    if (entry) entry.type = t;
+  }
+
+  function futureTypeGoNext() {
+    const ctx = futureTypeContext;
+    if (!ctx || !futureSightState) return;
+    const picked = futureTypeModal?.querySelector('input[name="future-type-choice"]:checked');
+    if (!picked) return;
+    const t = picked.value === 'limited' ? 'limited' : 'permanent';
+
+    if (ctx.kind === 'edit') {
+      applyFutureTypeEdit(t);
+      closeFutureTypePicker();
+      renderFutureAdmin();
+      return;
+    }
+    if (ctx.kind === 'pick') {
+      applyFutureTypePickSingle(t);
+      closeFutureTypePicker();
+      renderFutureAdmin();
+      return;
+    }
+    if (ctx.kind === 'pick-batch-queue') {
+      const cur = ctx.characters[ctx.index];
+      if (!cur) {
+        closeFutureTypePicker();
+        return;
+      }
+      ctx.resolved.push({ character: cur, type: t });
+      if (ctx.index >= ctx.characters.length - 1) {
+        flushPickBatchResolvedToMonth(ctx);
+        closeFutureTypePicker();
+        renderFutureAdmin();
+        return;
+      }
+      ctx.index += 1;
+      syncFutureTypeModalUI();
+      syncFutureTypeNavLabels();
+    }
+  }
+
+  function futureTypeGoBack() {
+    const ctx = futureTypeContext;
+    if (!ctx) return;
+    if (ctx.kind === 'pick-batch-queue') {
+      if (ctx.index === 0) {
+        closeFutureTypePicker();
+        return;
+      }
+      ctx.index -= 1;
+      const undone = ctx.resolved.pop();
+      const prevType = undone && (undone.type === 'limited' || undone.type === 'permanent') ? undone.type : undefined;
+      syncFutureTypeModalUI(prevType ? { restoreType: prevType } : {});
+      syncFutureTypeNavLabels();
+      return;
+    }
+    closeFutureTypePicker();
+  }
+
   function isFuturePrizeGachaPickMode() {
     const el = document.getElementById('future-character-prize-checkbox');
     return Boolean(el?.checked);
@@ -1182,13 +1411,17 @@
       const needType = cat === 'new' || cat === 'rerun';
       if (needType) {
         futureTypeContext = {
-          kind: 'pick-batch',
+          kind: 'pick-batch-queue',
           characters: chars,
+          index: 0,
+          resolved: [],
           monthId: futureCharacterTarget.monthId,
           categoryId: cat,
         };
         closeFutureCharacterPicker();
         if (!futureTypeModal) return;
+        syncFutureTypeModalUI();
+        syncFutureTypeNavLabels();
         futureTypeModal.hidden = false;
         refreshBodyScrollLock();
       } else {
@@ -1228,6 +1461,8 @@
       };
       closeFutureCharacterPicker();
       if (!futureTypeModal) return;
+      syncFutureTypeModalUI();
+      syncFutureTypeNavLabels();
       futureTypeModal.hidden = false;
       refreshBodyScrollLock();
     } else {
@@ -1391,6 +1626,8 @@
       index: target.index,
     };
     if (!futureTypeModal) return;
+    syncFutureTypeModalUI();
+    syncFutureTypeNavLabels();
     futureTypeModal.hidden = false;
     refreshBodyScrollLock();
   }
@@ -1399,55 +1636,12 @@
     if (!futureTypeModal) return;
     futureTypeModal.hidden = true;
     futureTypeContext = null;
+    clearFutureTypeRadios();
+    const next = document.getElementById('future-type-next');
+    if (next) next.disabled = true;
+    const sub = document.getElementById('future-type-sub');
+    if (sub) sub.hidden = true;
     refreshBodyScrollLock();
-  }
-
-  function applyFutureType(type) {
-    const ctx = futureTypeContext;
-    if (!ctx || !futureSightState) return;
-    const t = type === 'limited' ? 'limited' : 'permanent';
-    if (ctx.kind === 'edit') {
-      const month = findFutureMonth(ctx.monthId);
-      const entry = month?.categories?.[ctx.categoryId]?.[ctx.index];
-      if (entry) entry.type = t;
-    } else if (ctx.kind === 'pick') {
-      const month = findFutureMonth(ctx.monthId);
-      if (!month) return;
-      const list = month.categories[ctx.categoryId] || [];
-      const c = ctx.character;
-      const entry = {
-        characterId: c.id,
-        id: c.id,
-        name: c.name,
-        imageUrl: c.imageUrl,
-        type: t,
-      };
-      if (typeof ctx.index === 'number') {
-        const prev = list[ctx.index];
-        if (prev?.prizeGacha === true) entry.prizeGacha = true;
-        list[ctx.index] = entry;
-      } else {
-        list.push(entry);
-      }
-      month.categories[ctx.categoryId] = list;
-    } else if (ctx.kind === 'pick-batch') {
-      const month = findFutureMonth(ctx.monthId);
-      if (!month) return;
-      const list = month.categories[ctx.categoryId] || [];
-      for (const c of ctx.characters) {
-        list.push({
-          characterId: c.id,
-          id: c.id,
-          name: c.name,
-          imageUrl: c.imageUrl,
-          type: t,
-          prizeGacha: true,
-        });
-      }
-      month.categories[ctx.categoryId] = list;
-    }
-    closeFutureTypePicker();
-    renderFutureAdmin();
   }
 
   function openFutureInfoEditor(monthId) {
@@ -1560,9 +1754,12 @@
   futureTypeModal?.addEventListener('click', (e) => {
     if (e.target === futureTypeModal) closeFutureTypePicker();
   });
-  futureTypeModal?.querySelectorAll('[data-future-type-choice]').forEach((btn) => {
-    btn.addEventListener('click', () => applyFutureType(btn.dataset.futureTypeChoice || 'permanent'));
+  futureTypeModal?.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t instanceof HTMLInputElement && t.name === 'future-type-choice') syncFutureTypeNextEnabled();
   });
+  document.getElementById('future-type-back')?.addEventListener('click', () => futureTypeGoBack());
+  document.getElementById('future-type-next')?.addEventListener('click', () => futureTypeGoNext());
   futureInfoCancel?.addEventListener('click', closeFutureInfoEditor);
   futureInfoSave?.addEventListener('click', saveFutureInfoEditor);
   futureInfoModal?.querySelectorAll('[data-close-future-info]').forEach((el) => {
