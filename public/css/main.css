@@ -2227,8 +2227,9 @@ button.future-type-badge {
 }
 
 .future-simultaneous-guide {
-  background: color-mix(in srgb, var(--pink) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--pink) 45%, transparent);
+  /* 내부: 프리코네 분홍(--pink #ff5da2) 톤 */
+  background: color-mix(in srgb, var(--pink) 32%, #fff);
+  border: 1px solid var(--pink);
   border-radius: 14px;
   padding: 8px 10px 10px;
   box-sizing: border-box;

@@ -664,7 +664,7 @@
   let futureCharacterPickSelected = null;
   /** 프라이즈 뽑기 다중 선택: characterId → character */
   let futureCharacterPickMap = new Map();
-  /** 동시복각 다중 선택: characterId → character */
+  /** 동시픽업 다중 선택: characterId → character */
   let futureCharacterSimultaneousMap = new Map();
   /** 체크박스와 동기화: 다중 선택 모드(그리드 클릭 로직이 항상 올바른 Map을 쓰도록 함) */
   let futureCharacterBulkMode = /** @type {'none' | 'prize' | 'simultaneous'} */ ('none');
@@ -951,7 +951,7 @@
     return item;
   }
 
-  /** 일반 캐릭터 줄 + 프라이즈 가이드 + 동시복각 가이드(해당 시) */
+  /** 일반 캐릭터 줄 + 프라이즈 가이드 + 동시픽업 블록(해당 시) */
   function renderFutureCategoryContent(entries, readonly, monthId, categoryId) {
     const list = Array.isArray(entries) ? entries : [];
     const stack = document.createElement('div');
@@ -993,7 +993,7 @@
       guide.className = 'future-simultaneous-guide';
       const titleEl = document.createElement('div');
       titleEl.className = 'future-simultaneous-guide-title';
-      titleEl.textContent = '동시복각 가이드';
+      titleEl.textContent = '동시픽업';
       guide.appendChild(titleEl);
       guide.appendChild(simLine);
       stack.appendChild(guide);
