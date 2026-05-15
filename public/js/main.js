@@ -659,7 +659,7 @@
   let sessionUserRole = 'guest';
   let futureSightState = null;
   let futureCharacterTarget = null;
-  /** @type {{ kind: 'edit', monthId: string, categoryId: string, index: number } | { kind: 'pick', character: object, monthId: string, categoryId: string, index?: number } | { kind: 'pick-batch-queue', characters: object[], index: number, resolved: { character: object, type: string }[], monthId: string, categoryId: string } | null} */
+  /** @type {{ kind: 'edit', monthId: string, categoryId: string, index: number } | { kind: 'pick', character: object, monthId: string, categoryId: string, index?: number } | { kind: 'pick-batch-queue', characters: object[], index: number, resolved: { character: object, type: string, princessPass?: boolean }[], monthId: string, categoryId: string } | null} */
   let futureTypeContext = null;
   let futureCharacterPickSelected = null;
   /** 프라이즈 뽑기 다중 선택: characterId → character */
@@ -839,6 +839,7 @@
           imageUrl: String(item.imageUrl || ''),
           type: item.type === 'limited' ? 'limited' : 'permanent',
           ...(item.prizeGacha === true ? { prizeGacha: true } : {}),
+          ...(item.princessPass === true ? { princessPass: true } : {}),
         })).filter((item) => item.characterId || item.id);
       return {
         id: String(month.id || `month-${idx + 1}`),
@@ -882,6 +883,7 @@
               characterId: entry.characterId || entry.id,
               type: entry.type === 'limited' ? 'limited' : 'permanent',
               ...(entry.prizeGacha === true ? { prizeGacha: true } : {}),
+              ...(entry.princessPass === true ? { princessPass: true } : {}),
             })),
           ])
         ),
@@ -932,6 +934,13 @@
         type.addEventListener('click', (e) => e.stopPropagation());
       }
       item.appendChild(type);
+      if (entry.princessPass) {
+        const passTag = document.createElement('span');
+        passTag.className = 'future-pass-tag';
+        passTag.textContent = '패스';
+        passTag.title = '프린세스 패스';
+        item.appendChild(passTag);
+      }
     }
 
     return item;
@@ -1211,13 +1220,15 @@
     else requestAnimationFrame(() => requestAnimationFrame(runFit));
   }
 
-  /** @param {{ restoreType?: 'limited'|'permanent' }} [opts] */
+  /** @param {{ restoreType?: 'limited'|'permanent', restorePrincessPass?: boolean }} [opts] */
   function syncFutureTypeModalUI(opts) {
     const restoreType = opts?.restoreType;
+    const restorePrincessPass = opts?.restorePrincessPass;
     const ctx = futureTypeContext;
     const sub = document.getElementById('future-type-sub');
     const img = document.getElementById('future-type-img');
     const nameEl = document.getElementById('future-type-name');
+    const passEl = document.getElementById('future-type-princess-pass');
     if (!ctx) {
       if (sub) sub.hidden = true;
       return;
@@ -1240,13 +1251,16 @@
 
     if (restoreType === 'limited' || restoreType === 'permanent') {
       setFutureTypeRadios(restoreType);
+      if (passEl) passEl.checked = restorePrincessPass === true;
     } else if (ctx.kind === 'edit') {
       const month = findFutureMonth(ctx.monthId);
       const entry = month?.categories?.[ctx.categoryId]?.[ctx.index];
       const t = entry?.type === 'limited' ? 'limited' : 'permanent';
       setFutureTypeRadios(t);
+      if (passEl) passEl.checked = entry?.princessPass === true;
     } else {
-      clearFutureTypeRadios();
+      setFutureTypeRadios('limited');
+      if (passEl) passEl.checked = false;
     }
     syncFutureTypeNextEnabled();
   }
@@ -1269,20 +1283,22 @@
     const month = findFutureMonth(ctx.monthId);
     if (!month) return;
     const list = month.categories[ctx.categoryId] || [];
-    for (const { character: ch, type: ty } of ctx.resolved) {
-      list.push({
+    for (const { character: ch, type: ty, princessPass } of ctx.resolved) {
+      const row = {
         characterId: ch.id,
         id: ch.id,
         name: ch.name,
         imageUrl: ch.imageUrl,
         type: ty,
         prizeGacha: true,
-      });
+      };
+      if (princessPass === true) row.princessPass = true;
+      list.push(row);
     }
     month.categories[ctx.categoryId] = list;
   }
 
-  function applyFutureTypePickSingle(t) {
+  function applyFutureTypePickSingle(t, princessPass) {
     const ctx = futureTypeContext;
     if (!ctx || ctx.kind !== 'pick' || !futureSightState) return;
     const c = ctx.character;
@@ -1296,6 +1312,7 @@
       imageUrl: c.imageUrl,
       type: t,
     };
+    if (princessPass === true) entry.princessPass = true;
     if (typeof ctx.index === 'number') {
       const prev = list[ctx.index];
       if (prev?.prizeGacha === true) entry.prizeGacha = true;
@@ -1306,12 +1323,15 @@
     month.categories[ctx.categoryId] = list;
   }
 
-  function applyFutureTypeEdit(t) {
+  function applyFutureTypeEdit(t, princessPass) {
     const ctx = futureTypeContext;
     if (!ctx || ctx.kind !== 'edit' || !futureSightState) return;
     const month = findFutureMonth(ctx.monthId);
     const entry = month?.categories?.[ctx.categoryId]?.[ctx.index];
-    if (entry) entry.type = t;
+    if (!entry) return;
+    entry.type = t;
+    if (princessPass === true) entry.princessPass = true;
+    else delete entry.princessPass;
   }
 
   function futureTypeGoNext() {
@@ -1320,15 +1340,16 @@
     const picked = futureTypeModal?.querySelector('input[name="future-type-choice"]:checked');
     if (!picked) return;
     const t = picked.value === 'limited' ? 'limited' : 'permanent';
+    const princessPass = document.getElementById('future-type-princess-pass')?.checked === true;
 
     if (ctx.kind === 'edit') {
-      applyFutureTypeEdit(t);
+      applyFutureTypeEdit(t, princessPass);
       closeFutureTypePicker();
       renderFutureAdmin();
       return;
     }
     if (ctx.kind === 'pick') {
-      applyFutureTypePickSingle(t);
+      applyFutureTypePickSingle(t, princessPass);
       closeFutureTypePicker();
       renderFutureAdmin();
       return;
@@ -1339,7 +1360,7 @@
         closeFutureTypePicker();
         return;
       }
-      ctx.resolved.push({ character: cur, type: t });
+      ctx.resolved.push({ character: cur, type: t, ...(princessPass ? { princessPass: true } : {}) });
       if (ctx.index >= ctx.characters.length - 1) {
         flushPickBatchResolvedToMonth(ctx);
         closeFutureTypePicker();
@@ -1362,8 +1383,11 @@
       }
       ctx.index -= 1;
       const undone = ctx.resolved.pop();
-      const prevType = undone && (undone.type === 'limited' || undone.type === 'permanent') ? undone.type : undefined;
-      syncFutureTypeModalUI(prevType ? { restoreType: prevType } : {});
+      const prevType = undone && (undone.type === 'limited' || undone.type === 'permanent') ? undone.type : 'limited';
+      syncFutureTypeModalUI({
+        restoreType: prevType,
+        restorePrincessPass: undone ? undone.princessPass === true : false,
+      });
       syncFutureTypeNavLabels();
       return;
     }
@@ -1637,6 +1661,8 @@
     futureTypeModal.hidden = true;
     futureTypeContext = null;
     clearFutureTypeRadios();
+    const passCb = document.getElementById('future-type-princess-pass');
+    if (passCb) passCb.checked = false;
     const next = document.getElementById('future-type-next');
     if (next) next.disabled = true;
     const sub = document.getElementById('future-type-sub');

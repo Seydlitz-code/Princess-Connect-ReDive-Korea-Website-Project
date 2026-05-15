@@ -265,6 +265,7 @@ function normalizeFutureSightState(value) {
           type,
         };
         if (obj.prizeGacha === true) base.prizeGacha = true;
+        if (obj.princessPass === true) base.princessPass = true;
         return base;
       });
     const legacySpecial = normalizeEntries(categories.special);
