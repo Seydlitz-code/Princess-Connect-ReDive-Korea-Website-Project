@@ -658,6 +658,8 @@
   const ownedUpdateForm = document.getElementById('owned-update-form');
   const ownedUpdateCancel = document.getElementById('owned-update-cancel');
   const ownedUpdateError = document.getElementById('owned-update-error');
+  const ownedUpdateSearchInput = document.getElementById('owned-update-character-search');
+  const ownedUpdateSearchSubmit = document.getElementById('owned-update-character-search-submit');
   const futureMainSheet = document.getElementById('future-main-sheet');
   const adminNavGroup = document.getElementById('mypage-admin-nav-group');
   const adminSubnav = document.querySelector('[data-mypage-subnav="site"]');
@@ -676,6 +678,8 @@
   let ownedUpdateSelection = new Set();
   let sessionUserRole = 'guest';
   let futureSightState = null;
+  /** 메인 미래시 전용: 로그인 시 보유 캐릭터만 흑백 처리(null이면 게스트·전원 컬러) */
+  let futureMainOwnedIdSet = /** @type {Set<string>|null} */ (null);
   let futureCharacterTarget = null;
   /** @type {{ kind: 'edit', monthId: string, categoryId: string, index: number } | { kind: 'pick', character: object, monthId: string, categoryId: string, index?: number } | { kind: 'pick-batch-queue', characters: object[], index: number, resolved: { character: object, type: 'limited'|'permanent'|'pass' }[], monthId: string, categoryId: string, specialSlot?: 'prize' | 'simultaneous' } | null} */
   let futureTypeContext = null;
@@ -732,8 +736,23 @@
       ownedUpdateError.hidden = true;
       ownedUpdateError.textContent = '';
     }
+    if (ownedUpdateSearchInput) ownedUpdateSearchInput.value = '';
+    ownedUpdateGrid?.querySelectorAll('.character-picker-btn').forEach((btn) => {
+      btn.hidden = false;
+    });
     refreshBodyScrollLock();
     mypageOwnedUpdateOpen?.focus();
+  }
+
+  /** 검색으로 숨긴 노드도 DOM에 남기 때문에 선택 상태(Set·is-selected)가 유지된다. */
+  function applyOwnedUpdateCharacterSearchFilter() {
+    if (!ownedUpdateGrid) return;
+    const q = (ownedUpdateSearchInput?.value || '').trim().toLowerCase();
+    ownedUpdateGrid.querySelectorAll('.character-picker-btn').forEach((btn) => {
+      const name = (btn.querySelector('.character-name')?.textContent || '').toLowerCase();
+      const match = !q || name.includes(q);
+      btn.hidden = !match;
+    });
   }
 
   function renderMypageProfilePreviewFromSrc(src) {
@@ -930,7 +949,7 @@
     };
   }
 
-  function buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId) {
+  function buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId, ownedGrayscaleSet) {
     const showType = categoryId === 'new' || categoryId === 'rerun';
     const item = document.createElement('div');
     if (!readonly) {
@@ -944,6 +963,10 @@
     item.className = 'future-char-card';
     if (entry.prizeGacha && !entry.simultaneousRerun) item.classList.add('future-char-card--prize');
     if (entry.simultaneousRerun) item.classList.add('future-char-card--simultaneous-rerun');
+    const cid = String(entry.characterId || entry.id || '').trim();
+    if (readonly && ownedGrayscaleSet && cid && ownedGrayscaleSet.has(cid)) {
+      item.classList.add('future-char-card--owned-grayscale');
+    }
 
     const nameWrap = document.createElement('div');
     nameWrap.className = 'future-char-name';
@@ -1005,7 +1028,7 @@
   }
 
   /** 일반 캐릭터 줄 + 프라이즈 가이드 + 동시픽업 블록(팝업별 추가 배치마다 블록 분리) */
-  function renderFutureCategoryContent(entries, readonly, monthId, categoryId) {
+  function renderFutureCategoryContent(entries, readonly, monthId, categoryId, ownedGrayscaleSet) {
     const list = Array.isArray(entries) ? entries : [];
     const stack = document.createElement('div');
     stack.className = 'future-category-stack';
@@ -1014,7 +1037,9 @@
     normalLine.className = 'future-char-line';
     list.forEach((entry, globalIndex) => {
       if (entry.prizeGacha || entry.simultaneousRerun) return;
-      normalLine.appendChild(buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId));
+      normalLine.appendChild(
+        buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId, ownedGrayscaleSet)
+      );
     });
     stack.appendChild(normalLine);
 
@@ -1022,7 +1047,9 @@
       const prizeLine = document.createElement('div');
       prizeLine.className = 'future-char-line future-prize-guide-line';
       for (const { entry, globalIndex } of seg.pairs) {
-        prizeLine.appendChild(buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId));
+        prizeLine.appendChild(
+          buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId, ownedGrayscaleSet)
+        );
       }
       const guide = document.createElement('div');
       guide.className = 'future-prize-guide';
@@ -1038,7 +1065,9 @@
       const simLine = document.createElement('div');
       simLine.className = 'future-char-line future-simultaneous-guide-line';
       for (const { entry, globalIndex } of seg.pairs) {
-        simLine.appendChild(buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId));
+        simLine.appendChild(
+          buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId, ownedGrayscaleSet)
+        );
       }
       const guide = document.createElement('div');
       guide.className = 'future-simultaneous-guide';
@@ -1091,7 +1120,9 @@
         cell.className = 'future-main-cell';
         const slot = document.createElement('div');
         slot.className = 'future-main-char-slot';
-        slot.appendChild(renderFutureCategoryContent(month.categories[cat.id] || [], true, month.id, cat.id));
+        slot.appendChild(
+          renderFutureCategoryContent(month.categories[cat.id] || [], true, month.id, cat.id, futureMainOwnedIdSet)
+        );
         cell.appendChild(slot);
         row.appendChild(cell);
       });
@@ -1206,15 +1237,37 @@
     futureAdminSheet.appendChild(table);
   }
 
+  async function syncFutureMainOwnedHighlights() {
+    if (sessionUserRole === 'guest') {
+      futureMainOwnedIdSet = null;
+    } else {
+      try {
+        const ocRes = await fetch('/api/me/owned-characters', {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        const ocData = await ocRes.json().catch(() => ({}));
+        if (!ocRes.ok || !Array.isArray(ocData.characters)) {
+          futureMainOwnedIdSet = new Set();
+        } else {
+          futureMainOwnedIdSet = new Set(ocData.characters.map((c) => String(c.id)));
+        }
+      } catch {
+        futureMainOwnedIdSet = new Set();
+      }
+    }
+    if (futureSightState) renderFutureMain(futureSightState);
+    if (sessionUserRole === 'admin') renderFutureAdmin();
+  }
+
   async function loadFutureSight() {
     try {
       const data = await apiJson('/api/future-sight', { credentials: 'include', cache: 'no-store' });
       futureSightState = ensureFutureState(data.data);
-      renderFutureMain(futureSightState);
-      if (sessionUserRole === 'admin') renderFutureAdmin();
     } catch {
-      renderFutureMain(defaultFutureSightState);
+      futureSightState = ensureFutureState(null);
     }
+    await syncFutureMainOwnedHighlights();
   }
 
   async function loadFutureSightForAdmin() {
@@ -1842,8 +1895,6 @@
     closeFutureInfoEditor();
   }
 
-  const defaultFutureSightState = ensureFutureState(null);
-
   document.querySelectorAll('.mypage-nav-btn[data-mypage-tab]').forEach((btn) => {
     btn.addEventListener('click', () => setMypageTab(btn.dataset.mypageTab || 'profile'));
   });
@@ -2226,6 +2277,7 @@
       }
       if (isSessionUser(data.user)) renderLoggedInHeader(data.user);
       else await refreshSessionHeader();
+      await syncFutureMainOwnedHighlights();
       loginForm.reset();
       closeLoginModal();
     } finally {
@@ -2244,12 +2296,14 @@
   });
 
   window.addEventListener('load', () => {
-    refreshSessionHeader();
-    refreshPublicRuntimeConfig();
-    loadFutureSight();
-    window.setInterval(() => {
-      void loadFutureSight();
-    }, 24 * 60 * 60 * 1000);
+    void (async () => {
+      await refreshSessionHeader();
+      refreshPublicRuntimeConfig();
+      await loadFutureSight();
+      window.setInterval(() => {
+        void loadFutureSight();
+      }, 24 * 60 * 60 * 1000);
+    })();
   });
 
   document.addEventListener('keydown', (e) => {
@@ -2726,7 +2780,9 @@
       ownedUpdateSelection = new Set(
         (Array.isArray(ownedData.characters) ? ownedData.characters : []).map((c) => String(c.id))
       );
+      if (ownedUpdateSearchInput) ownedUpdateSearchInput.value = '';
       renderCharacterPickerInto(ownedUpdateGrid, list, () => ownedUpdateSelection);
+      applyOwnedUpdateCharacterSearchFilter();
       ownedCharactersModal.hidden = false;
       refreshBodyScrollLock();
       requestAnimationFrame(() => ownedModalScroll?.focus());
@@ -2737,6 +2793,13 @@
 
   mypageOwnedUpdateOpen?.addEventListener('click', () => {
     void openOwnedCharactersModal();
+  });
+
+  ownedUpdateSearchSubmit?.addEventListener('click', () => applyOwnedUpdateCharacterSearchFilter());
+  ownedUpdateSearchInput?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    applyOwnedUpdateCharacterSearchFilter();
   });
 
   document.getElementById('owned-characters-modal-close')?.addEventListener('click', () => {
@@ -2782,6 +2845,7 @@
       /* 성공 */
       closeOwnedCharactersModal();
       await refreshMypageOwnedList();
+      await syncFutureMainOwnedHighlights();
     } catch (e) {
       const errElCatch = document.getElementById('owned-update-error');
       if (errElCatch) {

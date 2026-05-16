@@ -462,9 +462,30 @@
           <span aria-hidden="true">←</span> 뒤로 가기
         </button>
         <form id="owned-update-form" class="owned-characters-modal-form" novalidate>
-          <header class="modal-head">
-            <h2 id="owned-characters-heading" class="modal-title">보유 캐릭터 업데이트</h2>
-            <p class="modal-sub">보유 중인 캐릭터를 탭하여 선택·해제한 뒤 저장하세요. 추천 파티 등에 반영됩니다.</p>
+          <header class="modal-head owned-update-modal-head">
+            <div class="future-character-modal-header-row">
+              <h2 id="owned-characters-heading" class="modal-title owned-update-modal-title">보유 캐릭터 업데이트</h2>
+              <div class="future-character-search-row">
+                <label class="visually-hidden" for="owned-update-character-search">캐릭터 이름 검색</label>
+                <input
+                  type="search"
+                  id="owned-update-character-search"
+                  class="future-character-search"
+                  placeholder="캐릭터 명을 입력하세요"
+                  autocomplete="off"
+                  spellcheck="false"
+                  enterkeyhint="search"
+                />
+                <button type="button" class="future-character-search-submit" id="owned-update-character-search-submit" aria-label="검색">
+                  <svg class="future-character-search-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                    <path
+                      fill="currentColor"
+                      d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 4 10.99 4 7.5S7.01 1 9.5 1 15 3.01 15 7.5 12.99 14 9.5 14z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </header>
           <div class="character-grid-scroll owned-characters-modal-scroll" tabindex="0">
             <div id="owned-update-character-grid" class="character-grid character-grid--cols-8" role="list" aria-label="캐릭터 선택"></div>

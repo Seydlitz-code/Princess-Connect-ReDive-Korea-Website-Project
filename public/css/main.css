@@ -1027,6 +1027,11 @@ body.is-mypage-route .mypage-shell {
   line-height: 1.3;
 }
 
+/* 로그인 사용자: 메인 미래시에서 보유 캐릭터 이미지만 흑백 */
+.future-main-char-slot .future-char-card.future-char-card--owned-grayscale img {
+  filter: grayscale(1);
+}
+
 .future-char-line {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1451,6 +1456,19 @@ button.future-type-badge {
 /* 모달 제목/설명 영역이 압축되지 않도록 고정 */
 #owned-characters-modal .modal-head {
   flex-shrink: 0;
+}
+
+#owned-characters-modal .owned-update-modal-head.modal-head {
+  margin-bottom: 16px;
+}
+
+#owned-characters-modal .future-character-modal-header-row .owned-update-modal-title.modal-title {
+  margin-bottom: 0;
+  flex: 1 1 200px;
+  min-width: 0;
+  font-size: clamp(1.05rem, 2.8vw, 1.35rem);
+  text-align: left;
+  line-height: 1.25;
 }
 
 .owned-characters-modal-scroll {
