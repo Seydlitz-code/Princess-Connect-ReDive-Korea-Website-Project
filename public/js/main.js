@@ -826,6 +826,10 @@
     };
   }
 
+  function makeFutureSpecialGroupId() {
+    return `sg-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+
   function ensureFutureState(state) {
     const src = state && typeof state === 'object' ? state : {};
     const months = Array.isArray(src.months) ? src.months : [];
@@ -847,6 +851,9 @@
             type: t,
             ...(item.prizeGacha === true ? { prizeGacha: true } : {}),
             ...(item.simultaneousRerun === true ? { simultaneousRerun: true } : {}),
+            ...(typeof item.specialGroupId === 'string' && item.specialGroupId.trim().length > 0
+              ? { specialGroupId: item.specialGroupId.trim().slice(0, 80) }
+              : {}),
           };
         }).filter((item) => item.characterId || item.id);
       return {
@@ -893,6 +900,9 @@
               type: entry.type === 'pass' ? 'pass' : entry.type === 'limited' ? 'limited' : 'permanent',
               ...(entry.prizeGacha === true ? { prizeGacha: true } : {}),
               ...(entry.simultaneousRerun === true ? { simultaneousRerun: true } : {}),
+              ...(typeof entry.specialGroupId === 'string' && entry.specialGroupId.trim().length > 0
+                ? { specialGroupId: entry.specialGroupId.trim().slice(0, 80) }
+                : {}),
             })),
           ])
         ),
@@ -951,7 +961,31 @@
     return item;
   }
 
-  /** 일반 캐릭터 줄 + 프라이즈 가이드 + 동시픽업 블록(해당 시) */
+  /**
+   * 프라이즈·동시픽업을 specialGroupId 기준으로 나눈다(목록 순서대로, 같은 키가 연속이면 한 블록).
+   * Id 없음(구 데이터)은 동일 레거시 키로 묶인다.
+   */
+  function segmentFutureSpecialUiGroups(list, kind) {
+    const segments = [];
+    const legacyKey = '__legacy__';
+    list.forEach((entry, globalIndex) => {
+      const prizeOnly = !!entry.prizeGacha && !entry.simultaneousRerun;
+      const simultaneous = !!entry.simultaneousRerun;
+      if (kind === 'prize' && !prizeOnly) return;
+      if (kind === 'simultaneous' && !simultaneous) return;
+      const raw = typeof entry.specialGroupId === 'string' ? entry.specialGroupId.trim() : '';
+      const key = raw.length > 0 ? raw : legacyKey;
+      const last = segments[segments.length - 1];
+      if (!last || last.key !== key) {
+        segments.push({ key, pairs: [{ entry, globalIndex }] });
+      } else {
+        last.pairs.push({ entry, globalIndex });
+      }
+    });
+    return segments;
+  }
+
+  /** 일반 캐릭터 줄 + 프라이즈 가이드 + 동시픽업 블록(팝업별 추가 배치마다 블록 분리) */
   function renderFutureCategoryContent(entries, readonly, monthId, categoryId) {
     const list = Array.isArray(entries) ? entries : [];
     const stack = document.createElement('div');
@@ -965,13 +999,12 @@
     });
     stack.appendChild(normalLine);
 
-    const prizeLine = document.createElement('div');
-    prizeLine.className = 'future-char-line future-prize-guide-line';
-    list.forEach((entry, globalIndex) => {
-      if (!entry.prizeGacha || entry.simultaneousRerun) return;
-      prizeLine.appendChild(buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId));
-    });
-    if (prizeLine.childElementCount > 0) {
+    segmentFutureSpecialUiGroups(list, 'prize').forEach((seg) => {
+      const prizeLine = document.createElement('div');
+      prizeLine.className = 'future-char-line future-prize-guide-line';
+      for (const { entry, globalIndex } of seg.pairs) {
+        prizeLine.appendChild(buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId));
+      }
       const guide = document.createElement('div');
       guide.className = 'future-prize-guide';
       const titleEl = document.createElement('div');
@@ -980,15 +1013,14 @@
       guide.appendChild(titleEl);
       guide.appendChild(prizeLine);
       stack.appendChild(guide);
-    }
-
-    const simLine = document.createElement('div');
-    simLine.className = 'future-char-line future-simultaneous-guide-line';
-    list.forEach((entry, globalIndex) => {
-      if (!entry.simultaneousRerun) return;
-      simLine.appendChild(buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId));
     });
-    if (simLine.childElementCount > 0) {
+
+    segmentFutureSpecialUiGroups(list, 'simultaneous').forEach((seg) => {
+      const simLine = document.createElement('div');
+      simLine.className = 'future-char-line future-simultaneous-guide-line';
+      for (const { entry, globalIndex } of seg.pairs) {
+        simLine.appendChild(buildFutureCharCardElement(entry, globalIndex, readonly, monthId, categoryId));
+      }
       const guide = document.createElement('div');
       guide.className = 'future-simultaneous-guide';
       const titleEl = document.createElement('div');
@@ -997,7 +1029,7 @@
       guide.appendChild(titleEl);
       guide.appendChild(simLine);
       stack.appendChild(guide);
-    }
+    });
 
     return stack;
   }
@@ -1305,6 +1337,10 @@
     if (!month) return;
     const list = month.categories[ctx.categoryId] || [];
     const isSimultaneous = ctx.specialSlot === 'simultaneous';
+    const gid =
+      typeof ctx.specialGroupId === 'string' && ctx.specialGroupId.trim().length > 0
+        ? ctx.specialGroupId.trim().slice(0, 80)
+        : '';
     for (const { character: ch, type: ty } of ctx.resolved) {
       list.push({
         characterId: ch.id,
@@ -1313,6 +1349,7 @@
         imageUrl: ch.imageUrl,
         type: ty,
         ...(isSimultaneous ? { simultaneousRerun: true } : { prizeGacha: true }),
+        ...(gid ? { specialGroupId: gid } : {}),
       });
     }
     month.categories[ctx.categoryId] = list;
@@ -1336,6 +1373,9 @@
       const prev = list[ctx.index];
       if (prev?.prizeGacha === true) entry.prizeGacha = true;
       if (prev?.simultaneousRerun === true) entry.simultaneousRerun = true;
+      if (typeof prev?.specialGroupId === 'string' && prev.specialGroupId.trim().length > 0) {
+        entry.specialGroupId = prev.specialGroupId.trim().slice(0, 80);
+      }
       list[ctx.index] = entry;
     } else {
       list.push(entry);
@@ -1475,6 +1515,9 @@
       const prev = list[futureCharacterTarget.index];
       if (prev?.prizeGacha === true) entry.prizeGacha = true;
       if (prev?.simultaneousRerun === true) entry.simultaneousRerun = true;
+      if (typeof prev?.specialGroupId === 'string' && prev.specialGroupId.trim().length > 0) {
+        entry.specialGroupId = prev.specialGroupId.trim().slice(0, 80);
+      }
       list[futureCharacterTarget.index] = entry;
     } else {
       list.push(entry);
@@ -1496,6 +1539,7 @@
         window.alert('추가할 캐릭터를 한 명 이상 선택해 주세요.');
         return;
       }
+      const specialGroupId = makeFutureSpecialGroupId();
       const cat = futureCharacterTarget.categoryId;
       const needType = cat === 'new' || cat === 'rerun';
       if (needType) {
@@ -1511,6 +1555,7 @@
           monthId: futureCharacterTarget.monthId,
           categoryId: cat,
           specialSlot,
+          specialGroupId,
         };
         closeFutureCharacterPicker();
         if (!futureTypeModal) return;
@@ -1530,6 +1575,7 @@
             imageUrl: c.imageUrl,
             type: 'permanent',
             ...(specialSlot === 'simultaneous' ? { simultaneousRerun: true } : { prizeGacha: true }),
+            specialGroupId,
           });
         }
         month.categories[cat] = list;
@@ -1620,17 +1666,10 @@
       btn.classList.toggle('character-picker-btn--filtered-out', !match);
       if (match) visible += 1;
     });
-    const selectedButtons = futureCharacterGrid.querySelectorAll('.character-picker-btn.is-selected');
     const bulkMap = getActiveFutureCharacterBulkPickMap();
-    if (bulkMap) {
-      selectedButtons.forEach((btn) => {
-        if (btn.classList.contains('character-picker-btn--filtered-out')) {
-          btn.classList.remove('is-selected');
-          const id = String(btn.dataset.characterId || '');
-          if (id) bulkMap.delete(id);
-        }
-      });
-    } else {
+    // 프라이즈 뽑기·동시픽업 등 다중 선택 모드에서는 검색으로 목록에서 숨겨져도 선택과 맵을 유지한다.
+    // 그렇지 않으면 새 검색으로 캐릭터를 고를 때 필터에 안 걸린 기존 선택이 전부 해제되는 문제가 난다.
+    if (!bulkMap) {
       const selected = futureCharacterGrid.querySelector('.character-picker-btn.is-selected');
       if (selected && selected.classList.contains('character-picker-btn--filtered-out')) {
         selected.classList.remove('is-selected');

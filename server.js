@@ -267,6 +267,8 @@ function normalizeFutureSightState(value) {
         };
         if (obj.prizeGacha === true) base.prizeGacha = true;
         if (obj.simultaneousRerun === true) base.simultaneousRerun = true;
+        const sg = String(obj.specialGroupId || '').trim().slice(0, 80);
+        if (sg) base.specialGroupId = sg;
         return base;
       });
     const legacySpecial = normalizeEntries(categories.special);

@@ -1048,11 +1048,13 @@ button.future-type-badge {
 }
 
 .future-type-badge.is-limited {
+  border: 1px solid #dc2626;
   background: #fee2e2;
   color: #b91c1c;
 }
 
 .future-type-badge.is-permanent {
+  border: 1px solid #0284c7;
   background: #e0f2fe;
   color: #075985;
 }
