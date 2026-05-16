@@ -35,7 +35,7 @@ app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT) || 3000;
 
 const BCRYPT_ROUNDS = 11;
-const USERNAME_RE = /^[a-zA-Z0-9_]{8,20}$/;
+const USERNAME_RE = /^[a-zA-Z]{8,20}$/;
 const NICKNAME_MIN = 2;
 const NICKNAME_MAX = 10;
 const PASSWORD_MIN = 8;
@@ -92,6 +92,15 @@ const FUTURE_SIGHT_MONTH_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 function nicknameCodepointLen(s) {
   return [...String(s || '')].length;
+}
+
+/** 한글·영문·일본어(히라가나·가타카나·반각 가타카나·한자 등) 닉네임 허용 */
+function isValidNicknameChars(s) {
+  const t = String(s || '').trim();
+  if (!t) return false;
+  return /^[\uAC00-\uD7A3\u3131-\u318Ea-zA-Z\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\uFF66-\uFF9F]+$/.test(
+    t
+  );
 }
 
 function currentKoreanMonthNumber(now = new Date()) {
@@ -444,7 +453,7 @@ async function bootstrapAdminFromEnvIfNeeded(pgPool) {
     if (!USERNAME_RE.test(username)) {
       await client.query('ROLLBACK');
       console.error(
-        '[admin_bootstrap] ADMIN_USERNAME 형식이 올바르지 않습니다. (영문·숫자·밑줄 8~20자)'
+        '[admin_bootstrap] ADMIN_USERNAME 형식이 올바르지 않습니다. (영문 8~20자)'
       );
       return;
     }
@@ -932,6 +941,12 @@ app.get('/api/users/check', async (req, res) => {
       const nlen = nicknameCodepointLen(nickname);
       if (nlen < NICKNAME_MIN || nlen > NICKNAME_MAX) {
         out.nicknameAvailable = false;
+      } else if (!isValidNicknameChars(nickname)) {
+        res.status(400).json({
+          ok: false,
+          error: '닉네임은 한국어, 영어, 일본어 문자만 사용할 수 있습니다.',
+        });
+        return;
       } else if (isPiiEncryptionReady()) {
         const nb = nicknameBlindIndex(nickname);
         const params = excludeUserId ? [nb, nickname, excludeUserId] : [nb, nickname];
@@ -1018,6 +1033,13 @@ app.patch('/api/me', async (req, res) => {
       res.status(400).json({
         ok: false,
         error: `닉네임은 ${NICKNAME_MIN}~${NICKNAME_MAX}자로 입력해 주세요.`,
+      });
+      return;
+    }
+    if (!isValidNicknameChars(nicknameNext)) {
+      res.status(400).json({
+        ok: false,
+        error: '닉네임은 한국어, 영어, 일본어 문자만 사용할 수 있습니다.',
       });
       return;
     }
@@ -1230,7 +1252,7 @@ app.post('/api/register', async (req, res) => {
   if (!USERNAME_RE.test(username)) {
     res.status(400).json({
       ok: false,
-      error: '아이디는 영문·숫자·밑줄만 사용하고 8~20자로 입력해 주세요.',
+      error: '아이디는 영문만 사용하고 8~20자로 입력해 주세요.',
     });
     return;
   }
@@ -1239,6 +1261,13 @@ app.post('/api/register', async (req, res) => {
     res.status(400).json({
       ok: false,
       error: `닉네임은 ${NICKNAME_MIN}~${NICKNAME_MAX}자로 입력해 주세요.`,
+    });
+    return;
+  }
+  if (!isValidNicknameChars(nickname)) {
+    res.status(400).json({
+      ok: false,
+      error: '닉네임은 한국어, 영어, 일본어 문자만 사용할 수 있습니다.',
     });
     return;
   }

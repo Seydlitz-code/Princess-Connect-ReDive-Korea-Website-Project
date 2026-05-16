@@ -2,6 +2,12 @@
   --pink: #ff5da2;
   --pink-hover: #f04d94;
   --pink-active: #e03d84;
+  /** 미래시 동시픽업 블록: 연한 하늘색 배경 / 진한 하늘색 테두리 */
+  --future-simultaneous-fill: #e5f3fb;
+  --future-simultaneous-stroke: #0b8bd1;
+  /** 미래시 프라이즈 블록: 연한 프리코네 분홍 배경 / 진한 분홍 테두리 */
+  --future-prize-fill: color-mix(in srgb, var(--pink) 20%, #ffffff);
+  --future-prize-stroke: var(--pink);
   --nav-active: #1976d2;
   --text: #141414;
   --muted: #5c5c5c;
@@ -1535,6 +1541,18 @@ button.future-type-badge {
   line-height: 1.35;
 }
 
+#signup-modal .signup-head-characters .modal-head {
+  margin-bottom: 22px;
+}
+
+#signup-modal .signup-characters-intro .signup-characters-intro-line {
+  margin: 0;
+}
+
+#signup-modal .signup-characters-intro .signup-characters-intro-line + .signup-characters-intro-line {
+  margin-top: 8px;
+}
+
 #signup-modal .signup-grid {
   gap: 14px 24px;
 }
@@ -1604,6 +1622,14 @@ button.future-type-badge {
   line-height: 1.28;
 }
 
+#signup-modal .field-hint-stack .field-hint-line {
+  display: block;
+}
+
+#signup-modal .field-hint-stack .field-hint-line + .field-hint-line {
+  margin-top: 4px;
+}
+
 #signup-modal .pw-input-shell {
   min-height: 38px;
   padding: 2px 0 2px 6px;
@@ -1639,11 +1665,6 @@ button.future-type-badge {
   padding-top: 0;
 }
 
-#signup-modal .signup-captcha-hint {
-  margin-top: -4px;
-  margin-bottom: 2px;
-}
-
 #signup-modal .signup-captcha-row {
   gap: 8px;
   align-items: stretch;
@@ -1671,12 +1692,25 @@ button.future-type-badge {
 }
 
 #signup-modal .signup-footer-panel#signup-footer-account {
-  gap: 6px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 36px;
+  row-gap: 10px;
+  align-items: end;
+  width: 100%;
 }
 
-#signup-modal .signup-step1-alert {
+#signup-modal #signup-footer-account .signup-step1-alert {
+  grid-column: 2;
+  justify-self: stretch;
+  text-align: center;
   padding: 6px 10px;
   font-size: 0.78rem;
+}
+
+#signup-modal #signup-footer-account .signup-btn-next {
+  grid-column: 2;
+  justify-self: end;
 }
 
 #signup-modal .btn-footer-primary.signup-btn-next {
@@ -1709,10 +1743,6 @@ button.future-type-badge {
   padding-top: 4px;
 }
 
-.signup-captcha-hint {
-  margin-top: -2px;
-}
-
 .signup-captcha-row {
   display: flex;
   flex-direction: row;
@@ -1736,6 +1766,36 @@ button.future-type-badge {
 .signup-captcha-side .signup-captcha-refresh {
   align-self: stretch;
   width: 100%;
+}
+
+/* 회원가입 보안문자 새로고침: 호버 시 글자는 검정 유지, 테두리만 진한 검정·두껍게 */
+#signup-modal .signup-captcha-refresh.btn-outline {
+  color: var(--text);
+  border: 1px solid var(--border);
+  transition:
+    border-color 0.15s ease,
+    border-width 0.15s ease,
+    padding 0.15s ease,
+    color 0.15s ease;
+}
+
+#signup-modal .signup-captcha-refresh.btn-outline.btn-sm:hover {
+  color: var(--text);
+  background: #fff;
+  border-color: var(--text);
+  border-width: 2px;
+  padding: 5px 10px;
+}
+
+#signup-modal .signup-captcha-refresh.btn-outline:active {
+  color: var(--text);
+  border-color: var(--text);
+}
+
+#signup-modal .signup-captcha-refresh.btn-outline:focus-visible {
+  color: var(--text);
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
 }
 
 .signup-captcha-svg {
@@ -1776,14 +1836,7 @@ button.future-type-badge {
   opacity: 0.45;
 }
 
-.signup-footer-panel#signup-footer-account {
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 10px;
-}
-
 .signup-step1-alert {
-  align-self: stretch;
   margin: 0;
   padding: 10px 12px;
   border-radius: 10px;
@@ -1793,7 +1846,7 @@ button.future-type-badge {
   font-size: 0.88rem;
   font-weight: 600;
   line-height: 1.35;
-  text-align: right;
+  text-align: center;
 }
 
 .signup-step1-alert:empty,
@@ -2078,24 +2131,36 @@ button.future-type-badge {
   margin-bottom: 16px;
 }
 
-.future-character-modal-centered-title {
-  text-align: center;
-  margin: 0 0 8px;
-  font-size: 1.35rem;
+.future-character-modal-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  width: 100%;
 }
 
-.future-character-modal-centered-sub {
-  text-align: center;
-  margin: 0 0 14px;
+.future-character-modal-title {
+  margin: 0;
+  text-align: left;
+  font-size: clamp(1.05rem, 2.8vw, 1.35rem);
+  font-weight: 900;
+  flex: 1 1 220px;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+#future-character-modal .future-character-modal-title.modal-title {
+  margin-bottom: 0;
 }
 
 .future-character-search-row {
   display: flex;
   align-items: stretch;
   gap: 8px;
-  width: 100%;
-  max-width: 520px;
-  margin: 0 auto;
+  flex: 1 1 240px;
+  max-width: min(100%, 400px);
+  margin-left: auto;
 }
 
 .future-character-search-row .future-character-search {
@@ -2185,7 +2250,7 @@ button.future-type-badge {
   font-weight: 800;
   cursor: pointer;
   user-select: none;
-  color: var(--pink);
+  color: var(--text);
 }
 
 .future-character-simultaneous-label input[type='checkbox'] {
@@ -2208,8 +2273,8 @@ button.future-type-badge {
 }
 
 .future-prize-guide {
-  background: rgba(255, 93, 162, 0.14);
-  border: 1px solid rgba(255, 93, 162, 0.4);
+  background: var(--future-prize-fill);
+  border: 2px solid var(--future-prize-stroke);
   border-radius: 14px;
   padding: 8px 10px 10px;
   box-sizing: border-box;
@@ -2229,9 +2294,8 @@ button.future-type-badge {
 }
 
 .future-simultaneous-guide {
-  /* 내부: 프리코네 분홍(--pink #ff5da2) 톤 */
-  background: color-mix(in srgb, var(--pink) 32%, #fff);
-  border: 1px solid var(--pink);
+  background: var(--future-simultaneous-fill);
+  border: 2px solid var(--future-simultaneous-stroke);
   border-radius: 14px;
   padding: 8px 10px 10px;
   box-sizing: border-box;
@@ -2241,7 +2305,7 @@ button.future-type-badge {
   text-align: center;
   font-size: 0.78rem;
   font-weight: 900;
-  color: var(--pink);
+  color: var(--text);
   margin: 0 0 6px;
 }
 
@@ -2250,9 +2314,14 @@ button.future-type-badge {
   margin-top: 2px;
 }
 
+.future-char-card--prize {
+  border-color: var(--future-prize-stroke);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--future-prize-stroke) 28%, transparent);
+}
+
 .future-char-card--simultaneous-rerun {
-  border-color: var(--pink);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pink) 35%, transparent);
+  border-color: var(--future-simultaneous-stroke);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--future-simultaneous-stroke) 30%, transparent);
 }
 
 .future-character-search-empty {
@@ -2617,6 +2686,19 @@ button.future-type-badge {
 
   .signup-grid {
     grid-template-columns: 1fr;
+  }
+
+  #signup-modal #signup-footer-account.signup-footer-panel {
+    grid-template-columns: 1fr;
+  }
+
+  #signup-modal #signup-footer-account .signup-step1-alert,
+  #signup-modal #signup-footer-account .signup-btn-next {
+    grid-column: 1;
+  }
+
+  #signup-modal #signup-footer-account .signup-btn-next {
+    justify-self: end;
   }
 
   .character-grid {

@@ -179,21 +179,23 @@
     <div class="modal-root" id="signup-modal" role="dialog" aria-modal="true" aria-labelledby="signup-heading" hidden>
       <div class="modal-backdrop" data-close-modal tabindex="-1"></div>
       <div class="modal-sheet signup-modal-sheet signup-modal-sheet--mono" role="document">
-        <button type="button" class="modal-back link-back" id="signup-modal-back">
-          <span aria-hidden="true">←</span> 뒤로 가기
-        </button>
+        <button type="button" class="modal-back link-back" id="signup-modal-back" aria-label="취소">취소</button>
         <div id="signup-head-account">
           <header class="modal-head">
             <h2 id="signup-heading" class="modal-title">회원가입</h2>
-            <p class="modal-sub">새 계정을 만들어 게시물을 작성하고 댓글을 남겨보세요.</p>
           </header>
         </div>
         <div id="signup-head-characters" class="signup-head-characters" hidden>
           <header class="modal-head">
             <h2 id="signup-heading-characters" class="modal-title">보유 캐릭터 선택</h2>
-            <p class="modal-sub">
-              보유 캐릭터 데이터베이스는 추천 파티 제공에 사용됩니다. 회원가입 후에도 변경할 수 있습니다.
-            </p>
+            <div class="signup-characters-intro">
+              <p class="modal-sub signup-characters-intro-line">
+                보유 캐릭터 데이터베이스는 추천 파티 제공에 사용됩니다. 회원가입 후에도 변경할 수 있습니다.
+              </p>
+              <p class="modal-sub signup-characters-intro-line" lang="ja">
+                所持キャラクターデータベースは攻略推薦に使用されます。所持キャラクターは会員登録後も変更できます。
+              </p>
+            </div>
           </header>
         </div>
 
@@ -215,9 +217,12 @@
 
               <div class="field-group">
                 <label class="field-label" for="nickname">닉네임</label>
-                <p class="field-hint">한글·영문 등 2~10자, 중복 확인 후 다음 단계로 진행할 수 있습니다.</p>
+                <p class="field-hint field-hint-stack signup-nickname-hint">
+                  <span class="field-hint-line">한국어, 영어, 일본어를 사용하여 2 ~ 10자 이내로 작성해 주세요.</span>
+                  <span class="field-hint-line" lang="ja">韓国語、英語、日本語を使用して2~10字以内で作成してください。</span>
+                </p>
                 <div class="field-row field-row--check">
-                  <input id="nickname" type="text" class="input" placeholder="2~10자 닉네임" autocomplete="nickname" />
+                  <input id="nickname" type="text" class="input" autocomplete="nickname" />
                   <button type="button" class="btn btn-secondary btn-compact" id="check-nickname">닉네임 중복 확인</button>
                 </div>
                 <p id="nickname-check-feedback" class="field-check-feedback" role="status" aria-live="polite"></p>
@@ -227,9 +232,12 @@
             <div class="signup-col signup-col--right">
               <div class="field-group">
                 <label class="field-label" for="userid">아이디</label>
-                <p class="field-hint">8~20자, 영문·숫자·밑줄(_)만 사용할 수 있습니다.</p>
+                <p class="field-hint field-hint-stack signup-userid-hint">
+                  <span class="field-hint-line">8 ~ 20자 영어로만 설정 가능합니다.</span>
+                  <span class="field-hint-line" lang="ja">8~20文字、英語のみ設定可能です。</span>
+                </p>
                 <div class="field-row field-row--check">
-                  <input id="userid" type="text" class="input" placeholder="8~20자 영문·숫자·밑줄" autocomplete="username" />
+                  <input id="userid" type="text" class="input" autocomplete="username" />
                   <button type="button" class="btn btn-secondary btn-compact" id="check-userid">아이디 중복 확인</button>
                 </div>
                 <p id="userid-check-feedback" class="field-check-feedback" role="status" aria-live="polite"></p>
@@ -357,7 +365,6 @@
 
               <div class="field-group signup-captcha-block">
                 <label class="field-label" for="signup-captcha-answer" id="signup-captcha-label">보안 문자 입력</label>
-                <p class="field-hint signup-captcha-hint">자동 가입을 줄이기 위해 아래 문자를 입력해 주세요.</p>
                 <div class="signup-captcha-row">
                   <div
                     id="signup-captcha-svg"
@@ -370,7 +377,6 @@
                       id="signup-captcha-answer"
                       type="text"
                       class="input"
-                      placeholder="보안 문자 입력"
                       maxlength="12"
                       autocomplete="off"
                       autocapitalize="characters"
@@ -475,31 +481,30 @@
           <span aria-hidden="true">←</span> 뒤로 가기
         </button>
         <header class="modal-head future-character-modal-head">
-          <h2 id="future-character-heading" class="modal-title future-character-modal-centered-title">
-            프리코네 한국서버 미래시 캐릭터 추가
-          </h2>
-          <p class="modal-sub future-character-modal-centered-sub">
-            캐릭터를 선택한 뒤 «추가»를 누르세요. 신규·복각 열에서는 한정/통상을 이어서 선택합니다. 프라이즈 뽑기·동시픽업을 켜면 여러 명을 한 번에 추가할 수 있으며, 두 옵션은 동시에 켤 수 없습니다.
-          </p>
-          <div class="future-character-search-row">
-            <label class="visually-hidden" for="future-character-search">캐릭터 이름 검색</label>
-            <input
-              type="search"
-              id="future-character-search"
-              class="future-character-search"
-              placeholder="캐릭터 명을 입력하세요"
-              autocomplete="off"
-              spellcheck="false"
-              enterkeyhint="search"
-            />
-            <button type="button" class="future-character-search-submit" id="future-character-search-submit" aria-label="검색">
-              <svg class="future-character-search-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 4 10.99 4 7.5S7.01 1 9.5 1 15 3.01 15 7.5 12.99 14 9.5 14z"
-                />
-              </svg>
-            </button>
+          <div class="future-character-modal-header-row">
+            <h2 id="future-character-heading" class="modal-title future-character-modal-title">
+              한국 서버 캐릭터 미래시 편집
+            </h2>
+            <div class="future-character-search-row">
+              <label class="visually-hidden" for="future-character-search">캐릭터 이름 검색</label>
+              <input
+                type="search"
+                id="future-character-search"
+                class="future-character-search"
+                placeholder="캐릭터 명을 입력하세요"
+                autocomplete="off"
+                spellcheck="false"
+                enterkeyhint="search"
+              />
+              <button type="button" class="future-character-search-submit" id="future-character-search-submit" aria-label="검색">
+                <svg class="future-character-search-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                  <path
+                    fill="currentColor"
+                    d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 4 10.99 4 7.5S7.01 1 9.5 1 15 3.01 15 7.5 12.99 14 9.5 14z"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
         </header>
         <div class="character-grid-scroll owned-characters-modal-scroll" tabindex="0">

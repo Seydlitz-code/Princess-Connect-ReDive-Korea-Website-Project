@@ -98,7 +98,10 @@
   const profileCropRotate = document.getElementById('profile-crop-rotate');
   const profileCropBackdrop = document.getElementById('profile-crop-backdrop');
 
-  const USERNAME_RE_CLIENT = /^[a-zA-Z0-9_]{8,20}$/;
+  const USERNAME_RE_CLIENT = /^[a-zA-Z]{8,20}$/;
+  /** 한글·영문·일본어(히라가나·가타카나·반각 가타카나·한자 등) */
+  const NICKNAME_CHARS_RE =
+    /^[\uAC00-\uD7A3\u3131-\u318Ea-zA-Z\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\uFF66-\uFF9F]+$/;
   const NICKNAME_LEN_MIN = 2;
   const NICKNAME_LEN_MAX = 10;
   const PASSWORD_LEN_MIN = 8;
@@ -205,6 +208,17 @@
     });
   }
 
+  function syncSignupModalBackButton() {
+    if (!modalBack) return;
+    if (signupStep === 1) {
+      modalBack.innerHTML = '취소';
+      modalBack.setAttribute('aria-label', '취소');
+    } else {
+      modalBack.innerHTML = '<span aria-hidden="true">←</span> 뒤로 가기';
+      modalBack.setAttribute('aria-label', '뒤로 가기');
+    }
+  }
+
   function setSignupStep(step) {
     signupStep = step;
     const is1 = step === 1;
@@ -225,6 +239,7 @@
       modal.setAttribute('aria-labelledby', label);
     }
     if (is1) syncSignupNextButton();
+    syncSignupModalBackButton();
   }
 
   async function loadSignupCaptcha() {
@@ -271,11 +286,14 @@
     if (nLen < NICKNAME_LEN_MIN || nLen > NICKNAME_LEN_MAX) {
       return `닉네임은 ${NICKNAME_LEN_MIN}~${NICKNAME_LEN_MAX}자로 입력해 주세요.`;
     }
+    if (!NICKNAME_CHARS_RE.test(nickname)) {
+      return '닉네임은 한국어, 영어, 일본어 문자만 사용할 수 있습니다.';
+    }
     if (nicknameApprovedFor !== nickname) return '닉네임 중복 확인을 해 주세요.';
 
     if (!username) return '아이디를 입력해 주세요.';
     if (!USERNAME_RE_CLIENT.test(username)) {
-      return '아이디는 영문·숫자·밑줄만 사용하고 8~20자로 입력해 주세요.';
+      return '아이디는 영문만 사용하고 8~20자로 입력해 주세요.';
     }
     if (usernameApprovedFor !== username) return '아이디 중복 확인을 해 주세요.';
 
@@ -741,7 +759,8 @@
     const nickChanged = nick !== mypageBaselineNickname;
     const nLen = nicknameCharCount(nick);
     const lenOk = nLen >= NICKNAME_LEN_MIN && nLen <= NICKNAME_LEN_MAX;
-    const nickOk = !nickChanged || (mypageNicknameApprovedFor === nick && lenOk);
+    const nickCharsOk = nick === '' || NICKNAME_CHARS_RE.test(nick);
+    const nickOk = !nickChanged || (mypageNicknameApprovedFor === nick && lenOk && nickCharsOk);
     const imageChanged =
       mypagePendingProfileDataUrl !== null && mypagePendingProfileDataUrl !== mypageBaselineProfileImage;
 
@@ -1957,6 +1976,16 @@
       syncMypageApplyButton();
       return;
     }
+    if (!NICKNAME_CHARS_RE.test(nickname)) {
+      mypageNicknameApprovedFor = null;
+      setCheckFeedback(
+        mypageNicknameFeedbackEl,
+        '닉네임은 한국어, 영어, 일본어 문자만 사용할 수 있습니다.',
+        'warn'
+      );
+      syncMypageApplyButton();
+      return;
+    }
 
     if (!mypageSessionUserId) {
       await loadMypageProfileForm();
@@ -2449,6 +2478,16 @@
       syncSignupNextButton();
       return;
     }
+    if (!NICKNAME_CHARS_RE.test(nickname)) {
+      nicknameApprovedFor = null;
+      setCheckFeedback(
+        nicknameFeedbackEl,
+        '닉네임은 한국어, 영어, 일본어 문자만 사용할 수 있습니다.',
+        'warn'
+      );
+      syncSignupNextButton();
+      return;
+    }
     try {
       const res = await fetch(`/api/users/check?${new URLSearchParams({ nickname })}`);
       const data = await res.json().catch(() => ({}));
@@ -2489,7 +2528,7 @@
       usernameApprovedFor = null;
       setCheckFeedback(
         useridFeedbackEl,
-        '아이디는 영문·숫자·밑줄만 사용하고 8~20자로 입력해 주세요.',
+        '아이디는 영문만 사용하고 8~20자로 입력해 주세요.',
         'warn'
       );
       syncSignupNextButton();
