@@ -738,20 +738,35 @@
     }
     if (ownedUpdateSearchInput) ownedUpdateSearchInput.value = '';
     ownedUpdateGrid?.querySelectorAll('.character-picker-btn').forEach((btn) => {
-      btn.hidden = false;
+      btn.classList.remove('character-picker-btn--filtered-out');
+      btn.removeAttribute('hidden');
     });
     refreshBodyScrollLock();
     mypageOwnedUpdateOpen?.focus();
   }
 
-  /** 검색으로 숨긴 노드도 DOM에 남기 때문에 선택 상태(Set·is-selected)가 유지된다. */
+  /** 검색으로 숨긴 노드도 DOM에 남기 때문에 선택 상태(Set·is-selected)가 유지된다. 숨김은 CSS `character-picker-btn--filtered-out`(display:none !important) 사용 — `hidden` 속성은 버튼의 display:flex에 무력화될 수 있음. */
+  function normalizeOwnedSearchText(raw) {
+    try {
+      return String(raw || '')
+        .normalize('NFC')
+        .trim()
+        .toLowerCase();
+    } catch {
+      return String(raw || '')
+        .trim()
+        .toLowerCase();
+    }
+  }
+
   function applyOwnedUpdateCharacterSearchFilter() {
     if (!ownedUpdateGrid) return;
-    const q = (ownedUpdateSearchInput?.value || '').trim().toLowerCase();
+    const q = normalizeOwnedSearchText(ownedUpdateSearchInput?.value || '');
     ownedUpdateGrid.querySelectorAll('.character-picker-btn').forEach((btn) => {
-      const name = (btn.querySelector('.character-name')?.textContent || '').toLowerCase();
+      const name = normalizeOwnedSearchText(btn.querySelector('.character-name')?.textContent || '');
       const match = !q || name.includes(q);
-      btn.hidden = !match;
+      btn.classList.toggle('character-picker-btn--filtered-out', !match);
+      btn.removeAttribute('hidden');
     });
   }
 
@@ -2796,6 +2811,7 @@
   });
 
   ownedUpdateSearchSubmit?.addEventListener('click', () => applyOwnedUpdateCharacterSearchFilter());
+  ownedUpdateSearchInput?.addEventListener('input', () => applyOwnedUpdateCharacterSearchFilter());
   ownedUpdateSearchInput?.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
