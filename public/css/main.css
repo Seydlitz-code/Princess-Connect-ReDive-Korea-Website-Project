@@ -964,7 +964,7 @@ body.is-mypage-route .mypage-shell {
 }
 
 .future-main-cell {
-  padding: 2px 3px;
+  padding: 2px 1px;
   min-width: 0;
   min-height: min-content;
   display: flex;
@@ -973,13 +973,13 @@ body.is-mypage-route .mypage-shell {
 
 .future-main-char-slot {
   flex: 1 1 auto;
-  min-height: 84px;
+  min-height: 90px;
   box-sizing: border-box;
   width: 100%;
   border: 1px dashed #e0e0e0;
   border-radius: 6px;
   background: #fff;
-  padding: 4px;
+  padding: 2px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -990,6 +990,7 @@ body.is-mypage-route .mypage-shell {
   flex: 0 0 auto;
   width: 100%;
   min-height: min-content;
+  gap: 4px;
 }
 
 .future-main-char-slot .future-char-line {
@@ -997,15 +998,15 @@ body.is-mypage-route .mypage-shell {
   width: 100%;
 }
 
-/* 메인 표: 카드 축소(칸당 3열·이미지·이름·통/한 뱃지에 행 높이 밀착) */
+/* 메인 표: 칸당 3열 — 가로 여백을 줄이고 초상 max-width로 크기 확보 */
 .future-main-cell .future-char-line {
-  gap: 2px;
+  gap: 1px;
   padding-bottom: 0;
   justify-items: center;
 }
 
 .future-main-cell .future-char-card {
-  max-width: 46px;
+  max-width: 58px;
   width: 100%;
   padding: 1px;
   gap: 1px;
@@ -2360,6 +2361,14 @@ button.future-type-badge {
   margin: 0 0 6px;
 }
 
+.future-main-char-slot .future-prize-guide {
+  padding: 5px 4px 7px;
+}
+
+.future-main-char-slot .future-prize-guide .future-prize-guide-title {
+  margin-bottom: 4px;
+}
+
 .future-main-char-slot .future-prize-guide,
 .future-admin-char-slot .future-prize-guide {
   margin-top: 2px;
@@ -2379,6 +2388,14 @@ button.future-type-badge {
   font-weight: 900;
   color: var(--text);
   margin: 0 0 6px;
+}
+
+.future-main-char-slot .future-simultaneous-guide {
+  padding: 5px 4px 7px;
+}
+
+.future-main-char-slot .future-simultaneous-guide .future-simultaneous-guide-title {
+  margin-bottom: 4px;
 }
 
 .future-main-char-slot .future-simultaneous-guide,
