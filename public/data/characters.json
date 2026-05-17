@@ -1933,10 +1933,10 @@
     },
     {
       "id": "3afa7435-35c8-5e53-938f-c57543e29f0b",
-      "name": "치에루(겨울)",
-      "file": "치에루(겨울).png",
+      "name": "치에루(윈터)",
+      "file": "치에루(윈터).png",
       "imageMime": "image/png",
-      "imageUrl": "/characters/%EC%B9%98%EC%97%90%EB%A3%A8(%EA%B2%A8%EC%9A%B8).png",
+      "imageUrl": "/characters/%EC%B9%98%EC%97%90%EB%A3%A8(%EC%9C%88%ED%84%B0).png",
       "updatedAt": "2026-05-09T13:35:01.767Z"
     },
     {
@@ -2397,10 +2397,10 @@
     },
     {
       "id": "34f04633-ddec-5ded-b826-49ba6d66e6d9",
-      "name": "클로에(여름)",
-      "file": "클로에(여름).png",
+      "name": "클로에(윈터)",
+      "file": "클로에(윈터).png",
       "imageMime": "image/png",
-      "imageUrl": "/characters/%ED%81%B4%EB%A1%9C%EC%97%90(%EC%97%AC%EB%A6%84).png",
+      "imageUrl": "/characters/%ED%81%B4%EB%A1%9C%EC%97%90(%EC%9C%88%ED%84%B0).png",
       "updatedAt": "2026-05-09T13:35:01.767Z"
     },
     {
