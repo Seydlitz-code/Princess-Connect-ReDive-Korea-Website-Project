@@ -772,14 +772,6 @@
       "updatedAt": "2026-05-09T13:35:01.767Z"
     },
     {
-      "id": "9d70de3a-d68e-540f-b776-cb2e35514b94",
-      "name": "미소기",
-      "file": "미소기.png",
-      "imageMime": "image/png",
-      "imageUrl": "/characters/%EB%AF%B8%EC%86%8C%EA%B8%B0.png",
-      "updatedAt": "2026-05-09T13:35:01.767Z"
-    },
-    {
       "id": "7689a3c4-e3ec-5420-84cf-2dfec999f220",
       "name": "미소기(여름)",
       "file": "미소기(여름).png",
@@ -1061,10 +1053,10 @@
     },
     {
       "id": "44b710e8-1518-5aa2-aa52-36e11c7de678",
-      "name": "스즈나(수영복)",
-      "file": "스즈나(수영복).png",
+      "name": "스즈나(여름)",
+      "file": "스즈나(여름).png",
       "imageMime": "image/png",
-      "imageUrl": "/characters/%EC%8A%A4%EC%A6%88%EB%82%98(%EC%88%98%EC%98%81%EB%B3%B5).png",
+      "imageUrl": "/characters/%EC%8A%A4%EC%A6%88%EB%82%98(%EC%97%AC%EB%A6%84).png",
       "updatedAt": "2026-05-09T13:35:01.767Z"
     },
     {
