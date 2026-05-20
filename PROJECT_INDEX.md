@@ -1,0 +1,292 @@
+﻿# Project Index — Princess Connect! Re:Dive Korea Server Strategy Website
+
+> **패키지명**: `priconne-kr-strategy-site`  
+> **진입점**: `server.js`  
+> **언어**: JavaScript (Node.js, TypeScript 미사용)  
+> **배포 대상**: Railway (cloud), Docker / 로컬 실행 가능  
+> **생성일**: 2026-05-20
+
+---
+
+## 1. 프로젝트 개요
+
+본 프로젝트는 **Cygames의 모바일 게임 "Princess Connect! Re:Dive" 한국 서버**를 위한 **미래시(Future Sight) 전략 가이드 사이트**입니다. 일본/중국 서버의 과거 배너 이력을 기반으로, 한국 서버에 곧 출시될 신규 캐릭터 배너와 재실시 이벤트, 6성 해방 퀘스트 등을 표 형태로 시각화하여 제공합니다.
+
+### 주요 기능
+- **Future Sight 테이블**: 월별 캐릭터/이벤트 로드맵
+- **소유 캐릭터 관리**: 가입 유저가 자신이 보유한 캐릭터를 체크하여 관리
+- **관리자 기능**: Future Sight 데이터 직접 편집, 캐릭터 이미지 관리
+- **회원 가입/로그인**: 자체 세션 인증 (HMAC-SHA256 signed cookie)
+- **2단계 봇 방지**: 커스텀 SVG 캡차 + Google reCAPTCHA v2 (선택)
+
+---
+
+## 2. 기술 스택
+
+| 계층 | 기술 |
+|---|---|
+| **런타임** | Node.js >=18 |
+| **HTTP 프레임워크** | Express 4.21 |
+| **데이터베이스** | PostgreSQL (`pg` 8.13) |
+| **인증/세션** | 커스텀 HMAC-SHA256 signed cookie (Passport.js 미사용) |
+| **비밀번호 해싱** | bcrypt |
+| **PII 암호화** | AES-256-GCM (유저명/닉네임 암호화 + blind HMAC 인덱싱) |
+| **캡차** | 커스텀 SVG 캡차 + Google reCAPTCHA v2 |
+| **이미지 처리** | Sharp (devDependency, 로고 처리용) |
+| **프론트엔드** | Vanilla JS (프레임워크 없음, 빌드 스텝 없음), 순수 CSS |
+| **폰트** | Google Fonts (Noto Sans KR/JP), Gyeonggi Cheonnyeon 폰트 |
+| **컨테이너** | Docker (node:20-alpine) |
+| **배포** | Nixpacks (Railway 네이티브) |
+
+---
+
+## 3. 디렉토리 구조
+
+```
+/
+├── server.js                     # 메인 Express 서버 (~1619 라인)
+├── package.json                  # 의존성 및 스크립트
+├── Dockerfile                    # Docker 빌드 (node:20-alpine, port 8080)
+├── nixpacks.toml                 # Railway Nixpacks 설정
+├── .dockerignore
+├── .gitignore
+│
+├── lib/                          # 백엔드 라이브러리 모듈
+│   ├── dbConfig.js               # PostgreSQL 연결 문자열 해석 (멀티 환경)
+│   ├── sessionAuth.js            # HMAC 서명 세션 쿠키 관리
+│   ├── userPiiCrypto.js          # AES-256-GCM PII 암호화 + blind HMAC 인덱싱
+│   ├── userPiiSchema.js          # PII 컬럼 DB 스키마 마이그레이션
+│   ├── recaptcha.js              # Google reCAPTCHA v2 siteverify 클라이언트
+│   ├── signupCaptcha.js          # 커스텀 SVG 캡차 (챌린지/응답)
+│   └── charactersLibrary.js      # 정적 파일 기반 캐릭터 라이브러리 로더
+│
+├── public/                       # 정적 파일 (Express 제공)
+│   ├── index.html                # 단일 HTML 페이지 (SPA 셸) — 665 라인
+│   ├── css/main.css              # 모든 스타일 — 2832 라인
+│   ├── js/main.js                # 모든 클라이언트 사이드 JS (IIFE) — 3023 라인
+│   ├── data/characters.json      # 정적 캐릭터 라이브러리 매니페스트
+│   ├── characters/               # 캐릭터 이미지 (JPEG/PNG)
+│   ├── fonts/gyeonggi-cheonnyeon/ # 로컬 폰트
+│   └── images/
+│       ├── logo.png
+│       └── future-main/          # 배너 배경 이미지
+│
+├── scripts/                      # 유틸리티 / CLI 스크립트
+│   ├── create-admin.js           # 관리자 계정 생성
+│   ├── build-character-library.js # 정적 캐릭터 라이브러리 빌드
+│   ├── import-characters.js      # 캐릭터 이미지를 PostgreSQL로 가져오기
+│   ├── check-db.js               # DB 연결 확인
+│   ├── process-logo.js           # 로고 이미지 처리
+│   ├── railway-db-vars-hint.js   # Railway 환경 변수 설정 가이드
+│   └── ...
+│
+└── .idea/                        # JetBrains IDE 설정
+```
+
+---
+
+## 4. 아키텍처
+
+### 4.1 서버 아키텍처 (`server.js`)
+
+**단일 파일 Express 서버**로, 모든 라우트가 인라인으로 정의되어 있습니다 (약 1619 라인). 서버 기동 시퀀스는 다음과 같습니다:
+
+1. `initDb()` — 재시도 로직을 통해 PostgreSQL 연결 (`PG_INIT_RETRIES`로 설정 가능)
+2. `ensureSchema()` — DB 테이블 자동 생성/마이그레이션 (`users`, `characters`, `user_owned_characters`, `site_future_sight`)
+3. `bootstrapAdminFromEnvIfNeeded()` — 환경 변수로 관리자 계정 자동 생성 (Railway 친화적)
+4. `readCharacterLibrarySync()` — `public/data/characters.json`에서 정적 캐릭터 라이브러리 로드 시도 (DB 조회보다 빠름)
+5. HTTP 서버 시작
+
+**Graceful Shutdown**: SIGTERM/SIGINT 시그널을 받으면 DB 연결을 정리하고 서버를 종료합니다.
+
+### 4.2 API 엔드포인트
+
+| 메서드 | 라우트 | 목적 |
+|---|---|---|
+| GET | `/api/config` | 공개 런타임 설정 (reCAPTCHA site key) |
+| GET | `/api/signup/captcha` | SVG 캡차 챌린지 생성 |
+| POST | `/api/signup/verify-step1` | 캡차 검증 → step pass 토큰 발급 |
+| POST | `/api/register` | 전체 가입 (2단계: 캡차 + reCAPTCHA + 유저 데이터) |
+| POST | `/api/login` | 로그인 (HMAC 서명 쿠키 세션 발급) |
+| POST | `/api/logout` | 세션 쿠키 제거 |
+| GET | `/api/me` | 현재 유저 프로필 조회 |
+| PATCH | `/api/me` | 프로필 수정 (닉네임 + 프로필 이미지) |
+| GET | `/api/me/owned-characters` | 유저 소유 캐릭터 목록 조회 |
+| PATCH | `/api/me/owned-characters` | 소유 캐릭터 업데이트 (전체 교체) |
+| GET | `/api/users/check` | 유저명/닉네임 사용 가능 여부 확인 |
+| GET | `/api/characters` | 전체 캐릭터 목록 조회 (라이브러리 또는 DB) |
+| GET | `/api/characters/:id/image` | 캐릭터 이미지 제공 (정적 파일 또는 DB BLOB) |
+| GET | `/api/future-sight` | Future Sight 로드맵 데이터 조회 |
+| PUT | `/api/admin/future-sight` | 관리자: Future Sight 데이터 수정 |
+| GET | `/api/health` | 헬스 체크 + DB 진단 정보 |
+| GET | `/*` | SPA 폴백 → `index.html` 제공 |
+
+### 4.3 데이터베이스 스키마
+
+`ensureSchema()`에 의해 자동 생성되는 5개의 테이블:
+
+- **`users`** — id (UUID PK), username, nickname, password_hash, profile_image, role ('user'/'admin'), created_at + PII 컬럼
+- **`characters`** — id (UUID PK), name (UNIQUE), image_mime, image_data (BYTEA), updated_at
+- **`user_owned_characters`** — user_id (FK), character_id (UUID), created_at; composite PK
+- **`site_future_sight`** — 싱글톤 행 (id=1 CHECK 제약), data (JSONB), updated_at
+- **PII 컬럼** (`ensureUserPiiSchema`에 의해 추가): `username_blind`, `nickname_blind`, `username_cipher`, `nickname_cipher` — 부분 unique 인덱스 포함
+
+### 4.4 인증 및 보안
+
+**세션**: 커스텀 구현 — HMAC-SHA256 서명 토큰을 HttpOnly 쿠키(`priconne_sid`)에 저장. 7일 만료, SameSite=Lax, 프로덕션 환경에서 Secure.
+
+**PII 보호**: 유저명과 닉네임은 AES-256-GCM으로 암호화되어 저장됩니다. 동시에 "blind index"(HMAC 기반)를 사용하여 평문을 노출하지 않고 중복 검사를 수행합니다. 마이그레이션 후 평문 컬럼은 NULL로 설정됩니다. 이를 통해 DB가 유출되더라도 개인 식별 정보(PII)가 보호됩니다.
+
+**회원가입 플로우** (2단계 봇 방지):
+1. **1단계**: 커스텀 SVG 캡차 (무작위 5자리 영숫자, 노이즈 라인/회전이 적용된 SVG) → `stepPassToken` 획득
+2. **2단계**: 선택적 Google reCAPTCHA v2 → 전체 가입 제출
+
+**봇 방지**: 인메모리 챌린지 맵 + TTL (캡차 8분, step pass 30분).
+
+---
+
+## 5. 데이터 흐름
+
+### 5.1 캐릭터 데이터 (두 가지 모드)
+
+1. **정적 라이브러리** (우선): `public/data/characters.json` + `public/characters/*.jpg/png`. 서버 기동 시 Map에 로드됩니다. `res.sendFile()`로 직접 정적 파일을 제공하여 더 빠릅니다.
+2. **PostgreSQL**: `characters` 테이블에 BYTEA로 이미지 저장. 정적 라이브러리를 사용할 수 없을 때 폴백으로 사용됩니다.
+
+### 5.2 Future Sight 데이터
+
+JSONB 형식으로 `site_future_sight` 싱글톤 테이블에 저장됩니다. `applyFutureSightMonthMaintenance()`가 매일 자동으로 월 인덱스를 조정하고 오래된 항목을 제거합니다.
+
+### 5.3 전체 데이터 흐름
+
+```
+PostgreSQL / 정적 라이브러리
+    ↓
+server.js (미들웨어 / API 핸들러)
+    ↓
+JSON API 응답
+    ↓
+Vanilla JS (fetch) → DOM 조작
+```
+
+---
+
+## 6. 프론트엔드 아키텍처
+
+### 6.1 개요
+
+클라이언트 사이드 라우터, 빌드 스텝, 번들러, 프레임워크를 전혀 사용하지 않는 **Vanilla JS SPA**입니다. 모든 네비게이션은 DOM 가시성 토글링으로 처리되며, 모든 상호작용은 순수 DOM API로 구현되어 있습니다.
+
+### 6.2 UI 구성
+
+`public/index.html` — 모든 모달이 hidden `<div>` 요소로 정의된 **단일 HTML 페이지**:
+
+| UI 섹션 | 설명 |
+|---|---|
+| **네비게이션** | 상단 네비게이션 바, 5개 보드: Main, Clan Battle, Battle Stadium, Deep Quest, Abyss |
+| **Main Board** | "Future Sight" 테이블 — 행 = 월, 열 = 카테고리 (신규/재실시/6성/고유1/고유2/이벤트) |
+| **Mypage** | 프로필 편집, 소유 캐릭터 표시, 관리자 패널 |
+| **Signup Modal** | 2단계: (1) 프로필 사진, 닉네임, 유저명, 비밀번호, 캡차; (2) 캐릭터 선택 + reCAPTCHA |
+| **Login Modal** | 유저명 + 비밀번호 폼 |
+| **Profile Crop Modal** | Canvas 기반 원형 크롭 (줌/회전/이동) |
+| **Owned Characters Modal** | 검색 필터가 포함된 캐릭터 그리드 선택기 |
+| **Future Character Picker** | 관리자: Future Sight에 캐릭터 추가/교체 (검색 + 일괄 모드 지원) |
+| **Future Type Picker** | 관리자: 한정/통상/프린세스 페스 유형 설정 |
+| **Future Info Editor** | 관리자: 월별 정보 텍스트 편집 |
+
+### 6.3 상태 관리
+
+IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 없음). 주요 상태 변수:
+- `charactersCache` — 캐릭터 데이터 캐시
+- `selectedCharacterIds` — 선택된 캐릭터 ID 목록
+- `futureSightState` — Future Sight 데이터
+- `sessionUserRole` — 현재 세션 유저의 역할
+- `ownedUpdateSelection` — 소유 캐릭터 업데이트 선택 상태
+
+### 6.4 CSS
+
+단일 파일 (2832 라인). CSS 커스텀 프로퍼티를 사용한 테마 설정. 미디어 쿼리를 통한 완전한 반응형 디자인. 프리프로세서나 CSS 프레임워크를 사용하지 않습니다.
+
+---
+
+## 7. 사용 가능한 스크립트
+
+| 명령어 | 동작 |
+|---|---|
+| `npm start` / `npm run dev` | 서버 시작 (`node server.js`) |
+| `npm run build:logo` | Sharp를 통한 로고 이미지 처리 |
+| `npm run import:characters` | 로컬 폴더의 캐릭터 이미지를 PostgreSQL로 가져오기 |
+| `npm run build:characters` | 정적 캐릭터 라이브러리 빌드 (JSON 매니페스트 + 이미지 복사) |
+| `npm run bootstrap:admin` | 관리자 계정 생성/업데이트 |
+| `npm run db:check` | PostgreSQL 연결 테스트 |
+| `npm run railway:db-hint` | Railway 설정 안내 출력 |
+
+**테스트, 린트, 타입체크 스크립트는 설정되어 있지 않습니다.**
+
+---
+
+## 8. 빌드 및 배포
+
+### 8.1 Docker
+
+- 베이스 이미지: `node:20-alpine`
+- 실행: `npm ci --omit=dev`, expose 8080, `CMD ["node", "server.js"]`
+- SIGTERM/SIGINT를 통한 Graceful Shutdown 지원
+
+### 8.2 Nixpacks (Railway)
+
+- 설치 단계: `npm ci`
+- 시작 명령: `node server.js`
+
+### 8.3 필수 환경 변수
+
+| 변수명 | 용도 |
+|---|---|
+| `DATABASE_PRIVATE_URL` 또는 `DATABASE_URL` | PostgreSQL 연결 문자열 |
+| `SESSION_SECRET` | 세션 서명 키 (로그인에 필수) |
+| `USER_PII_ENCRYPTION_KEY` | PII 암호화 키 (없으면 `SESSION_SECRET`에서 파생) |
+| `RECAPTCHA_SITE_KEY` + `RECAPTCHA_SECRET_KEY` | Google reCAPTCHA (선택) |
+| `ADMIN_BOOTSTRAP_PASSWORD` | 최초 배포 시 관리자 자동 생성 |
+| `PORT` | 기본 3000 (Docker에서는 8080) |
+
+---
+
+## 9. 주요 설계 패턴
+
+1. **듀얼 캐릭터 데이터 소스**: 정적 파일 라이브러리 (더 빠름) vs PostgreSQL BLOB — API 소비자에게 완전히 투명하게 동작
+2. **PII 우선 아키텍처**: 모든 개인 데이터(유저명, 닉네임)는 저장 시 암호화됩니다. 중복 검사는 Blind HMAC 인덱스로 수행
+3. **커스텀 캡차**: 외부 서비스 의존도를 낮추기 위해 자체 생성 SVG 캡차를 사용, Google reCAPTCHA를 추가 보안 계층으로 제공
+4. **Graceful Startup**: 설정 가능한 재시도 횟수/지연을 통한 DB 연결 재시도. DB를 사용할 수 없는 경우에도 graceful degradation (헬스 엔드포인트에서 진단 정보 반환)
+5. **자동 마이그레이션 스키마**: 기동 시 테이블이 자동 생성/변경됨 — 별도의 마이그레이션 도구 불필요
+6. **Admin env 부트스트랩**: 최초 배포 시 환경 변수를 통한 무중단 관리자 계정 생성
+7. **Vanilla JS SPA**: 클라이언트 사이드 라우터 없이 DOM toggling만으로 구현. 저복잡도, 저의존성 설계
+8. **한국어/일본어 이중 언어 UI**: 네비게이션 레이블과 안내문이 한국어와 일본어로 표시됨
+9. **Canvas 기반 이미지 크롭**: 클라이언트 사이드에서 원형 프로필 이미지 크롭, 줌/회전/이동 기능
+10. **Future Sight 자동 유지보수**: 월 인덱스가 매일 자동으로 전진하여 콘텐츠가 오래되지 않도록 관리
+
+---
+
+## 10. 외부 의존성 및 API
+
+- **express** — HTTP 서버 프레임워크
+- **pg** — PostgreSQL 클라이언트
+- **bcrypt** — 비밀번호 해싱
+- **sharp** (dev) — 이미지 처리
+- **Google reCAPTCHA v2** — 가입 시 선택적 스팸 방지
+- **Google Fonts** — Noto Sans KR, Noto Sans JP
+- **Gyeonggi Cheonnyeon Font** — 제목용 로컬 한국어 폰트
+
+---
+
+## 11. 핵심 파일 설명
+
+| 파일 | 라인 수 | 역할 |
+|---|---|---|
+| `server.js` | ~1619 | 전체 백엔드 로직: 서버 기동, DB 스키마, 모든 API 라우트, 정적 파일 제공, 세션 관리 |
+| `public/index.html` | ~665 | SPA 셸: 모든 모달과 UI 섹션을 포함하는 단일 HTML |
+| `public/js/main.js` | ~3023 | 모든 프론트엔드 로직: API 호출, DOM 조작, 이벤트 처리, 상태 관리 |
+| `public/css/main.css` | ~2832 | 전체 스타일시트: 레이아웃, 테마, 반응형 디자인, 모달, 애니메이션 |
+| `lib/sessionAuth.js` | — | HMAC-SHA256 세션 쿠키 생성/검증 유틸리티 |
+| `lib/userPiiCrypto.js` | — | AES-256-GCM 암호화 + Blind HMAC 인덱싱 |
+| `lib/signupCaptcha.js` | — | 커스텀 SVG 캡차 생성 및 검증 |
+| `lib/charactersLibrary.js` | — | 정적 캐릭터 라이브러리 로더 |
+| `lib/dbConfig.js` | — | 환경별 PostgreSQL 연결 문자열 해석 |
