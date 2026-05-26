@@ -1,4 +1,6 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
@@ -32,6 +34,19 @@ const {
 const app = express();
 
 app.set('trust proxy', 1);
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        'script-src': ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
+        'frame-src': ["'self'", 'https://www.google.com'],
+        'style-src': ["'self'", 'https:', "'unsafe-inline'"],
+        'font-src': ["'self'", 'https:', 'data:'],
+        'img-src': ["'self'", 'data:'],
+      },
+    },
+  })
+);
 const PORT = Number(process.env.PORT) || 3000;
 
 const BCRYPT_ROUNDS = 11;
@@ -591,6 +606,31 @@ function requirePool(res) {
 }
 
 app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ limit: '1mb', extended: false }));
+app.use(express.raw({ limit: '1mb', type: 'application/octet-stream' }));
+app.use(express.text({ limit: '1mb', type: 'text/plain' }));
+
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
+});
+app.use(globalLimiter);
+
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: '너무 많은 시도입니다. 잠시 후 다시 시도해 주세요.' },
+});
+app.use('/api/login', authLimiter);
+app.use('/api/register', authLimiter);
+app.use('/api/signup/captcha', authLimiter);
+app.use('/api/signup/verify-step1', authLimiter);
+app.use('/api/users/check', authLimiter);
 
 app.get('/api/config', (req, res) => {
   const siteKey = getRecaptchaSiteKeyTrimmed();
