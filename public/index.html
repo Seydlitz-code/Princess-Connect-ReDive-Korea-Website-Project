@@ -88,7 +88,96 @@
           <div class="future-main-banner future-main-banner--footer" aria-hidden="true"></div>
         </div>
       </section>
-      <section class="board-panel" data-board-panel="clan" hidden aria-label="클랜전 게시판"></section>
+      <section class="board-panel" data-board-panel="clan" hidden aria-label="클랜전 게시판">
+        <div class="clan-board-shell">
+          <header class="clan-board-header">
+            <h2 class="clan-board-title">클랜전 게시판</h2>
+            <div class="clan-board-toolbar">
+              <div class="clan-category-tabs" role="tablist" aria-label="카테고리">
+                <button type="button" class="clan-cat-btn is-active" role="tab" aria-selected="true" data-category="all">전체</button>
+                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="general">자유</button>
+                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="recruit">클랜원 모집</button>
+                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="strategy">공략</button>
+                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="discussion">토론</button>
+                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="info">정보</button>
+              </div>
+              <div class="clan-search-row">
+                <input type="search" class="clan-search-input" id="clan-board-search" placeholder="제목 + 내용 검색" autocomplete="off" enterkeyhint="search" />
+                <button type="button" class="clan-search-btn" id="clan-board-search-btn" aria-label="검색">
+                  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 4 10.99 4 7.5S7.01 1 9.5 1 15 3.01 15 7.5 12.99 14 9.5 14z" />
+                  </svg>
+                </button>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" id="clan-write-open">글쓰기</button>
+            </div>
+          </header>
+          <div class="clan-post-list" id="clan-post-list" role="list" aria-live="polite"></div>
+          <p class="clan-board-empty" id="clan-board-empty" role="status" hidden>게시물이 없습니다.</p>
+          <nav class="clan-pagination" id="clan-pagination" aria-label="페이지" hidden></nav>
+          <div class="clan-post-detail" id="clan-post-detail" hidden>
+            <div class="clan-post-detail-inner">
+              <button type="button" class="clan-detail-back" id="clan-detail-back">
+                <span aria-hidden="true">&larr;</span> 목록으로
+              </button>
+              <div id="clan-detail-content"></div>
+              <div class="clan-detail-actions" id="clan-detail-actions" hidden>
+                <button type="button" class="clan-like-btn" id="clan-like-btn" disabled>
+                  <svg class="clan-like-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                  </svg>
+                  <span id="clan-like-text">추천</span>
+                  <span class="clan-like-count" id="clan-like-count">0</span>
+                </button>
+              </div>
+              <section class="clan-comments" id="clan-comments-section" hidden>
+                <h3 class="clan-comments-heading">댓글 <span id="clan-comment-count">0</span></h3>
+                <div class="clan-comments-list" id="clan-comments-list" role="list"></div>
+                <nav class="clan-pagination" id="clan-comment-pagination" aria-label="댓글 페이지" hidden></nav>
+                <form class="clan-comment-write" id="clan-comment-write-form" hidden>
+                  <textarea id="clan-comment-input" class="clan-comment-textarea" rows="3" placeholder="댓글을 입력하세요" required minlength="1" maxlength="2000"></textarea>
+                  <p id="clan-comment-error" class="clan-write-error" role="alert" aria-live="assertive" hidden></p>
+                  <div class="clan-comment-write-actions">
+                    <button type="submit" class="btn btn-primary btn-sm" id="clan-comment-submit">등록</button>
+                  </div>
+                </form>
+              </section>
+            </div>
+          </div>
+          <div class="clan-post-write" id="clan-post-write" hidden>
+            <div class="clan-detail-inner">
+              <button type="button" class="clan-detail-back" id="clan-write-back">
+                <span aria-hidden="true">&larr;</span> 목록으로
+              </button>
+              <form id="clan-write-form" class="clan-write-form">
+                <p id="clan-write-error" class="clan-write-error" role="alert" aria-live="assertive" hidden></p>
+                <div class="field-group clan-write-field">
+                  <label class="field-label" for="clan-write-category">카테고리</label>
+                  <div class="clan-category-tabs" role="radiogroup" aria-label="게시물 카테고리 선택">
+                    <button type="button" class="clan-cat-btn is-active" role="radio" aria-checked="true" data-category="general" data-clan-write-cat>자유</button>
+                    <button type="button" class="clan-cat-btn" role="radio" aria-checked="false" data-category="recruit" data-clan-write-cat>클랜원 모집</button>
+                    <button type="button" class="clan-cat-btn" role="radio" aria-checked="false" data-category="strategy" data-clan-write-cat>공략</button>
+                    <button type="button" class="clan-cat-btn" role="radio" aria-checked="false" data-category="discussion" data-clan-write-cat>토론</button>
+                    <button type="button" class="clan-cat-btn" role="radio" aria-checked="false" data-category="info" data-clan-write-cat>정보</button>
+                  </div>
+                </div>
+                <div class="field-group clan-write-field">
+                  <label class="field-label" for="clan-write-title">제목</label>
+                  <input id="clan-write-title" name="title" type="text" class="clan-write-input" placeholder="제목을 입력하세요" autocomplete="off" required minlength="1" maxlength="200" />
+                </div>
+                <div class="field-group clan-write-field">
+                  <label class="field-label" for="clan-write-content">내용</label>
+                  <textarea id="clan-write-content" name="content" class="clan-write-textarea" rows="12" placeholder="내용을 입력하세요" required minlength="1"></textarea>
+                </div>
+                <footer class="modal-footer clan-write-footer">
+                  <button type="button" class="btn btn-outline" id="clan-write-cancel">취소</button>
+                  <button type="submit" class="btn btn-primary" id="clan-write-submit">작성</button>
+                </footer>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
       <section class="board-panel" data-board-panel="stadium" hidden aria-label="배틀 스타디움 게시판"></section>
       <section class="board-panel" data-board-panel="deep" hidden aria-label="심역 퀘스트 게시판"></section>
       <section class="board-panel" data-board-panel="abyss" hidden aria-label="심역 토벌전 게시판"></section>

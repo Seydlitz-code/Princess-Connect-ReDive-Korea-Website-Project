@@ -37,6 +37,11 @@
         loadMypageProfileForm();
       });
     }
+    if (boardId === 'clan') {
+      queueMicrotask(() => {
+        loadClanBoardPosts();
+      });
+    }
   }
 
   links.forEach((btn) => {
@@ -3019,5 +3024,559 @@
       signupSubmit.disabled = false;
     }
   });
+
+  /* ========== 클랜전 게시판 ========== */
+
+  const clanCatBtns = Array.from(document.querySelectorAll('.clan-cat-btn'));
+  const clanPostList = document.getElementById('clan-post-list');
+  const clanBoardEmpty = document.getElementById('clan-board-empty');
+  const clanPagination = document.getElementById('clan-pagination');
+  const clanPostDetail = document.getElementById('clan-post-detail');
+  const clanDetailContent = document.getElementById('clan-detail-content');
+  const clanDetailBack = document.getElementById('clan-detail-back');
+  const clanDetailActions = document.getElementById('clan-detail-actions');
+  const clanLikeBtn = document.getElementById('clan-like-btn');
+  const clanLikeText = document.getElementById('clan-like-text');
+  const clanLikeCount = document.getElementById('clan-like-count');
+  const clanCommentsSection = document.getElementById('clan-comments-section');
+  const clanCommentCount = document.getElementById('clan-comment-count');
+  const clanCommentsList = document.getElementById('clan-comments-list');
+  const clanCommentPagination = document.getElementById('clan-comment-pagination');
+  const clanBoardSearch = document.getElementById('clan-board-search');
+  const clanBoardSearchBtn = document.getElementById('clan-board-search-btn');
+  const clanWriteOpenBtn = document.getElementById('clan-write-open');
+  const clanPostWrite = document.getElementById('clan-post-write');
+  const clanWriteForm = document.getElementById('clan-write-form');
+  const clanWriteCategoryBtns = Array.from(document.querySelectorAll('[data-clan-write-cat]'));
+  const clanWriteTitle = document.getElementById('clan-write-title');
+  const clanWriteContent = document.getElementById('clan-write-content');
+  const clanWriteSubmit = document.getElementById('clan-write-submit');
+  const clanWriteCancel = document.getElementById('clan-write-cancel');
+  const clanWriteBack = document.getElementById('clan-write-back');
+  const clanWriteError = document.getElementById('clan-write-error');
+  const clanCommentWriteForm = document.getElementById('clan-comment-write-form');
+  const clanCommentInput = document.getElementById('clan-comment-input');
+  const clanCommentSubmit = document.getElementById('clan-comment-submit');
+  const clanCommentError = document.getElementById('clan-comment-error');
+
+  let clanBoardPage = 1;
+  let clanBoardCategory = 'all';
+  let clanBoardSearchText = '';
+  let clanBoardCurrentPostId = null;
+  let clanBoardCurrentPostLiked = false;
+  let clanWriteCategory = 'general';
+
+  const CATEGORY_LABELS = {
+    all: '전체',
+    general: '자유',
+    recruit: '클랜원 모집',
+    strategy: '공략',
+    discussion: '토론',
+    info: '정보',
+  };
+
+  function updateClanCategoryActive() {
+    clanCatBtns.forEach((btn) => {
+      const on = btn.dataset.category === clanBoardCategory;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-selected', String(on));
+    });
+  }
+
+  async function loadClanBoardPosts() {
+    if (!clanPostList || !clanBoardEmpty || !clanPagination) return;
+    clanPostDetail.hidden = true;
+    clanPostList.hidden = false;
+    if (clanBoardEmpty) clanBoardEmpty.hidden = true;
+
+    const params = new URLSearchParams();
+    params.set('page', String(clanBoardPage));
+    params.set('limit', '20');
+    if (clanBoardCategory !== 'all') params.set('category', clanBoardCategory);
+    if (clanBoardSearchText) params.set('search', clanBoardSearchText);
+
+    try {
+      const res = await fetch(`/api/clan-board/posts?${params.toString()}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        window.alert(data.error || '게시물을 불러오지 못했습니다.');
+        return;
+      }
+      renderClanPostList(data.posts);
+      renderClanPagination(clanPagination, data.pagination, (page) => {
+        clanBoardPage = page;
+        loadClanBoardPosts();
+      });
+      if (clanBoardEmpty) {
+        clanBoardEmpty.hidden = data.posts.length > 0;
+      }
+      if (clanPostList) {
+        clanPostList.hidden = data.posts.length === 0;
+      }
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : '네트워크 오류가 발생했습니다.');
+    }
+  }
+
+  function renderClanPostList(posts) {
+    if (!clanPostList) return;
+    clanPostList.innerHTML = '';
+
+    posts.forEach((post) => {
+      const row = document.createElement('div');
+      row.className = 'clan-post-row';
+      row.setAttribute('role', 'listitem');
+      row.addEventListener('click', () => openClanPostDetail(post.id));
+
+      const catCell = document.createElement('div');
+      catCell.className = 'clan-post-category-cell';
+      const badge = document.createElement('span');
+      badge.className = `clan-post-badge clan-post-badge--${post.category}`;
+      badge.textContent = CATEGORY_LABELS[post.category] || post.category;
+      catCell.appendChild(badge);
+
+      const titleCell = document.createElement('div');
+      titleCell.className = 'clan-post-title-cell';
+      const title = document.createElement('p');
+      title.className = 'clan-post-title';
+      title.textContent = post.title;
+      titleCell.appendChild(title);
+
+      const info = document.createElement('div');
+      info.className = 'clan-post-info';
+      const author = document.createElement('span');
+      author.className = 'clan-post-author';
+      author.textContent = post.author.nickname;
+      const date = document.createElement('span');
+      date.textContent = formatClanDate(post.created_at);
+      const views = document.createElement('span');
+      views.textContent = `조회 ${post.view_count}`;
+      const comments = document.createElement('span');
+      comments.textContent = `댓글 ${post.comment_count}`;
+      const likes = document.createElement('span');
+      likes.textContent = `추천 ${post.like_count}`;
+      info.appendChild(author);
+      info.appendChild(date);
+      info.appendChild(views);
+      info.appendChild(comments);
+      info.appendChild(likes);
+
+      row.appendChild(catCell);
+      row.appendChild(titleCell);
+      row.appendChild(info);
+      clanPostList.appendChild(row);
+    });
+  }
+
+  function renderClanPagination(container, pagination, onPage) {
+    if (!container) return;
+    container.innerHTML = '';
+    if (!pagination || pagination.totalPages <= 1) {
+      container.hidden = true;
+      return;
+    }
+    container.hidden = false;
+
+    const { page, totalPages } = pagination;
+
+    const prev = document.createElement('button');
+    prev.type = 'button';
+    prev.className = 'clan-pagination-btn';
+    prev.textContent = '\u2039';
+    prev.disabled = page <= 1;
+    prev.setAttribute('aria-label', '이전 페이지');
+    prev.addEventListener('click', () => { if (page > 1) onPage(page - 1); });
+    container.appendChild(prev);
+
+    const maxVisible = 7;
+    let start = Math.max(1, page - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPages, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'clan-pagination-btn';
+      if (i === page) btn.classList.add('is-active');
+      btn.textContent = String(i);
+      btn.setAttribute('aria-label', `${i}페이지`);
+      btn.addEventListener('click', () => onPage(i));
+      container.appendChild(btn);
+    }
+
+    const next = document.createElement('button');
+    next.type = 'button';
+    next.className = 'clan-pagination-btn';
+    next.textContent = '\u203a';
+    next.disabled = page >= totalPages;
+    next.setAttribute('aria-label', '다음 페이지');
+    next.addEventListener('click', () => { if (page < totalPages) onPage(page + 1); });
+    container.appendChild(next);
+  }
+
+  function formatClanDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  function formatClanFullDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  async function openClanPostDetail(postId) {
+    if (!clanPostDetail || !clanDetailContent) return;
+    clanPostList.hidden = true;
+    if (clanBoardEmpty) clanBoardEmpty.hidden = true;
+    clanPagination.hidden = true;
+    clanDetailActions.hidden = true;
+    clanCommentsSection.hidden = true;
+    clanCommentPagination.hidden = true;
+    clanPostDetail.hidden = false;
+    clanDetailContent.innerHTML = '<p style="text-align:center;color:var(--muted);padding:40px 0;">불러오는 중...</p>';
+
+    try {
+      await fetch(`/api/clan-board/posts/${encodeURIComponent(postId)}/view`, { method: 'PATCH' }).catch(() => {});
+    } catch (_) { /* ignore */ }
+
+    try {
+      const res = await fetch(`/api/clan-board/posts/${encodeURIComponent(postId)}`, { credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        clanDetailContent.innerHTML = `<p style="text-align:center;color:var(--muted);padding:40px 0;">${data.error || '게시물을 불러올 수 없습니다.'}</p>`;
+        return;
+      }
+      clanBoardCurrentPostId = postId;
+      clanBoardCurrentPostLiked = data.post.liked || false;
+      renderClanPostDetail(data.post);
+    } catch (e) {
+      clanDetailContent.innerHTML = '<p style="text-align:center;color:var(--muted);padding:40px 0;">네트워크 오류가 발생했습니다.</p>';
+    }
+  }
+
+  function renderClanPostDetail(post) {
+    if (!clanDetailContent) return;
+
+    const head = document.createElement('div');
+    head.className = 'clan-detail-head';
+    const badge = document.createElement('span');
+    badge.className = `clan-post-badge clan-post-badge--${post.category}`;
+    badge.textContent = CATEGORY_LABELS[post.category] || post.category;
+    const title = document.createElement('h3');
+    title.className = 'clan-detail-title';
+    title.textContent = post.title;
+    const meta = document.createElement('div');
+    meta.className = 'clan-detail-meta';
+    const author = document.createElement('span');
+    author.className = 'clan-detail-author';
+    author.textContent = post.author.nickname;
+    const date = document.createElement('span');
+    date.textContent = formatClanFullDate(post.created_at);
+    const views = document.createElement('span');
+    views.textContent = `조회 ${post.view_count}`;
+    meta.appendChild(author);
+    meta.appendChild(date);
+    meta.appendChild(views);
+    head.appendChild(badge);
+    head.appendChild(title);
+    head.appendChild(meta);
+
+    const body = document.createElement('div');
+    body.className = 'clan-detail-body';
+    body.textContent = post.content;
+
+    clanDetailContent.innerHTML = '';
+    clanDetailContent.appendChild(head);
+    clanDetailContent.appendChild(body);
+
+    clanDetailActions.hidden = false;
+    clanLikeBtn.classList.toggle('is-liked', !!clanBoardCurrentPostLiked);
+    clanLikeCount.textContent = String(post.like_count);
+    clanLikeText.textContent = clanBoardCurrentPostLiked ? '추천 취소' : '추천';
+    clanLikeBtn.disabled = false;
+
+    clanCommentsSection.hidden = false;
+    clanCommentCount.textContent = String(post.comment_count);
+    loadClanBoardComments(post.id, 1);
+    showClanCommentForm();
+    resetClanCommentForm();
+  }
+
+  async function loadClanBoardComments(postId, page) {
+    if (!clanCommentsList || !clanCommentPagination) return;
+    try {
+      const res = await fetch(`/api/clan-board/posts/${encodeURIComponent(postId)}/comments?page=${page}&limit=20`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return;
+
+      clanCommentsList.innerHTML = '';
+      if (data.comments.length === 0) {
+        clanCommentsList.innerHTML = '<p style="text-align:center;color:var(--muted);padding:16px 0;">댓글이 없습니다.</p>';
+        clanCommentPagination.hidden = true;
+        return;
+      }
+
+      data.comments.forEach((comment) => {
+        const item = document.createElement('div');
+        item.className = 'clan-comment-item';
+        item.setAttribute('role', 'listitem');
+
+        const avatar = document.createElement('div');
+        avatar.className = 'clan-comment-avatar';
+        if (comment.author.profileImage) {
+          const img = document.createElement('img');
+          img.src = comment.author.profileImage;
+          img.alt = '';
+          img.loading = 'lazy';
+          avatar.appendChild(img);
+        } else {
+          const ph = document.createElement('span');
+          ph.className = 'clan-comment-avatar-placeholder';
+          ph.textContent = 'P';
+          avatar.appendChild(ph);
+        }
+
+        const body = document.createElement('div');
+        body.className = 'clan-comment-body';
+
+        const head = document.createElement('div');
+        head.className = 'clan-comment-head';
+        const nick = document.createElement('span');
+        nick.className = 'clan-comment-nickname';
+        nick.textContent = comment.author.nickname;
+        const date = document.createElement('span');
+        date.className = 'clan-comment-date';
+        date.textContent = formatClanFullDate(comment.created_at);
+        head.appendChild(nick);
+        head.appendChild(date);
+
+        const text = document.createElement('p');
+        text.className = 'clan-comment-text';
+        text.textContent = comment.content;
+
+        body.appendChild(head);
+        body.appendChild(text);
+        item.appendChild(avatar);
+        item.appendChild(body);
+        clanCommentsList.appendChild(item);
+      });
+
+      renderClanPagination(clanCommentPagination, data.pagination, (newPage) => {
+        loadClanBoardComments(postId, newPage);
+      });
+    } catch (_) { /* ignore */ }
+  }
+
+  clanDetailBack?.addEventListener('click', () => {
+    clanPostDetail.hidden = true;
+    loadClanBoardPosts();
+  });
+
+  clanLikeBtn?.addEventListener('click', async () => {
+    if (!clanBoardCurrentPostId || clanLikeBtn.disabled) return;
+    clanLikeBtn.disabled = true;
+    try {
+      const res = await fetch(`/api/clan-board/posts/${encodeURIComponent(clanBoardCurrentPostId)}/likes`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 401) {
+          window.alert(data.error || '로그인이 필요합니다.');
+        } else {
+          window.alert(data.error || '처리 중 오류가 발생했습니다.');
+        }
+        return;
+      }
+      clanBoardCurrentPostLiked = data.liked;
+      clanLikeBtn.classList.toggle('is-liked', !!data.liked);
+      clanLikeText.textContent = data.liked ? '추천 취소' : '추천';
+      clanLikeCount.textContent = String(data.like_count);
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : '네트워크 오류가 발생했습니다.');
+    } finally {
+      clanLikeBtn.disabled = false;
+    }
+  });
+
+  clanCatBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      clanBoardCategory = btn.dataset.category;
+      clanBoardPage = 1;
+      updateClanCategoryActive();
+      loadClanBoardPosts();
+    });
+  });
+
+  clanBoardSearchBtn?.addEventListener('click', () => {
+    clanBoardSearchText = (clanBoardSearch?.value || '').trim();
+    clanBoardPage = 1;
+    loadClanBoardPosts();
+  });
+
+  clanBoardSearch?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      clanBoardSearchText = (clanBoardSearch?.value || '').trim();
+      clanBoardPage = 1;
+      loadClanBoardPosts();
+    }
+  });
+
+  /* 글쓰기 */
+
+  function openClanWriteForm() {
+    if (sessionUserRole === 'guest') {
+      openLoginModal();
+      return;
+    }
+    clanPostList.hidden = true;
+    if (clanBoardEmpty) clanBoardEmpty.hidden = true;
+    clanPagination.hidden = true;
+    clanPostDetail.hidden = true;
+    clanPostWrite.hidden = false;
+    clanWriteForm.reset();
+    if (clanWriteError) { clanWriteError.hidden = true; clanWriteError.textContent = ''; }
+    clanWriteCategory = 'general';
+    updateClanWriteCategoryActive();
+    if (clanWriteTitle) clanWriteTitle.focus();
+  }
+
+  function closeClanWriteForm() {
+    clanPostWrite.hidden = true;
+    loadClanBoardPosts();
+  }
+
+  function updateClanWriteCategoryActive() {
+    clanWriteCategoryBtns.forEach((btn) => {
+      const on = btn.dataset.category === clanWriteCategory;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-checked', String(on));
+    });
+  }
+
+  clanWriteOpenBtn?.addEventListener('click', () => { openClanWriteForm(); });
+
+  clanWriteCategoryBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      clanWriteCategory = btn.dataset.category;
+      updateClanWriteCategoryActive();
+    });
+  });
+
+  clanWriteBack?.addEventListener('click', () => { closeClanWriteForm(); });
+  clanWriteCancel?.addEventListener('click', () => { closeClanWriteForm(); });
+
+  clanWriteForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (clanWriteSubmit) clanWriteSubmit.disabled = true;
+    if (clanWriteError) { clanWriteError.hidden = true; clanWriteError.textContent = ''; }
+
+    const title = (clanWriteTitle?.value || '').trim();
+    const content = (clanWriteContent?.value || '').trim();
+
+    if (!title) {
+      if (clanWriteError) { clanWriteError.textContent = '제목을 입력해 주세요.'; clanWriteError.hidden = false; }
+      clanWriteSubmit.disabled = false;
+      clanWriteTitle?.focus();
+      return;
+    }
+    if (!content) {
+      if (clanWriteError) { clanWriteError.textContent = '내용을 입력해 주세요.'; clanWriteError.hidden = false; }
+      clanWriteSubmit.disabled = false;
+      clanWriteContent?.focus();
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/clan-board/posts', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content, category: clanWriteCategory }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 401) {
+          if (clanWriteError) { clanWriteError.textContent = data.error || '로그인이 필요합니다.'; clanWriteError.hidden = false; }
+        } else {
+          if (clanWriteError) { clanWriteError.textContent = data.error || '게시물 작성 중 오류가 발생했습니다.'; clanWriteError.hidden = false; }
+        }
+        return;
+      }
+      closeClanWriteForm();
+      await openClanPostDetail(data.id);
+    } catch (err) {
+      if (clanWriteError) { clanWriteError.textContent = err instanceof Error ? err.message : '네트워크 오류가 발생했습니다.'; clanWriteError.hidden = false; }
+    } finally {
+      if (clanWriteSubmit) clanWriteSubmit.disabled = false;
+    }
+  });
+
+  /* 댓글 작성 */
+
+  function showClanCommentForm() {
+    if (clanCommentWriteForm) {
+      clanCommentWriteForm.hidden = sessionUserRole === 'guest';
+    }
+  }
+
+  function resetClanCommentForm() {
+    if (clanCommentInput) clanCommentInput.value = '';
+    if (clanCommentError) { clanCommentError.hidden = true; clanCommentError.textContent = ''; }
+  }
+
+  clanCommentWriteForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!clanBoardCurrentPostId) return;
+    if (clanCommentSubmit) clanCommentSubmit.disabled = true;
+    if (clanCommentError) { clanCommentError.hidden = true; clanCommentError.textContent = ''; }
+
+    const content = (clanCommentInput?.value || '').trim();
+    if (!content) {
+      if (clanCommentError) { clanCommentError.textContent = '댓글 내용을 입력해 주세요.'; clanCommentError.hidden = false; }
+      if (clanCommentSubmit) clanCommentSubmit.disabled = false;
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/clan-board/posts/${encodeURIComponent(clanBoardCurrentPostId)}/comments`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (clanCommentError) { clanCommentError.textContent = data.error || '댓글 작성 중 오류가 발생했습니다.'; clanCommentError.hidden = false; }
+        return;
+      }
+      resetClanCommentForm();
+      await loadClanBoardComments(clanBoardCurrentPostId, 1);
+      await refreshClanPostCommentCount();
+    } catch (err) {
+      if (clanCommentError) { clanCommentError.textContent = err instanceof Error ? err.message : '네트워크 오류가 발생했습니다.'; clanCommentError.hidden = false; }
+    } finally {
+      if (clanCommentSubmit) clanCommentSubmit.disabled = false;
+    }
+  });
+
+  async function refreshClanPostCommentCount() {
+    if (!clanBoardCurrentPostId || !clanCommentCount) return;
+    try {
+      const res = await fetch(`/api/clan-board/posts/${encodeURIComponent(clanBoardCurrentPostId)}`, { credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.post) {
+        clanCommentCount.textContent = String(data.post.comment_count);
+      }
+    } catch (_) { /* ignore */ }
+  }
 
 })();

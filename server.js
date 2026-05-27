@@ -424,6 +424,44 @@ async function ensureSchema(client) {
       CONSTRAINT site_future_sight_singleton CHECK (id = 1)
     );
   `);
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS clan_board_posts (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title VARCHAR(200) NOT NULL,
+      content TEXT NOT NULL,
+      category VARCHAR(32) NOT NULL DEFAULT 'general',
+      view_count INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ
+    );
+  `);
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS clan_board_comments (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      post_id UUID NOT NULL REFERENCES clan_board_posts(id) ON DELETE CASCADE,
+      author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      content TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS clan_board_likes (
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      post_id UUID NOT NULL REFERENCES clan_board_posts(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, post_id)
+    );
+  `);
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_clan_board_posts_category ON clan_board_posts(category);
+  `);
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_clan_board_posts_created_at ON clan_board_posts(created_at DESC);
+  `);
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_clan_board_comments_post_id ON clan_board_comments(post_id);
+  `);
 }
 
 /**
@@ -1589,6 +1627,374 @@ app.get('/api/characters/:id/image', async (req, res) => {
     res.setHeader('Content-Type', row.image_mime);
     res.setHeader('Cache-Control', 'public, max-age=86400');
     res.send(row.image_data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+const clanBoardLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
+});
+app.use('/api/clan-board', clanBoardLimiter);
+
+function clanBoardRequirePool(res) {
+  if (!pool) {
+    res.status(503).json({ ok: false, error: '데이터베이스 연결 준비 중입니다.' });
+    return false;
+  }
+  return true;
+}
+
+const CLAN_BOARD_VALID_CATEGORIES = ['general', 'recruit', 'strategy', 'discussion', 'info'];
+const CATEGORY_LABELS = {
+  general: '자유',
+  recruit: '클랜원 모집',
+  strategy: '공략',
+  discussion: '토론',
+  info: '정보',
+};
+
+app.get('/api/clan-board/posts', async (req, res) => {
+  if (!clanBoardRequirePool(res)) return;
+  try {
+    const page = Math.max(1, parseInt(String(req.query.page || '1'), 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '20'), 10) || 20));
+    const category = String(req.query.category || '').trim();
+    const search = String(req.query.search || '').trim();
+
+    const params = [];
+    const conditions = [];
+
+    if (category && CLAN_BOARD_VALID_CATEGORIES.includes(category)) {
+      params.push(category);
+      conditions.push(`p.category = $${params.length}`);
+    }
+
+    if (search) {
+      params.push(`%${search}%`);
+      conditions.push(`(p.title ILIKE $${params.length} OR p.content ILIKE $${params.length})`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const countParams = [...params];
+    const countQuery = `SELECT COUNT(*)::int AS total FROM clan_board_posts p ${whereClause}`;
+    const countResult = await pool.query(countQuery, countParams);
+    const total = countResult.rows[0].total;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const safePage = Math.min(page, totalPages);
+    const offset = (safePage - 1) * limit;
+
+    const selectParams = [...params, limit, offset];
+    const selectQuery = `
+      SELECT
+        p.id, p.title, p.category, p.view_count, p.created_at,
+        u.id AS author_id,
+        u.nickname, u.nickname_cipher, u.username, u.username_cipher, u.profile_image AS author_profile_image,
+        (SELECT COUNT(*) FROM clan_board_comments c WHERE c.post_id = p.id) AS comment_count,
+        (SELECT COUNT(*) FROM clan_board_likes l WHERE l.post_id = p.id) AS like_count
+      FROM clan_board_posts p
+      JOIN users u ON p.author_id = u.id
+      ${whereClause}
+      ORDER BY p.created_at DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `;
+    const result = await pool.query(selectQuery, selectParams);
+
+    const posts = result.rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      category: row.category,
+      view_count: row.view_count,
+      like_count: parseInt(row.like_count, 10) || 0,
+      comment_count: parseInt(row.comment_count, 10) || 0,
+      created_at: row.created_at?.toISOString?.() || row.created_at,
+      author: {
+        nickname: displayNicknameFromRow({ nickname: row.nickname, nickname_cipher: row.nickname_cipher }),
+        profileImage: row.author_profile_image || null,
+      },
+    }));
+
+    res.json({
+      ok: true,
+      posts,
+      pagination: { page: safePage, limit, total, totalPages },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+app.get('/api/clan-board/posts/:id', async (req, res) => {
+  if (!clanBoardRequirePool(res)) return;
+  try {
+    const { id } = req.params;
+    const secret = getSessionSecret();
+    const userId = secret ? getUserIdFromRequest(secret, req.headers.cookie || '') : null;
+
+    const postQuery = `
+      SELECT
+        p.id, p.title, p.content, p.category, p.view_count, p.created_at, p.updated_at,
+        u.id AS author_id,
+        u.nickname, u.nickname_cipher, u.username, u.username_cipher, u.profile_image AS author_profile_image,
+        (SELECT COUNT(*) FROM clan_board_likes l WHERE l.post_id = p.id) AS like_count,
+        (SELECT COUNT(*) FROM clan_board_comments c WHERE c.post_id = p.id) AS comment_count
+      FROM clan_board_posts p
+      JOIN users u ON p.author_id = u.id
+      WHERE p.id = $1::uuid
+      LIMIT 1
+    `;
+    const result = await pool.query(postQuery, [id]);
+    if (result.rowCount === 0) {
+      res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
+      return;
+    }
+    const row = result.rows[0];
+
+    let liked = false;
+    if (userId) {
+      const likeResult = await pool.query(
+        `SELECT 1 FROM clan_board_likes WHERE user_id = $1::uuid AND post_id = $2::uuid LIMIT 1`,
+        [userId, id]
+      );
+      liked = likeResult.rowCount > 0;
+    }
+
+    res.json({
+      ok: true,
+      post: {
+        id: row.id,
+        title: row.title,
+        content: row.content,
+        category: row.category,
+        view_count: row.view_count,
+        like_count: parseInt(row.like_count, 10) || 0,
+        comment_count: parseInt(row.comment_count, 10) || 0,
+        created_at: row.created_at?.toISOString?.() || row.created_at,
+        updated_at: row.updated_at?.toISOString?.() || row.updated_at,
+        author: {
+          nickname: displayNicknameFromRow({ nickname: row.nickname, nickname_cipher: row.nickname_cipher }),
+          profileImage: row.author_profile_image || null,
+        },
+        liked,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+app.patch('/api/clan-board/posts/:id/view', async (req, res) => {
+  if (!clanBoardRequirePool(res)) return;
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      `UPDATE clan_board_posts SET view_count = view_count + 1 WHERE id = $1::uuid RETURNING view_count`,
+      [id]
+    );
+    if (result.rowCount === 0) {
+      res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
+      return;
+    }
+    res.json({ ok: true, view_count: result.rows[0].view_count });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+app.post('/api/clan-board/posts/:id/likes', async (req, res) => {
+  if (!clanBoardRequirePool(res)) return;
+  const secret = getSessionSecret();
+  if (!secret) {
+    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
+    return;
+  }
+  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
+  if (!userId) {
+    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
+    return;
+  }
+  try {
+    const { id } = req.params;
+    const postCheck = await pool.query(`SELECT 1 FROM clan_board_posts WHERE id = $1::uuid LIMIT 1`, [id]);
+    if (postCheck.rowCount === 0) {
+      res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
+      return;
+    }
+
+    const existing = await pool.query(
+      `SELECT 1 FROM clan_board_likes WHERE user_id = $1::uuid AND post_id = $2::uuid LIMIT 1`,
+      [userId, id]
+    );
+
+    if (existing.rowCount > 0) {
+      await pool.query(
+        `DELETE FROM clan_board_likes WHERE user_id = $1::uuid AND post_id = $2::uuid`,
+        [userId, id]
+      );
+    } else {
+      await pool.query(
+        `INSERT INTO clan_board_likes (user_id, post_id) VALUES ($1::uuid, $2::uuid)`,
+        [userId, id]
+      );
+    }
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM clan_board_likes WHERE post_id = $1::uuid`,
+      [id]
+    );
+    res.json({ ok: true, liked: existing.rowCount === 0, like_count: countResult.rows[0].count });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+app.get('/api/clan-board/posts/:id/comments', async (req, res) => {
+  if (!clanBoardRequirePool(res)) return;
+  try {
+    const { id } = req.params;
+    const page = Math.max(1, parseInt(String(req.query.page || '1'), 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '20'), 10) || 20));
+
+    const totalResult = await pool.query(
+      `SELECT COUNT(*)::int AS total FROM clan_board_comments WHERE post_id = $1::uuid`,
+      [id]
+    );
+    const total = totalResult.rows[0].total;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const safePage = Math.min(page, totalPages);
+    const offset = (safePage - 1) * limit;
+
+    const result = await pool.query(
+      `SELECT
+         c.id, c.content, c.created_at,
+         u.id AS author_id,
+         u.nickname, u.nickname_cipher, u.profile_image AS author_profile_image
+       FROM clan_board_comments c
+       JOIN users u ON c.author_id = u.id
+       WHERE c.post_id = $1::uuid
+       ORDER BY c.created_at ASC
+       LIMIT $2 OFFSET $3`,
+      [id, limit, offset]
+    );
+
+    const comments = result.rows.map((row) => ({
+      id: row.id,
+      content: row.content,
+      created_at: row.created_at?.toISOString?.() || row.created_at,
+      author: {
+        nickname: displayNicknameFromRow({ nickname: row.nickname, nickname_cipher: row.nickname_cipher }),
+        profileImage: row.author_profile_image || null,
+      },
+    }));
+
+    res.json({ ok: true, comments, pagination: { page: safePage, limit, total, totalPages } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+app.post('/api/clan-board/posts', async (req, res) => {
+  if (!clanBoardRequirePool(res)) return;
+  const secret = getSessionSecret();
+  if (!secret) {
+    res.status(503).json({ ok: false, error: '로그인 기능을 사용할 수 없습니다.' });
+    return;
+  }
+  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
+  if (!userId) {
+    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
+    return;
+  }
+
+  const { title, content, category } = req.body || {};
+  const trimmedTitle = String(title || '').trim();
+  const trimmedContent = String(content || '').trim();
+  const trimmedCategory = String(category || 'general').trim();
+
+  if (!trimmedTitle) {
+    res.status(400).json({ ok: false, error: '제목을 입력해 주세요.' });
+    return;
+  }
+  if (trimmedTitle.length > 200) {
+    res.status(400).json({ ok: false, error: '제목은 200자 이내로 입력해 주세요.' });
+    return;
+  }
+  if (!trimmedContent) {
+    res.status(400).json({ ok: false, error: '내용을 입력해 주세요.' });
+    return;
+  }
+  if (!CLAN_BOARD_VALID_CATEGORIES.includes(trimmedCategory)) {
+    res.status(400).json({ ok: false, error: '올바른 카테고리를 선택해 주세요.' });
+    return;
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO clan_board_posts (author_id, title, content, category)
+       VALUES ($1::uuid, $2, $3, $4)
+       RETURNING id`,
+      [userId, trimmedTitle, trimmedContent, trimmedCategory]
+    );
+    res.status(201).json({ ok: true, id: result.rows[0].id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+app.post('/api/clan-board/posts/:id/comments', async (req, res) => {
+  if (!clanBoardRequirePool(res)) return;
+  const secret = getSessionSecret();
+  if (!secret) {
+    res.status(503).json({ ok: false, error: '로그인 기능을 사용할 수 없습니다.' });
+    return;
+  }
+  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
+  if (!userId) {
+    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
+    return;
+  }
+
+  const { id } = req.params;
+  const trimmedContent = String((req.body && req.body.content) || '').trim();
+
+  if (!trimmedContent) {
+    res.status(400).json({ ok: false, error: '댓글 내용을 입력해 주세요.' });
+    return;
+  }
+
+  try {
+    const postCheck = await pool.query(`SELECT 1 FROM clan_board_posts WHERE id = $1::uuid LIMIT 1`, [id]);
+    if (postCheck.rowCount === 0) {
+      res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
+      return;
+    }
+
+    const result = await pool.query(
+      `INSERT INTO clan_board_comments (post_id, author_id, content)
+       VALUES ($1::uuid, $2::uuid, $3)
+       RETURNING id, created_at`,
+      [id, userId, trimmedContent]
+    );
+    res.status(201).json({
+      ok: true,
+      comment: {
+        id: result.rows[0].id,
+        content: trimmedContent,
+        created_at: result.rows[0].created_at?.toISOString?.() || result.rows[0].created_at,
+      },
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
