@@ -175,7 +175,7 @@ body {
   padding: 8px 16px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 1px;
   width: 100%;
   white-space: nowrap;
@@ -192,12 +192,12 @@ body {
 
 .clan-dropdown-item:hover,
 .clan-dropdown-item:focus-visible {
-  background: #fce4ec;
+  background: #e8e8e8;
   outline: none;
 }
 
 .clan-dropdown-item.is-active {
-  background: #f8bbd0;
+  background: #dcdcdc;
   font-weight: 700;
 }
 
@@ -2936,15 +2936,13 @@ button.future-type-badge {
   }
 
   .clan-post-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: 35px 65px 1fr;
   }
 
-  .clan-post-category-cell {
-    width: 100%;
-  }
-
-  .clan-post-info span {
-    font-size: 0.72rem;
+  .clan-post-author-cell,
+  .clan-post-date-cell,
+  .clan-post-views-cell {
+    display: none;
   }
 
   .clan-pagination-btn {
@@ -2988,16 +2986,22 @@ button.future-type-badge {
 
 .clan-board-toolbar {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .clan-category-tabs {
   display: flex;
   gap: 0;
+  flex: 1;
   flex-wrap: wrap;
-  width: 100%;
   border-bottom: 2px solid var(--border);
+}
+
+.clan-write-btn {
+  flex-shrink: 0;
+  margin-bottom: 2px;
 }
 
 .clan-cat-btn {
@@ -3087,10 +3091,10 @@ button.future-type-badge {
 
 .clan-post-row {
   display: grid;
-  grid-template-columns: 100px 1fr 160px;
+  grid-template-columns: 45px 75px 1fr 90px 100px 55px;
   align-items: center;
-  gap: 12px;
-  padding: 14px 18px;
+  gap: 6px;
+  padding: 10px 14px;
   background: #fff;
   cursor: pointer;
   transition: background-color 0.12s ease;
@@ -3105,19 +3109,26 @@ button.future-type-badge {
   background: var(--surface);
 }
 
+.clan-post-num-cell {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .clan-post-category-cell {
   justify-self: start;
 }
 
 .clan-post-badge {
   display: inline-block;
-  padding: 2px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
   font-weight: 700;
   color: #fff;
   white-space: nowrap;
-  margin-right: 4px;
+  margin-right: 2px;
 }
 
 .clan-post-badge--notice { background: #dc2626; }
@@ -3142,7 +3153,7 @@ button.future-type-badge {
 
 .clan-post-title {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--text);
   overflow: hidden;
@@ -3150,25 +3161,26 @@ button.future-type-badge {
   white-space: nowrap;
 }
 
-.clan-post-info {
-  display: flex;
-  gap: 14px;
-  justify-content: flex-end;
+.clan-post-author-cell {
   font-size: 0.78rem;
+  color: var(--text);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clan-post-date-cell {
+  font-size: 0.72rem;
   color: var(--muted);
   white-space: nowrap;
-  flex-shrink: 0;
 }
 
-.clan-post-info span {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.clan-post-author {
-  font-weight: 600;
-  color: var(--text);
+.clan-post-views-cell {
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+  text-align: right;
 }
 
 .clan-board-empty {

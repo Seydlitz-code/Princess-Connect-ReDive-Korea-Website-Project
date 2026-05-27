@@ -3070,8 +3070,6 @@
   const clanCommentCount = document.getElementById('clan-comment-count');
   const clanCommentsList = document.getElementById('clan-comments-list');
   const clanCommentPagination = document.getElementById('clan-comment-pagination');
-  const clanBoardSearch = document.getElementById('clan-board-search');
-  const clanBoardSearchBtn = document.getElementById('clan-board-search-btn');
   const clanWriteOpenBtn = document.getElementById('clan-write-open');
   const clanPostWrite = document.getElementById('clan-post-write');
   const clanWriteForm = document.getElementById('clan-write-form');
@@ -3155,12 +3153,18 @@
     if (!clanPostList) return;
     clanPostList.innerHTML = '';
 
-    posts.forEach((post) => {
+    const baseIndex = (clanBoardPage - 1) * 40;
+
+    posts.forEach((post, idx) => {
       const row = document.createElement('div');
       row.className = 'clan-post-row';
       if (post.is_pinned) row.classList.add('clan-post-row--pinned');
       row.setAttribute('role', 'listitem');
       row.addEventListener('click', () => openClanPostDetail(post.id));
+
+      const numCell = document.createElement('div');
+      numCell.className = 'clan-post-num-cell';
+      numCell.textContent = post.is_pinned ? '공지' : String(baseIndex + idx + 1);
 
       const catCell = document.createElement('div');
       catCell.className = 'clan-post-category-cell';
@@ -3182,28 +3186,24 @@
       title.textContent = post.title;
       titleCell.appendChild(title);
 
-      const info = document.createElement('div');
-      info.className = 'clan-post-info';
-      const author = document.createElement('span');
-      author.className = 'clan-post-author';
-      author.textContent = post.author.nickname;
-      const date = document.createElement('span');
-      date.textContent = formatClanDate(post.created_at);
-      const views = document.createElement('span');
-      views.textContent = `조회 ${post.view_count}`;
-      const comments = document.createElement('span');
-      comments.textContent = `댓글 ${post.comment_count}`;
-      const likes = document.createElement('span');
-      likes.textContent = `추천 ${post.like_count}`;
-      info.appendChild(author);
-      info.appendChild(date);
-      info.appendChild(views);
-      info.appendChild(comments);
-      info.appendChild(likes);
+      const authorCell = document.createElement('div');
+      authorCell.className = 'clan-post-author-cell';
+      authorCell.textContent = post.author.nickname;
 
+      const dateCell = document.createElement('div');
+      dateCell.className = 'clan-post-date-cell';
+      dateCell.textContent = formatClanDate(post.created_at);
+
+      const viewsCell = document.createElement('div');
+      viewsCell.className = 'clan-post-views-cell';
+      viewsCell.textContent = String(post.view_count);
+
+      row.appendChild(numCell);
       row.appendChild(catCell);
       row.appendChild(titleCell);
-      row.appendChild(info);
+      row.appendChild(authorCell);
+      row.appendChild(dateCell);
+      row.appendChild(viewsCell);
       clanPostList.appendChild(row);
     });
   }
@@ -3458,24 +3458,8 @@
   const clanBoardBottomSearch = document.getElementById('clan-board-bottom-search');
   const clanBoardBottomSearchBtn = document.getElementById('clan-board-bottom-search-btn');
 
-  clanBoardSearchBtn?.addEventListener('click', () => {
-    clanBoardSearchText = (clanBoardSearch?.value || '').trim();
-    clanBoardPage = 1;
-    loadClanBoardPosts();
-  });
-
-  clanBoardSearch?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      clanBoardSearchText = (clanBoardSearch?.value || '').trim();
-      clanBoardPage = 1;
-      loadClanBoardPosts();
-    }
-  });
-
   clanBoardBottomSearchBtn?.addEventListener('click', () => {
     clanBoardSearchText = (clanBoardBottomSearch?.value || '').trim();
-    if (clanBoardSearch) clanBoardSearch.value = clanBoardSearchText;
     clanBoardPage = 1;
     loadClanBoardPosts();
   });
@@ -3484,7 +3468,6 @@
     if (e.key === 'Enter') {
       e.preventDefault();
       clanBoardSearchText = (clanBoardBottomSearch?.value || '').trim();
-      if (clanBoardSearch) clanBoardSearch.value = clanBoardSearchText;
       clanBoardPage = 1;
       loadClanBoardPosts();
     }
