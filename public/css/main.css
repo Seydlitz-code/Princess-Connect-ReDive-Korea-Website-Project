@@ -131,6 +131,90 @@ body {
   color: var(--text);
 }
 
+.clan-nav-wrap {
+  position: relative;
+}
+
+.clan-nav-wrap::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: 6px;
+}
+
+.clan-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  min-width: 140px;
+  padding-top: 4px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.clan-nav-wrap:hover .clan-dropdown,
+.clan-dropdown:hover {
+  display: block;
+}
+
+.clan-dropdown-item {
+  appearance: none;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text);
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  width: 100%;
+  white-space: nowrap;
+  transition: background 0.12s ease;
+}
+
+.clan-dropdown-item:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.clan-dropdown-item:last-child {
+  border-radius: 0 0 8px 8px;
+}
+
+.clan-dropdown-item:hover,
+.clan-dropdown-item:focus-visible {
+  background: #fce4ec;
+  outline: none;
+}
+
+.clan-dropdown-item.is-active {
+  background: #f8bbd0;
+  font-weight: 700;
+}
+
+.clan-dropdown-item .nav-ja {
+  font-family: 'Noto Sans JP', 'Noto Sans KR', sans-serif;
+  font-size: 0.665rem;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.clan-dropdown-item .nav-ko {
+  font-weight: 800;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
 .nav-underline {
   position: absolute;
   left: 0;
@@ -2897,43 +2981,49 @@ button.future-type-badge {
   color: var(--text);
 }
 
+.clan-board-subtitle {
+  font-weight: 600;
+  color: var(--pink);
+}
+
 .clan-board-toolbar {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .clan-category-tabs {
   display: flex;
-  gap: 6px;
+  gap: 0;
   flex-wrap: wrap;
+  width: 100%;
+  border-bottom: 2px solid var(--border);
 }
 
 .clan-cat-btn {
   appearance: none;
-  border: 1px solid var(--border);
-  background: #fff;
+  border: none;
+  background: transparent;
   cursor: pointer;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--muted);
-  padding: 6px 14px;
-  border-radius: 20px;
-  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  padding: 10px 18px;
+  border-bottom: 3px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .clan-cat-btn:hover {
-  border-color: var(--pink);
-  color: var(--pink);
+  color: var(--text);
+  border-bottom-color: var(--border);
 }
 
 .clan-cat-btn.is-active {
-  background: var(--pink);
-  border-color: var(--pink);
-  color: #fff;
+  color: var(--pink);
+  border-bottom-color: var(--pink);
 }
 
 .clan-search-row {
@@ -2990,8 +3080,6 @@ button.future-type-badge {
 .clan-post-list {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  background: var(--border);
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
@@ -3006,6 +3094,11 @@ button.future-type-badge {
   background: #fff;
   cursor: pointer;
   transition: background-color 0.12s ease;
+  border-bottom: 1px solid var(--border);
+}
+
+.clan-post-row:last-child {
+  border-bottom: none;
 }
 
 .clan-post-row:hover {
@@ -3024,13 +3117,24 @@ button.future-type-badge {
   font-weight: 700;
   color: #fff;
   white-space: nowrap;
+  margin-right: 4px;
 }
 
+.clan-post-badge--notice { background: #dc2626; }
 .clan-post-badge--general { background: #888; }
-.clan-post-badge--recruit { background: #16a34a; }
-.clan-post-badge--strategy { background: var(--nav-active); }
-.clan-post-badge--discussion { background: #e07b22; }
-.clan-post-badge--info { background: #8b5cf6; }
+.clan-post-badge--phase1 { background: #e07b22; }
+.clan-post-badge--phase2 { background: var(--nav-active); }
+.clan-post-badge--phase3 { background: #7c3aed; }
+.clan-post-badge--phase4 { background: #16a34a; }
+.clan-post-badge--phase5 { background: #b91c1c; }
+
+.clan-post-row--pinned {
+  background: #fffbf0;
+}
+
+.clan-post-row--pinned:hover {
+  background: #fff7e0;
+}
 
 .clan-post-title-cell {
   min-width: 0;
@@ -3072,6 +3176,17 @@ button.future-type-badge {
   color: var(--muted);
   padding: 40px 16px;
   font-size: 0.88rem;
+}
+
+.clan-board-bottom-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.clan-bottom-search-row {
+  display: flex;
+  gap: 6px;
 }
 
 /* 페이지네이션 */

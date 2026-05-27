@@ -13,31 +13,55 @@
     underline.style.transform = `translateX(${r.left - t.left}px)`;
   }
 
+  const CLAN_SUB_BOARDS = new Set(['clan-semi', 'clan-fullauto']);
+
+  const CLAN_SUB_LABELS = {
+    'clan-semi': '세미오토',
+    'clan-fullauto': '플오토',
+  };
+
   function setActiveBoard(boardId) {
+    const mappedBoardId = boardId === 'clan' ? 'clan-fullauto' : boardId;
+    const isClanSub = CLAN_SUB_BOARDS.has(mappedBoardId);
+    const panelBoardId = isClanSub ? 'clan' : mappedBoardId;
+
+    const subTitleEl = document.getElementById('clan-board-subtitle');
+    if (subTitleEl) {
+      subTitleEl.textContent = isClanSub ? `- ${CLAN_SUB_LABELS[mappedBoardId] || ''}` : '';
+    }
+
     links.forEach((btn) => {
-      const on = btn.dataset.board === boardId;
+      const on = btn.dataset.board === mappedBoardId || (isClanSub && btn.dataset.board === 'clan-fullauto');
       btn.classList.toggle('is-active', on);
       if (on) btn.setAttribute('aria-current', 'page');
       else btn.removeAttribute('aria-current');
     });
 
+    document.querySelectorAll('.clan-dropdown-item').forEach((item) => {
+      const on = item.dataset.board === mappedBoardId;
+      item.classList.toggle('is-active', on);
+    });
+
     panels.forEach((panel) => {
-      const match = panel.dataset.boardPanel === boardId;
+      const match = panel.dataset.boardPanel === panelBoardId;
       panel.hidden = !match;
       panel.classList.toggle('is-visible', match);
     });
 
-    document.body.classList.toggle('is-mypage-route', boardId === 'mypage');
+    document.body.classList.toggle('is-mypage-route', mappedBoardId === 'mypage');
 
-    const activeBtn = links.find((b) => b.dataset.board === boardId);
+    let activeBtn = links.find((b) => b.dataset.board === mappedBoardId);
+    if (!activeBtn && isClanSub) {
+      activeBtn = links.find((b) => b.dataset.board === 'clan-fullauto');
+    }
     requestAnimationFrame(() => moveUnderline(activeBtn));
 
-    if (boardId === 'mypage') {
+    if (mappedBoardId === 'mypage') {
       queueMicrotask(() => {
         loadMypageProfileForm();
       });
     }
-    if (boardId === 'clan') {
+    if (isClanSub || mappedBoardId === 'clan') {
       queueMicrotask(() => {
         loadClanBoardPosts();
       });
@@ -45,6 +69,10 @@
   }
 
   links.forEach((btn) => {
+    btn.addEventListener('click', () => setActiveBoard(btn.dataset.board));
+  });
+
+  document.querySelectorAll('.clan-dropdown-item').forEach((btn) => {
     btn.addEventListener('click', () => setActiveBoard(btn.dataset.board));
   });
 
@@ -3069,10 +3097,11 @@
   const CATEGORY_LABELS = {
     all: '전체',
     general: '자유',
-    recruit: '클랜원 모집',
-    strategy: '공략',
-    discussion: '토론',
-    info: '정보',
+    phase1: '1넴',
+    phase2: '2넴',
+    phase3: '3넴',
+    phase4: '4넴',
+    phase5: '5넴',
   };
 
   function updateClanCategoryActive() {
@@ -3091,7 +3120,7 @@
 
     const params = new URLSearchParams();
     params.set('page', String(clanBoardPage));
-    params.set('limit', '20');
+    params.set('limit', '40');
     if (clanBoardCategory !== 'all') params.set('category', clanBoardCategory);
     if (clanBoardSearchText) params.set('search', clanBoardSearchText);
 
@@ -3113,6 +3142,10 @@
       if (clanPostList) {
         clanPostList.hidden = data.posts.length === 0;
       }
+      const bottomActions = document.getElementById('clan-board-bottom-actions');
+      if (bottomActions) {
+        bottomActions.hidden = data.posts.length === 0;
+      }
     } catch (e) {
       window.alert(e instanceof Error ? e.message : '네트워크 오류가 발생했습니다.');
     }
@@ -3125,11 +3158,18 @@
     posts.forEach((post) => {
       const row = document.createElement('div');
       row.className = 'clan-post-row';
+      if (post.is_pinned) row.classList.add('clan-post-row--pinned');
       row.setAttribute('role', 'listitem');
       row.addEventListener('click', () => openClanPostDetail(post.id));
 
       const catCell = document.createElement('div');
       catCell.className = 'clan-post-category-cell';
+      if (post.is_pinned) {
+        const noticeBadge = document.createElement('span');
+        noticeBadge.className = 'clan-post-badge clan-post-badge--notice';
+        noticeBadge.textContent = '공지';
+        catCell.appendChild(noticeBadge);
+      }
       const badge = document.createElement('span');
       badge.className = `clan-post-badge clan-post-badge--${post.category}`;
       badge.textContent = CATEGORY_LABELS[post.category] || post.category;
@@ -3415,6 +3455,9 @@
     });
   });
 
+  const clanBoardBottomSearch = document.getElementById('clan-board-bottom-search');
+  const clanBoardBottomSearchBtn = document.getElementById('clan-board-bottom-search-btn');
+
   clanBoardSearchBtn?.addEventListener('click', () => {
     clanBoardSearchText = (clanBoardSearch?.value || '').trim();
     clanBoardPage = 1;
@@ -3425,6 +3468,23 @@
     if (e.key === 'Enter') {
       e.preventDefault();
       clanBoardSearchText = (clanBoardSearch?.value || '').trim();
+      clanBoardPage = 1;
+      loadClanBoardPosts();
+    }
+  });
+
+  clanBoardBottomSearchBtn?.addEventListener('click', () => {
+    clanBoardSearchText = (clanBoardBottomSearch?.value || '').trim();
+    if (clanBoardSearch) clanBoardSearch.value = clanBoardSearchText;
+    clanBoardPage = 1;
+    loadClanBoardPosts();
+  });
+
+  clanBoardBottomSearch?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      clanBoardSearchText = (clanBoardBottomSearch?.value || '').trim();
+      if (clanBoardSearch) clanBoardSearch.value = clanBoardSearchText;
       clanBoardPage = 1;
       loadClanBoardPosts();
     }

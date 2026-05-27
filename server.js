@@ -432,6 +432,7 @@ async function ensureSchema(client) {
       content TEXT NOT NULL,
       category VARCHAR(32) NOT NULL DEFAULT 'general',
       view_count INTEGER NOT NULL DEFAULT 0,
+      is_pinned BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ
     );
@@ -461,6 +462,9 @@ async function ensureSchema(client) {
   `);
   await client.query(`
     CREATE INDEX IF NOT EXISTS idx_clan_board_comments_post_id ON clan_board_comments(post_id);
+  `);
+  await client.query(`
+    ALTER TABLE clan_board_posts ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN NOT NULL DEFAULT false;
   `);
 }
 
@@ -1650,20 +1654,21 @@ function clanBoardRequirePool(res) {
   return true;
 }
 
-const CLAN_BOARD_VALID_CATEGORIES = ['general', 'recruit', 'strategy', 'discussion', 'info'];
+const CLAN_BOARD_VALID_CATEGORIES = ['general', 'phase1', 'phase2', 'phase3', 'phase4', 'phase5'];
 const CATEGORY_LABELS = {
   general: '자유',
-  recruit: '클랜원 모집',
-  strategy: '공략',
-  discussion: '토론',
-  info: '정보',
+  phase1: '1넴',
+  phase2: '2넴',
+  phase3: '3넴',
+  phase4: '4넴',
+  phase5: '5넴',
 };
 
 app.get('/api/clan-board/posts', async (req, res) => {
   if (!clanBoardRequirePool(res)) return;
   try {
     const page = Math.max(1, parseInt(String(req.query.page || '1'), 10) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '20'), 10) || 20));
+    const limit = Math.min(40, Math.max(1, parseInt(String(req.query.limit || '40'), 10) || 40));
     const category = String(req.query.category || '').trim();
     const search = String(req.query.search || '').trim();
 
@@ -1682,47 +1687,69 @@ app.get('/api/clan-board/posts', async (req, res) => {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const countParams = [...params];
-    const countQuery = `SELECT COUNT(*)::int AS total FROM clan_board_posts p ${whereClause}`;
-    const countResult = await pool.query(countQuery, countParams);
-    const total = countResult.rows[0].total;
-    const totalPages = Math.max(1, Math.ceil(total / limit));
-    const safePage = Math.min(page, totalPages);
-    const offset = (safePage - 1) * limit;
-
-    const selectParams = [...params, limit, offset];
-    const selectQuery = `
-      SELECT
-        p.id, p.title, p.category, p.view_count, p.created_at,
-        u.id AS author_id,
-        u.nickname, u.nickname_cipher, u.username, u.username_cipher, u.profile_image AS author_profile_image,
-        (SELECT COUNT(*) FROM clan_board_comments c WHERE c.post_id = p.id) AS comment_count,
-        (SELECT COUNT(*) FROM clan_board_likes l WHERE l.post_id = p.id) AS like_count
-      FROM clan_board_posts p
-      JOIN users u ON p.author_id = u.id
-      ${whereClause}
-      ORDER BY p.created_at DESC
-      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    const baseColumns = `
+      p.id, p.title, p.category, p.view_count, p.is_pinned, p.created_at,
+      u.id AS author_id,
+      u.nickname, u.nickname_cipher, u.username, u.username_cipher, u.profile_image AS author_profile_image,
+      (SELECT COUNT(*) FROM clan_board_comments c WHERE c.post_id = p.id) AS comment_count,
+      (SELECT COUNT(*) FROM clan_board_likes l WHERE l.post_id = p.id) AS like_count
     `;
-    const result = await pool.query(selectQuery, selectParams);
 
-    const posts = result.rows.map((row) => ({
+    const mapPost = (row) => ({
       id: row.id,
       title: row.title,
       category: row.category,
       view_count: row.view_count,
       like_count: parseInt(row.like_count, 10) || 0,
       comment_count: parseInt(row.comment_count, 10) || 0,
+      is_pinned: row.is_pinned,
       created_at: row.created_at?.toISOString?.() || row.created_at,
       author: {
         nickname: displayNicknameFromRow({ nickname: row.nickname, nickname_cipher: row.nickname_cipher }),
         profileImage: row.author_profile_image || null,
       },
-    }));
+    });
+
+    const pinnedParams = [...params];
+    let pinnedPosts = [];
+    if (page === 1) {
+      const pinnedQuery = `
+        SELECT ${baseColumns}
+        FROM clan_board_posts p
+        JOIN users u ON p.author_id = u.id
+        ${whereClause ? whereClause + ' AND' : 'WHERE'} p.is_pinned = true
+        ORDER BY p.created_at DESC
+      `;
+      const pinnedResult = await pool.query(pinnedQuery, pinnedParams);
+      pinnedPosts = pinnedResult.rows.map(mapPost);
+    }
+
+    const totalParams = [...params, false];
+    const totalQuery = `SELECT COUNT(*)::int AS total FROM clan_board_posts p ${whereClause ? whereClause + ' AND' : 'WHERE'} p.is_pinned = $${totalParams.length}`;
+    const totalResult = await pool.query(totalQuery, totalParams);
+    const total = totalResult.rows[0].total;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const safePage = Math.min(page, totalPages);
+    const offset = (safePage - 1) * limit;
+
+    const selectParams = [...params, false, limit, offset];
+    const paramIdx = params.length;
+    const selectQuery = `
+      SELECT ${baseColumns}
+      FROM clan_board_posts p
+      JOIN users u ON p.author_id = u.id
+      ${whereClause ? whereClause + ' AND' : 'WHERE'} p.is_pinned = $${paramIdx + 1}
+      ORDER BY p.created_at DESC
+      LIMIT $${paramIdx + 2} OFFSET $${paramIdx + 3}
+    `;
+    const result = await pool.query(selectQuery, selectParams);
+
+    const regularPosts = result.rows.map(mapPost);
 
     res.json({
       ok: true,
-      posts,
+      posts: [...pinnedPosts, ...regularPosts],
+      pinned: pinnedPosts,
       pagination: { page: safePage, limit, total, totalPages },
     });
   } catch (err) {

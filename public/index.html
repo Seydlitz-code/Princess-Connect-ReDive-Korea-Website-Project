@@ -33,10 +33,22 @@
               <span class="nav-ko">메인</span>
               <span class="nav-ja">メイン</span>
             </button>
-            <button type="button" class="nav-link" data-board="clan">
-              <span class="nav-ko">클랜전</span>
-              <span class="nav-ja">クランバトル</span>
-            </button>
+            <span class="clan-nav-wrap">
+              <button type="button" class="nav-link" data-board="clan-fullauto">
+                <span class="nav-ko">클랜전</span>
+                <span class="nav-ja">クランバトル</span>
+              </button>
+              <div class="clan-dropdown" aria-label="클랜전 하위 메뉴">
+                <button type="button" class="clan-dropdown-item" data-board="clan-semi">
+                  <span class="nav-ko">세미오토</span>
+                  <span class="nav-ja">セミオート</span>
+                </button>
+                <button type="button" class="clan-dropdown-item" data-board="clan-fullauto">
+                  <span class="nav-ko">플오토</span>
+                  <span class="nav-ja">フルオート</span>
+                </button>
+              </div>
+            </span>
             <button type="button" class="nav-link" data-board="stadium">
               <span class="nav-ko">배틀 스타디움</span>
               <span class="nav-ja">バトルスタジアム</span>
@@ -91,15 +103,16 @@
       <section class="board-panel" data-board-panel="clan" hidden aria-label="클랜전 게시판">
         <div class="clan-board-shell">
           <header class="clan-board-header">
-            <h2 class="clan-board-title">클랜전 게시판</h2>
+            <h2 class="clan-board-title">클랜전 게시판 <span class="clan-board-subtitle" id="clan-board-subtitle"></span></h2>
             <div class="clan-board-toolbar">
               <div class="clan-category-tabs" role="tablist" aria-label="카테고리">
                 <button type="button" class="clan-cat-btn is-active" role="tab" aria-selected="true" data-category="all">전체</button>
                 <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="general">자유</button>
-                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="recruit">클랜원 모집</button>
-                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="strategy">공략</button>
-                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="discussion">토론</button>
-                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="info">정보</button>
+                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="phase1">1넴</button>
+                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="phase2">2넴</button>
+                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="phase3">3넴</button>
+                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="phase4">4넴</button>
+                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="phase5">5넴</button>
               </div>
               <div class="clan-search-row">
                 <input type="search" class="clan-search-input" id="clan-board-search" placeholder="제목 + 내용 검색" autocomplete="off" enterkeyhint="search" />
@@ -115,6 +128,16 @@
           <div class="clan-post-list" id="clan-post-list" role="list" aria-live="polite"></div>
           <p class="clan-board-empty" id="clan-board-empty" role="status" hidden>게시물이 없습니다.</p>
           <nav class="clan-pagination" id="clan-pagination" aria-label="페이지" hidden></nav>
+          <div class="clan-board-bottom-actions" id="clan-board-bottom-actions" hidden>
+            <div class="clan-bottom-search-row">
+              <input type="search" class="clan-search-input" id="clan-board-bottom-search" placeholder="제목 + 내용 검색" autocomplete="off" enterkeyhint="search" />
+              <button type="button" class="clan-search-btn" id="clan-board-bottom-search-btn" aria-label="검색">
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 4 10.99 4 7.5S7.01 1 9.5 1 15 3.01 15 7.5 12.99 14 9.5 14z" />
+                </svg>
+              </button>
+            </div>
+          </div>
           <div class="clan-post-detail" id="clan-post-detail" hidden>
             <div class="clan-post-detail-inner">
               <button type="button" class="clan-detail-back" id="clan-detail-back">
@@ -155,10 +178,11 @@
                   <label class="field-label" for="clan-write-category">카테고리</label>
                   <div class="clan-category-tabs" role="radiogroup" aria-label="게시물 카테고리 선택">
                     <button type="button" class="clan-cat-btn is-active" role="radio" aria-checked="true" data-category="general" data-clan-write-cat>자유</button>
-                    <button type="button" class="clan-cat-btn" role="radio" aria-checked="false" data-category="recruit" data-clan-write-cat>클랜원 모집</button>
-                    <button type="button" class="clan-cat-btn" role="radio" aria-checked="false" data-category="strategy" data-clan-write-cat>공략</button>
-                    <button type="button" class="clan-cat-btn" role="radio" aria-checked="false" data-category="discussion" data-clan-write-cat>토론</button>
-                    <button type="button" class="clan-cat-btn" role="radio" aria-checked="false" data-category="info" data-clan-write-cat>정보</button>
+                    <button type="button" class="clan-cat-btn" role="radio" aria-checked="false" data-category="phase1" data-clan-write-cat>1넴</button>
+                    <button type="button" class="clan-cat-btn" role="radio" aria-checked="false" data-category="phase2" data-clan-write-cat>2넴</button>
+                    <button type="button" class="clan-cat-btn" role="radio" aria-checked="false" data-category="phase3" data-clan-write-cat>3넴</button>
+                    <button type="button" class="clan-cat-btn" role="radio" aria-checked="false" data-category="phase4" data-clan-write-cat>4넴</button>
+                    <button type="button" class="clan-cat-btn" role="radio" aria-checked="false" data-category="phase5" data-clan-write-cat>5넴</button>
                   </div>
                 </div>
                 <div class="field-group clan-write-field">
