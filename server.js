@@ -1654,8 +1654,9 @@ function clanBoardRequirePool(res) {
   return true;
 }
 
-const CLAN_BOARD_VALID_CATEGORIES = ['general', 'phase1', 'phase2', 'phase3', 'phase4', 'phase5'];
+const CLAN_BOARD_VALID_CATEGORIES = ['none', 'general', 'phase1', 'phase2', 'phase3', 'phase4', 'phase5'];
 const CATEGORY_LABELS = {
+  none: '없음',
   general: '자유',
   phase1: '1넴',
   phase2: '2넴',
@@ -1953,8 +1954,8 @@ app.post('/api/clan-board/posts', async (req, res) => {
     res.status(400).json({ ok: false, error: '제목을 입력해 주세요.' });
     return;
   }
-  if (trimmedTitle.length > 200) {
-    res.status(400).json({ ok: false, error: '제목은 200자 이내로 입력해 주세요.' });
+  if (trimmedTitle.length > 30) {
+    res.status(400).json({ ok: false, error: '게시물 제목은 30자 이내로만 작성 가능합니다.' });
     return;
   }
   if (!trimmedContent) {

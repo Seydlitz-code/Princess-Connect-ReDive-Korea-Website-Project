@@ -44,7 +44,7 @@
 
 ```
 /
-├── server.js                     # 메인 Express 서버 (~1619 라인)
+├── server.js                     # 메인 Express 서버 (~1944 라인)
 ├── package.json                  # 의존성 및 스크립트
 ├── Dockerfile                    # Docker 빌드 (node:20-alpine, port 8080)
 ├── nixpacks.toml                 # Railway Nixpacks 설정
@@ -61,9 +61,9 @@
 │   └── charactersLibrary.js      # 정적 파일 기반 캐릭터 라이브러리 로더
 │
 ├── public/                       # 정적 파일 (Express 제공)
-│   ├── index.html                # 단일 HTML 페이지 (SPA 셸) — 665 라인
-│   ├── css/main.css              # 모든 스타일 — 2832 라인
-│   ├── js/main.js                # 모든 클라이언트 사이드 JS (IIFE) — 3023 라인
+│   ├── index.html                # 단일 HTML 페이지 (SPA 셸) — 809 라인
+│   ├── css/main.css              # 모든 스타일 — 3253 라인
+│   ├── js/main.js                # 모든 클라이언트 사이드 JS (IIFE) — 3477 라인
 │   ├── data/characters.json      # 정적 캐릭터 라이브러리 매니페스트
 │   ├── characters/               # 캐릭터 이미지 (JPEG/PNG)
 │   ├── fonts/gyeonggi-cheonnyeon/ # 로컬 폰트
@@ -89,7 +89,7 @@
 
 ### 4.1 서버 아키텍처 (`server.js`)
 
-**단일 파일 Express 서버**로, 모든 라우트가 인라인으로 정의되어 있습니다 (약 1619 라인). 서버 기동 시퀀스는 다음과 같습니다:
+**단일 파일 Express 서버**로, 모든 라우트가 인라인으로 정의되어 있습니다 (약 1944 라인). 서버 기동 시퀀스는 다음과 같습니다:
 
 1. `initDb()` — 재시도 로직을 통해 PostgreSQL 연결 (`PG_INIT_RETRIES`로 설정 가능)
 2. `ensureSchema()` — DB 테이블 자동 생성/마이그레이션 (`users`, `characters`, `user_owned_characters`, `site_future_sight`)
@@ -192,6 +192,9 @@ Vanilla JS (fetch) → DOM 조작
 | **Future Character Picker** | 관리자: Future Sight에 캐릭터 추가/교체 (검색 + 일괄 모드 지원) |
 | **Future Type Picker** | 관리자: 한정/통상/프린세스 페스 유형 설정 |
 | **Future Info Editor** | 관리자: 월별 정보 텍스트 편집 |
+| **Clan Board Post List** | 클랜전 게시판 게시물 목록: 번호/카테고리/제목/작성자/날짜/조회 컬럼 헤더, 추천/댓글 수, 공지사항 핀, 카테고리 탭 필터(전체/자유/1넴~5넴), 페이지네이션, 검색 |
+| **Clan Write Form** | 리치 텍스트 게시물 작성: 현재 게시판명 표시(세미오토/플오토), 게시물 구분 드롭다운(없음/1넴~5넴), 제목 30자 제한(+초과 시 붉은 경고문), 툴바(이미지/동영상 삽입, 웹 링크 팝업, 폰트 크기 8~72 28단계, 볼드/이탤릭/밑줄/취소선), contentEditable 에디터 |
+| **Clan Post Detail** | 게시물 상세 보기: 카테고리 뱃지, 제목, 작성자/날짜/조회수 메타, HTML 리치 콘텐츠 본문, 추천 버튼, 댓글 목록/작성 |
 
 ### 6.3 상태 관리
 
@@ -204,7 +207,7 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 
 ### 6.4 CSS
 
-단일 파일 (2832 라인). CSS 커스텀 프로퍼티를 사용한 테마 설정. 미디어 쿼리를 통한 완전한 반응형 디자인. 프리프로세서나 CSS 프레임워크를 사용하지 않습니다.
+단일 파일 (3253 라인). CSS 커스텀 프로퍼티를 사용한 테마 설정. 미디어 쿼리를 통한 완전한 반응형 디자인. 프리프로세서나 CSS 프레임워크를 사용하지 않습니다.
 
 ---
 
@@ -263,6 +266,7 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 9. **Canvas 기반 이미지 크롭**: 클라이언트 사이드에서 원형 프로필 이미지 크롭, 줌/회전/이동 기능
 10. **Future Sight 자동 유지보수**: 월 인덱스가 매일 자동으로 전진하여 콘텐츠가 오래되지 않도록 관리
 11. **마이페이지 헤더 전환**: 마이페이지 라우트에서 상단 네비게이션을 숨기고 "마이페이지" 타이틀로 대체, 로고/링크 클릭 시 메인 페이지로 SPA 이동
+12. **리치 텍스트 게시물 에디터**: 클랜전 게시판 글쓰기 페이지에 contentEditable 기반 리치 텍스트 에디터 제공. 이미지/동영상 파일 삽입(Data URL), 웹 링크 삽입, 폰트 크기(8~72, 28단계), 볼드/이탤릭/밑줄/취소선 텍스트 서식, 제목 30자 제한 및 경고 표시, 게시물 구분(없음, 1넴~5넴) 드롭다운
 
 ---
 
@@ -282,10 +286,10 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 
 | 파일 | 라인 수 | 역할 |
 |---|---|---|
-| `server.js` | ~1619 | 전체 백엔드 로직: 서버 기동, DB 스키마, 모든 API 라우트, 정적 파일 제공, 세션 관리 |
-| `public/index.html` | ~774 | SPA 셸: 모든 모달과 UI 섹션을 포함하는 단일 HTML |
-| `public/js/main.js` | ~3639 | 모든 프론트엔드 로직: API 호출, DOM 조작, 이벤트 처리, 상태 관리 |
-| `public/css/main.css` | ~3618 | 전체 스타일시트: 레이아웃, 테마, 반응형 디자인, 모달, 애니메이션 |
+| `server.js` | ~1944 | 전체 백엔드 로직: 서버 기동, DB 스키마, 모든 API 라우트, 정적 파일 제공, 세션 관리 |
+| `public/index.html` | ~809 | SPA 셸: 모든 모달과 UI 섹션을 포함하는 단일 HTML |
+| `public/js/main.js` | ~3477 | 모든 프론트엔드 로직: API 호출, DOM 조작, 이벤트 처리, 상태 관리 |
+| `public/css/main.css` | ~3253 | 전체 스타일시트: 레이아웃, 테마, 반응형 디자인, 모달, 애니메이션 |
 | `lib/sessionAuth.js` | — | HMAC-SHA256 세션 쿠키 생성/검증 유틸리티 |
 | `lib/userPiiCrypto.js` | — | AES-256-GCM 암호화 + Blind HMAC 인덱싱 |
 | `lib/signupCaptcha.js` | — | 커스텀 SVG 캡차 생성 및 검증 |

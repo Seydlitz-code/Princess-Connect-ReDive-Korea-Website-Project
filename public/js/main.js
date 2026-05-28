@@ -3087,13 +3087,30 @@
   const clanWriteOpenBtn = document.getElementById('clan-write-open');
   const clanPostWrite = document.getElementById('clan-post-write');
   const clanWriteForm = document.getElementById('clan-write-form');
-  const clanWriteCategoryBtns = Array.from(document.querySelectorAll('[data-clan-write-cat]'));
+  const clanWriteBoardName = document.getElementById('clan-write-board-name');
+  const clanWriteCategorySelect = document.getElementById('clan-write-category');
   const clanWriteTitle = document.getElementById('clan-write-title');
+  const clanWriteTitleWarning = document.getElementById('clan-write-title-warning');
   const clanWriteContent = document.getElementById('clan-write-content');
   const clanWriteSubmit = document.getElementById('clan-write-submit');
   const clanWriteCancel = document.getElementById('clan-write-cancel');
   const clanWriteBack = document.getElementById('clan-write-back');
   const clanWriteError = document.getElementById('clan-write-error');
+  const clanWriteToolbar = document.getElementById('clan-write-toolbar');
+  const clanWriteBtnImage = document.getElementById('clan-write-btn-image');
+  const clanWriteBtnVideo = document.getElementById('clan-write-btn-video');
+  const clanWriteBtnLink = document.getElementById('clan-write-btn-link');
+  const clanWriteFontsize = document.getElementById('clan-write-fontsize');
+  const clanWriteBtnBold = document.getElementById('clan-write-btn-bold');
+  const clanWriteBtnItalic = document.getElementById('clan-write-btn-italic');
+  const clanWriteBtnUnderline = document.getElementById('clan-write-btn-underline');
+  const clanWriteBtnStrike = document.getElementById('clan-write-btn-strike');
+  const clanWriteImageInput = document.getElementById('clan-write-image-input');
+  const clanWriteVideoInput = document.getElementById('clan-write-video-input');
+  const clanWriteLinkPopup = document.getElementById('clan-write-link-popup');
+  const clanWriteLinkInput = document.getElementById('clan-write-link-input');
+  const clanWriteLinkInsert = document.getElementById('clan-write-link-insert');
+  const clanWriteLinkCancel = document.getElementById('clan-write-link-cancel');
   const clanCommentWriteForm = document.getElementById('clan-comment-write-form');
   const clanCommentInput = document.getElementById('clan-comment-input');
   const clanCommentSubmit = document.getElementById('clan-comment-submit');
@@ -3104,10 +3121,11 @@
   let clanBoardSearchText = '';
   let clanBoardCurrentPostId = null;
   let clanBoardCurrentPostLiked = false;
-  let clanWriteCategory = 'general';
+  let clanWriteCategory = 'none';
 
   const CATEGORY_LABELS = {
     all: '전체',
+    none: '없음',
     general: '자유',
     phase1: '1넴',
     phase2: '2넴',
@@ -3166,6 +3184,24 @@
   function renderClanPostList(posts) {
     if (!clanPostList) return;
     clanPostList.innerHTML = '';
+
+    const headerRow = document.createElement('div');
+    headerRow.className = 'clan-post-header-row';
+    const headers = [
+      { cls: 'clan-post-header-num', text: '번호' },
+      { cls: 'clan-post-header-cat', text: '카테고리' },
+      { cls: 'clan-post-header-title', text: '제목' },
+      { cls: 'clan-post-header-author', text: '작성자' },
+      { cls: 'clan-post-header-date', text: '날짜' },
+      { cls: 'clan-post-header-views', text: '조회' },
+    ];
+    headers.forEach((h) => {
+      const cell = document.createElement('div');
+      cell.className = h.cls;
+      cell.textContent = h.text;
+      headerRow.appendChild(cell);
+    });
+    clanPostList.appendChild(headerRow);
 
     const baseIndex = (clanBoardPage - 1) * 40;
 
@@ -3343,7 +3379,7 @@
 
     const body = document.createElement('div');
     body.className = 'clan-detail-body';
-    body.textContent = post.content;
+    body.innerHTML = post.content;
 
     clanDetailContent.innerHTML = '';
     clanDetailContent.appendChild(head);
@@ -3489,6 +3525,15 @@
 
   /* 글쓰기 */
 
+  function getClanBoardNameDisplay() {
+    const activeNav = links.find((b) => b.classList.contains('is-active'));
+    if (!activeNav) return '클랜전 게시판';
+    const board = activeNav.dataset.board;
+    if (board === 'clan-semi') return '클랜전 게시판 — 세미오토';
+    if (board === 'clan-fullauto') return '클랜전 게시판 — 플오토';
+    return '클랜전 게시판';
+  }
+
   function openClanWriteForm() {
     if (sessionUserRole === 'guest') {
       openLoginModal();
@@ -3501,8 +3546,13 @@
     clanPostWrite.hidden = false;
     clanWriteForm.reset();
     if (clanWriteError) { clanWriteError.hidden = true; clanWriteError.textContent = ''; }
-    clanWriteCategory = 'general';
-    updateClanWriteCategoryActive();
+    if (clanWriteTitleWarning) clanWriteTitleWarning.hidden = true;
+    if (clanWriteLinkPopup) clanWriteLinkPopup.hidden = true;
+    clanWriteCategory = 'none';
+    if (clanWriteCategorySelect) clanWriteCategorySelect.value = 'none';
+    if (clanWriteFontsize) clanWriteFontsize.value = '12';
+    if (clanWriteContent) clanWriteContent.innerHTML = '';
+    if (clanWriteBoardName) clanWriteBoardName.textContent = getClanBoardNameDisplay();
     if (clanWriteTitle) clanWriteTitle.focus();
   }
 
@@ -3511,33 +3561,140 @@
     loadClanBoardPosts();
   }
 
-  function updateClanWriteCategoryActive() {
-    clanWriteCategoryBtns.forEach((btn) => {
-      const on = btn.dataset.category === clanWriteCategory;
-      btn.classList.toggle('is-active', on);
-      btn.setAttribute('aria-checked', String(on));
-    });
+  function execWriteCommand(command, value) {
+    if (!clanWriteContent) return;
+    clanWriteContent.focus();
+    document.execCommand(command, false, value || null);
+  }
+
+  function insertFileAtCursor(file, type) {
+    if (!clanWriteContent) return;
+    clanWriteContent.focus();
+    const reader = new FileReader();
+    reader.onload = () => {
+      const el = document.createElement(type === 'video' ? 'video' : 'img');
+      el.src = reader.result;
+      if (type === 'video') el.setAttribute('controls', '');
+      el.style.maxWidth = '100%';
+      const sel = window.getSelection();
+      if (sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(el);
+        range.setStartAfter(el);
+        range.setEndAfter(el);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else {
+        clanWriteContent.appendChild(el);
+      }
+    };
+    reader.readAsDataURL(file);
   }
 
   clanWriteOpenBtn?.addEventListener('click', () => { openClanWriteForm(); });
 
-  clanWriteCategoryBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      clanWriteCategory = btn.dataset.category;
-      updateClanWriteCategoryActive();
-    });
+  clanWriteCategorySelect?.addEventListener('change', () => {
+    clanWriteCategory = clanWriteCategorySelect.value;
   });
 
   clanWriteBack?.addEventListener('click', () => { closeClanWriteForm(); });
   clanWriteCancel?.addEventListener('click', () => { closeClanWriteForm(); });
 
+  clanWriteTitle?.addEventListener('input', () => {
+    if (!clanWriteTitleWarning) return;
+    const len = [...clanWriteTitle.value].length;
+    if (len > 30) {
+      clanWriteTitleWarning.hidden = false;
+      clanWriteTitle.style.borderColor = '#dc2626';
+    } else {
+      clanWriteTitleWarning.hidden = true;
+      clanWriteTitle.style.borderColor = '';
+    }
+  });
+
+  clanWriteTitle?.addEventListener('blur', () => {
+    if (clanWriteTitle) clanWriteTitle.style.borderColor = '';
+  });
+
+  clanWriteBtnImage?.addEventListener('click', () => {
+    clanWriteImageInput?.click();
+  });
+
+  clanWriteImageInput?.addEventListener('change', () => {
+    const file = clanWriteImageInput?.files?.[0];
+    if (file) insertFileAtCursor(file, 'image');
+    if (clanWriteImageInput) clanWriteImageInput.value = '';
+  });
+
+  clanWriteBtnVideo?.addEventListener('click', () => {
+    clanWriteVideoInput?.click();
+  });
+
+  clanWriteVideoInput?.addEventListener('change', () => {
+    const file = clanWriteVideoInput?.files?.[0];
+    if (file) insertFileAtCursor(file, 'video');
+    if (clanWriteVideoInput) clanWriteVideoInput.value = '';
+  });
+
+  clanWriteBtnLink?.addEventListener('click', () => {
+    if (clanWriteLinkPopup) clanWriteLinkPopup.hidden = false;
+    if (clanWriteLinkInput) {
+      clanWriteLinkInput.value = '';
+      clanWriteLinkInput.focus();
+    }
+  });
+
+  clanWriteLinkCancel?.addEventListener('click', () => {
+    if (clanWriteLinkPopup) clanWriteLinkPopup.hidden = true;
+  });
+
+  clanWriteLinkInsert?.addEventListener('click', () => {
+    const url = (clanWriteLinkInput?.value || '').trim();
+    if (!url) return;
+    if (clanWriteLinkPopup) clanWriteLinkPopup.hidden = true;
+    if (!clanWriteContent) return;
+    clanWriteContent.focus();
+    const text = document.createTextNode(url);
+    const sel = window.getSelection();
+    if (sel.rangeCount && !sel.getRangeAt(0).collapsed) {
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(text);
+      range.setStartAfter(text);
+      range.setEndAfter(text);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else {
+      clanWriteContent.appendChild(text);
+    }
+  });
+
+  clanWriteLinkInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      clanWriteLinkInsert?.click();
+    }
+  });
+
+  clanWriteFontsize?.addEventListener('change', () => {
+    execWriteCommand('fontSize', clanWriteFontsize.value);
+  });
+
+  clanWriteBtnBold?.addEventListener('click', () => { execWriteCommand('bold'); });
+  clanWriteBtnItalic?.addEventListener('click', () => { execWriteCommand('italic'); });
+  clanWriteBtnUnderline?.addEventListener('click', () => { execWriteCommand('underline'); });
+  clanWriteBtnStrike?.addEventListener('click', () => { execWriteCommand('strikeThrough'); });
+
   clanWriteForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (clanWriteSubmit) clanWriteSubmit.disabled = true;
     if (clanWriteError) { clanWriteError.hidden = true; clanWriteError.textContent = ''; }
+    if (clanWriteLinkPopup) clanWriteLinkPopup.hidden = true;
 
     const title = (clanWriteTitle?.value || '').trim();
-    const content = (clanWriteContent?.value || '').trim();
+    const htmlContent = clanWriteContent?.innerHTML || '';
+    const textContent = (clanWriteContent?.textContent || '').trim();
 
     if (!title) {
       if (clanWriteError) { clanWriteError.textContent = '제목을 입력해 주세요.'; clanWriteError.hidden = false; }
@@ -3545,7 +3702,17 @@
       clanWriteTitle?.focus();
       return;
     }
-    if (!content) {
+
+    const titleLen = [...title].length;
+    if (titleLen > 30) {
+      if (clanWriteError) { clanWriteError.textContent = '게시물 제목은 30자 이내로만 작성 가능합니다.'; clanWriteError.hidden = false; }
+      if (clanWriteTitleWarning) clanWriteTitleWarning.hidden = false;
+      clanWriteSubmit.disabled = false;
+      clanWriteTitle?.focus();
+      return;
+    }
+
+    if (!textContent) {
       if (clanWriteError) { clanWriteError.textContent = '내용을 입력해 주세요.'; clanWriteError.hidden = false; }
       clanWriteSubmit.disabled = false;
       clanWriteContent?.focus();
@@ -3557,7 +3724,7 @@
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content, category: clanWriteCategory }),
+        body: JSON.stringify({ title, content: htmlContent, category: clanWriteCategory }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

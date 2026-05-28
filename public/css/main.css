@@ -314,8 +314,6 @@ body.is-mypage-route .header-mypage-title {
   line-height: 1.35;
   font-weight: 600;
   color: var(--text);
-  text-decoration: underline;
-  text-underline-offset: 3px;
   cursor: pointer;
 }
 
@@ -2979,6 +2977,16 @@ button.future-type-badge {
     font-size: 0.82rem;
   }
 
+  .clan-post-header-row {
+    grid-template-columns: 35px 65px 1fr;
+  }
+
+  .clan-post-header-row .clan-post-header-author,
+  .clan-post-header-row .clan-post-header-date,
+  .clan-post-header-row .clan-post-header-views {
+    display: none;
+  }
+
   .clan-post-row {
     grid-template-columns: 35px 65px 1fr;
   }
@@ -3025,7 +3033,7 @@ button.future-type-badge {
 
 .clan-board-subtitle {
   font-weight: 600;
-  color: var(--pink);
+  color: var(--text);
 }
 
 .clan-board-toolbar {
@@ -3133,6 +3141,19 @@ button.future-type-badge {
   overflow: hidden;
 }
 
+.clan-post-header-row {
+  display: grid;
+  grid-template-columns: 45px 75px 1fr 90px 100px 55px;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
 .clan-post-row {
   display: grid;
   grid-template-columns: 45px 75px 1fr 90px 100px 55px;
@@ -3151,6 +3172,20 @@ button.future-type-badge {
 
 .clan-post-row:hover {
   background: var(--surface);
+}
+
+.clan-post-header-num {
+  text-align: center;
+}
+
+.clan-post-header-cat {
+  justify-self: start;
+}
+
+.clan-post-header-author,
+.clan-post-header-date,
+.clan-post-header-views {
+  text-align: left;
 }
 
 .clan-post-num-cell {
@@ -3176,6 +3211,7 @@ button.future-type-badge {
 }
 
 .clan-post-badge--notice { background: #dc2626; }
+.clan-post-badge--none { background: #888; }
 .clan-post-badge--general { background: #888; }
 .clan-post-badge--phase1 { background: #e07b22; }
 .clan-post-badge--phase2 { background: var(--nav-active); }
@@ -3511,6 +3547,166 @@ button.future-type-badge {
 
 .clan-write-field .clan-category-tabs {
   flex-wrap: wrap;
+}
+
+.clan-write-board-name {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-top: 4px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--text);
+}
+
+.clan-write-select {
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  min-width: 140px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.clan-write-select:focus {
+  outline: none;
+  border-color: var(--pink);
+}
+
+.clan-write-title-warning {
+  margin: 6px 0 0;
+  color: #dc2626;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.clan-write-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: var(--surface);
+}
+
+.clan-write-toolbar-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  transition: background-color 0.12s ease;
+}
+
+.clan-write-toolbar-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.clan-write-toolbar-btn--text svg {
+  width: 18px;
+  height: 18px;
+}
+
+.clan-write-toolbar-sep {
+  display: inline-block;
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 4px;
+  align-self: center;
+}
+
+.clan-write-fontsize-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-right: 2px;
+}
+
+.clan-write-fontsize-select {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.clan-write-fontsize-select:focus {
+  outline: none;
+  border-color: var(--pink);
+}
+
+.clan-write-editor {
+  font: inherit;
+  width: 100%;
+  min-height: 260px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 0 0 10px 10px;
+  border-top: none;
+  background: #fff;
+  color: var(--text);
+  line-height: 1.65;
+  outline: none;
+  overflow-y: auto;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.clan-write-editor:focus {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px rgba(255, 93, 162, 0.18);
+}
+
+.clan-write-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #9e9e9e;
+  pointer-events: none;
+}
+
+.clan-write-editor img,
+.clan-write-editor video {
+  max-width: 100%;
+  height: auto;
+}
+
+.clan-write-link-popup {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.clan-write-link-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.clan-write-link-input-row .clan-write-input {
+  flex: 1;
 }
 
 .clan-write-error {
