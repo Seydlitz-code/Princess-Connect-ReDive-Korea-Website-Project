@@ -674,6 +674,8 @@
   const headerUserNicknameEl = document.getElementById('header-user-nickname');
   const headerLogoutBtn = document.getElementById('header-logout');
   const headerOpenMypage = document.getElementById('header-open-mypage');
+  const brandLink = document.querySelector('.brand');
+  const mypageToMain = document.getElementById('mypage-to-main');
   const mypageProfilePreview = document.getElementById('mypage-profile-preview');
   const mypageProfileFile = document.getElementById('mypage-profile-file');
   const mypageProfileTrigger = document.getElementById('mypage-profile-file-trigger');
@@ -2044,6 +2046,18 @@
     e.preventDefault();
     setActiveBoard('mypage');
     setMypageTab('profile');
+    window.scrollTo(0, 0);
+  });
+
+  brandLink?.addEventListener('click', (e) => {
+    e.preventDefault();
+    setActiveBoard('main');
+    window.scrollTo(0, 0);
+  });
+
+  mypageToMain?.addEventListener('click', (e) => {
+    e.preventDefault();
+    setActiveBoard('main');
     window.scrollTo(0, 0);
   });
 

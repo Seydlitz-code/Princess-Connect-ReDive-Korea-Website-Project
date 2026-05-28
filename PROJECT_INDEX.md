@@ -182,9 +182,9 @@ Vanilla JS (fetch) → DOM 조작
 
 | UI 섹션 | 설명 |
 |---|---|
-| **네비게이션** | 상단 네비게이션 바, 5개 보드: Main, Clan Battle, Battle Stadium, Deep Quest, Abyss |
+| **네비게이션** | 상단 네비게이션 바, 5개 보드: Main, Clan Battle, Battle Stadium, Deep Quest, Abyss. 마이페이지 접속 시 메인 메뉴 대신 "마이페이지" 텍스트로 교체 |
 | **Main Board** | "Future Sight" 테이블 — 행 = 월, 열 = 카테고리 (신규/재실시/6성/고유1/고유2/이벤트) |
-| **Mypage** | 프로필 편집, 소유 캐릭터 표시, 관리자 패널 |
+| **Mypage** | 프로필 편집, 소유 캐릭터 표시, 관리자 패널. 프로필 탭 헤더에 "메인으로" 링크, 로고 클릭 시 메인 페이지로 이동 |
 | **Signup Modal** | 2단계: (1) 프로필 사진, 닉네임, 유저명, 비밀번호, 캡차; (2) 캐릭터 선택 + reCAPTCHA |
 | **Login Modal** | 유저명 + 비밀번호 폼 |
 | **Profile Crop Modal** | Canvas 기반 원형 크롭 (줌/회전/이동) |
@@ -262,6 +262,7 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 8. **한국어/일본어 이중 언어 UI**: 네비게이션 레이블과 안내문이 한국어와 일본어로 표시됨
 9. **Canvas 기반 이미지 크롭**: 클라이언트 사이드에서 원형 프로필 이미지 크롭, 줌/회전/이동 기능
 10. **Future Sight 자동 유지보수**: 월 인덱스가 매일 자동으로 전진하여 콘텐츠가 오래되지 않도록 관리
+11. **마이페이지 헤더 전환**: 마이페이지 라우트에서 상단 네비게이션을 숨기고 "마이페이지" 타이틀로 대체, 로고/링크 클릭 시 메인 페이지로 SPA 이동
 
 ---
 
@@ -282,9 +283,9 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 | 파일 | 라인 수 | 역할 |
 |---|---|---|
 | `server.js` | ~1619 | 전체 백엔드 로직: 서버 기동, DB 스키마, 모든 API 라우트, 정적 파일 제공, 세션 관리 |
-| `public/index.html` | ~665 | SPA 셸: 모든 모달과 UI 섹션을 포함하는 단일 HTML |
-| `public/js/main.js` | ~3023 | 모든 프론트엔드 로직: API 호출, DOM 조작, 이벤트 처리, 상태 관리 |
-| `public/css/main.css` | ~2832 | 전체 스타일시트: 레이아웃, 테마, 반응형 디자인, 모달, 애니메이션 |
+| `public/index.html` | ~774 | SPA 셸: 모든 모달과 UI 섹션을 포함하는 단일 HTML |
+| `public/js/main.js` | ~3639 | 모든 프론트엔드 로직: API 호출, DOM 조작, 이벤트 처리, 상태 관리 |
+| `public/css/main.css` | ~3618 | 전체 스타일시트: 레이아웃, 테마, 반응형 디자인, 모달, 애니메이션 |
 | `lib/sessionAuth.js` | — | HMAC-SHA256 세션 쿠키 생성/검증 유틸리티 |
 | `lib/userPiiCrypto.js` | — | AES-256-GCM 암호화 + Blind HMAC 인덱싱 |
 | `lib/signupCaptcha.js` | — | 커스텀 SVG 캡차 생성 및 검증 |

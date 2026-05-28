@@ -27,6 +27,7 @@
           />
         </a>
 
+        <span class="header-mypage-title" id="header-mypage-title" hidden>마이페이지</span>
         <nav class="site-nav" aria-label="게시판">
           <div class="nav-track">
             <button type="button" class="nav-link is-active" data-board="main">
@@ -220,7 +221,10 @@
             <div class="mypage-tab-panel" data-mypage-panel="profile">
               <header class="mypage-profile-head">
                 <h2 class="mypage-panel-title">프로필 설정 및 변경</h2>
-                <button type="button" class="btn btn-secondary" id="mypage-profile-apply" disabled>적용하기</button>
+                <div class="mypage-profile-actions">
+                  <a href="#" class="mypage-to-main-link" id="mypage-to-main">메인으로</a>
+                  <button type="button" class="btn btn-secondary" id="mypage-profile-apply" disabled>적용하기</button>
+                </div>
               </header>
               <div class="mypage-profile-body">
                 <div class="profile-block mypage-profile-block">
