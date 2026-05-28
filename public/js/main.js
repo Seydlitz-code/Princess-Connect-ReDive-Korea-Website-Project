@@ -3525,10 +3525,11 @@
 
   /* 글쓰기 */
 
+  let clanBoardPreviousSubBoard = 'clan-fullauto';
+  const clanWritePanel = document.querySelector('[data-board-panel="clan-write"]');
+
   function getClanBoardNameDisplay() {
-    const activeNav = links.find((b) => b.classList.contains('is-active'));
-    if (!activeNav) return '클랜전 게시판';
-    const board = activeNav.dataset.board;
+    const board = clanBoardPreviousSubBoard;
     if (board === 'clan-semi') return '클랜전 게시판 — 세미오토';
     if (board === 'clan-fullauto') return '클랜전 게시판 — 플오토';
     return '클랜전 게시판';
@@ -3539,11 +3540,21 @@
       openLoginModal();
       return;
     }
-    clanPostList.hidden = true;
-    if (clanBoardEmpty) clanBoardEmpty.hidden = true;
-    clanPagination.hidden = true;
-    clanPostDetail.hidden = true;
-    clanPostWrite.hidden = false;
+    const activeNav = links.find((b) => b.classList.contains('is-active'));
+    clanBoardPreviousSubBoard = activeNav ? activeNav.dataset.board : 'clan-fullauto';
+
+    panels.forEach((panel) => {
+      const match = panel.dataset.boardPanel === 'clan-write';
+      panel.hidden = !match;
+      panel.classList.toggle('is-visible', match);
+    });
+    links.forEach((btn) => {
+      btn.classList.remove('is-active');
+      btn.removeAttribute('aria-current');
+    });
+    document.body.classList.remove('is-mypage-route');
+    requestAnimationFrame(() => moveUnderline(null));
+
     clanWriteForm.reset();
     if (clanWriteError) { clanWriteError.hidden = true; clanWriteError.textContent = ''; }
     if (clanWriteTitleWarning) clanWriteTitleWarning.hidden = true;
@@ -3557,8 +3568,7 @@
   }
 
   function closeClanWriteForm() {
-    clanPostWrite.hidden = true;
-    loadClanBoardPosts();
+    setActiveBoard(clanBoardPreviousSubBoard);
   }
 
   function execWriteCommand(command, value) {
