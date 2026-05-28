@@ -134,7 +134,7 @@
           <div class="clan-post-detail" id="clan-post-detail" hidden>
             <div class="clan-post-detail-inner">
               <button type="button" class="clan-detail-back" id="clan-detail-back">
-                <span aria-hidden="true">&larr;</span> 목록으로
+                <span aria-hidden="true">&larr;</span> 게시판으로 이동하기
               </button>
               <div id="clan-detail-content"></div>
               <div class="clan-detail-actions" id="clan-detail-actions" hidden>
@@ -166,7 +166,7 @@
         <div class="clan-write-page">
           <div class="clan-detail-inner">
             <button type="button" class="clan-detail-back" id="clan-write-back">
-              <span aria-hidden="true">&larr;</span> 목록으로
+              <span aria-hidden="true">&larr;</span> 게시판으로 이동하기
             </button>
             <div class="clan-write-board-name" id="clan-write-board-name">클랜전 게시판</div>
             <form id="clan-write-form" class="clan-write-form">
@@ -190,44 +190,47 @@
               <div class="field-group clan-write-field">
                 <label class="field-label">내용</label>
                 <div class="clan-write-toolbar" id="clan-write-toolbar">
-                  <button type="button" class="clan-write-toolbar-btn" id="clan-write-btn-image" title="이미지 삽입">
-                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-                    <span>이미지</span>
-                  </button>
-                  <button type="button" class="clan-write-toolbar-btn" id="clan-write-btn-video" title="동영상 삽입">
-                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
-                    <span>동영상</span>
-                  </button>
-                  <button type="button" class="clan-write-toolbar-btn" id="clan-write-btn-link" title="웹 링크 추가">
-                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
-                    <span>웹 링크</span>
-                  </button>
-                  <span class="clan-write-toolbar-sep" aria-hidden="true"></span>
-                  <label class="clan-write-fontsize-label" for="clan-write-fontsize">크기</label>
-                  <select id="clan-write-fontsize" class="clan-write-fontsize-select">
-                    <option value="8">8</option><option value="10">10</option><option value="12" selected>12</option>
-                    <option value="14">14</option><option value="16">16</option><option value="18">18</option>
-                    <option value="20">20</option><option value="22">22</option><option value="24">24</option>
-                    <option value="26">26</option><option value="28">28</option><option value="30">30</option>
-                    <option value="32">32</option><option value="34">34</option><option value="36">36</option>
-                    <option value="38">38</option><option value="40">40</option><option value="42">42</option>
-                    <option value="44">44</option><option value="46">46</option><option value="48">48</option>
-                    <option value="52">52</option><option value="56">56</option><option value="60">60</option>
-                    <option value="64">64</option><option value="68">68</option><option value="72">72</option>
-                  </select>
-                  <span class="clan-write-toolbar-sep" aria-hidden="true"></span>
-                  <button type="button" class="clan-write-toolbar-btn clan-write-toolbar-btn--text" id="clan-write-btn-bold" title="두껍게">
-                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42zM10 6.5h3c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-3v-3zm3.5 9H10v-3h3.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z"/></svg>
-                  </button>
-                  <button type="button" class="clan-write-toolbar-btn clan-write-toolbar-btn--text" id="clan-write-btn-italic" title="기울이기">
-                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M10 4v3h2.21l-3.42 8H6v3h8v-3h-2.21l3.42-8H18V4h-8z"/></svg>
-                  </button>
-                  <button type="button" class="clan-write-toolbar-btn clan-write-toolbar-btn--text" id="clan-write-btn-underline" title="밑줄">
-                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 17c3.31 0 6-2.69 6-6V3h-2.5v8c0 1.93-1.57 3.5-3.5 3.5S8.5 12.93 8.5 11V3H6v8c0 3.31 2.69 6 6 6zm-7 2v2h14v-2H5z"/></svg>
-                  </button>
-                  <button type="button" class="clan-write-toolbar-btn clan-write-toolbar-btn--text" id="clan-write-btn-strike" title="취소선">
-                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6.85 7.08C6.85 4.37 9.45 3 12.24 3c1.64 0 3 .49 3.9 1.28.77.65 1.46 1.73 1.46 3.24h-3.01c0-.31-.05-.59-.15-.85-.29-.86-1.2-1.28-2.25-1.28-1.86 0-2.34 1.02-2.34 1.7 0 .48.25.88.74 1.21.38.25.77.48 1.41.7H7.39c-.21-.34-.54-.89-.54-1.92zM21 12v-2H3v2h9.62c1.15.45 1.96.75 1.96 1.97 0 1-.81 1.67-2.28 1.67-1.54 0-2.44-.54-2.93-1.5H6.4c.48 2.02 2.31 3.27 5.06 3.27 2.64 0 5.18-1.17 5.18-3.83 0-1.61-1.18-2.82-2.79-3.23V12H21z"/></svg>
-                  </button>
+                  <div class="clan-write-toolbar-row">
+                    <button type="button" class="clan-write-toolbar-btn" id="clan-write-btn-image" title="이미지 삽입">
+                      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                      <span>이미지</span>
+                    </button>
+                    <button type="button" class="clan-write-toolbar-btn" id="clan-write-btn-video" title="동영상 삽입">
+                      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                      <span>동영상</span>
+                    </button>
+                    <button type="button" class="clan-write-toolbar-btn" id="clan-write-btn-link" title="웹 링크 추가">
+                      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+                      <span>웹 링크</span>
+                    </button>
+                  </div>
+                  <div class="clan-write-toolbar-row">
+                    <label class="clan-write-fontsize-label" for="clan-write-fontsize">크기</label>
+                    <select id="clan-write-fontsize" class="clan-write-fontsize-select">
+                      <option value="8">8</option><option value="10">10</option><option value="12" selected>12</option>
+                      <option value="14">14</option><option value="16">16</option><option value="18">18</option>
+                      <option value="20">20</option><option value="22">22</option><option value="24">24</option>
+                      <option value="26">26</option><option value="28">28</option><option value="30">30</option>
+                      <option value="32">32</option><option value="34">34</option><option value="36">36</option>
+                      <option value="38">38</option><option value="40">40</option><option value="42">42</option>
+                      <option value="44">44</option><option value="46">46</option><option value="48">48</option>
+                      <option value="52">52</option><option value="56">56</option><option value="60">60</option>
+                      <option value="64">64</option><option value="68">68</option><option value="72">72</option>
+                    </select>
+                    <span class="clan-write-toolbar-sep" aria-hidden="true"></span>
+                    <button type="button" class="clan-write-toolbar-btn clan-write-toolbar-btn--text" id="clan-write-btn-bold" title="두껍게">
+                      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42zM10 6.5h3c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-3v-3zm3.5 9H10v-3h3.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z"/></svg>
+                    </button>
+                    <button type="button" class="clan-write-toolbar-btn clan-write-toolbar-btn--text" id="clan-write-btn-italic" title="기울이기">
+                      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M10 4v3h2.21l-3.42 8H6v3h8v-3h-2.21l3.42-8H18V4h-8z"/></svg>
+                    </button>
+                    <button type="button" class="clan-write-toolbar-btn clan-write-toolbar-btn--text" id="clan-write-btn-underline" title="밑줄">
+                      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 17c3.31 0 6-2.69 6-6V3h-2.5v8c0 1.93-1.57 3.5-3.5 3.5S8.5 12.93 8.5 11V3H6v8c0 3.31 2.69 6 6 6zm-7 2v2h14v-2H5z"/></svg>
+                    </button>
+                    <button type="button" class="clan-write-toolbar-btn clan-write-toolbar-btn--text" id="clan-write-btn-strike" title="취소선">
+                      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6.85 7.08C6.85 4.37 9.45 3 12.24 3c1.64 0 3 .49 3.9 1.28.77.65 1.46 1.73 1.46 3.24h-3.01c0-.31-.05-.59-.15-.85-.29-.86-1.2-1.28-2.25-1.28-1.86 0-2.34 1.02-2.34 1.7 0 .48.25.88.74 1.21.38.25.77.48 1.41.7H7.39c-.21-.34-.54-.89-.54-1.92zM21 12v-2H3v2h9.62c1.15.45 1.96.75 1.96 1.97 0 1-.81 1.67-2.28 1.67-1.54 0-2.44-.54-2.93-1.5H6.4c.48 2.02 2.31 3.27 5.06 3.27 2.64 0 5.18-1.17 5.18-3.83 0-1.61-1.18-2.82-2.79-3.23V12H21z"/></svg>
+                    </button>
+                  </div>
                 </div>
                 <div id="clan-write-content" class="clan-write-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="내용" data-placeholder="내용을 입력하세요"></div>
               </div>
