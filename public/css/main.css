@@ -3754,6 +3754,58 @@ button.future-type-badge {
   white-space: normal;
 }
 
+.clan-tactic-table__char-cell {
+  text-align: center;
+  vertical-align: middle;
+  padding: 0;
+  width: 128px;
+  min-width: 128px;
+  max-width: 128px;
+  height: 128px;
+}
+
+.clan-tactic-table__char-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  padding: 6px 4px;
+  border: 2px solid var(--nav-active, #1976d2);
+  border-radius: 8px;
+  background: rgba(25, 118, 210, 0.08);
+  cursor: pointer;
+  color: var(--nav-active, #1976d2);
+  font: inherit;
+  transition: background 0.15s ease;
+}
+
+.clan-tactic-table__char-btn:hover {
+  background: rgba(25, 118, 210, 0.16);
+}
+
+.boss-image-popup-sheet {
+  width: min(800px, 100%);
+}
+
+.boss-image-popup-search-row {
+  margin-bottom: 12px;
+}
+
+.boss-image-popup-scroll {
+  max-height: min(480px, 50vh);
+}
+
+.boss-image-popup-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+}
+
 .clan-write-link-popup {
   margin-top: 12px;
   padding: 14px 16px;
@@ -3938,24 +3990,35 @@ button.future-type-badge {
   width: 128px;
   height: 128px;
   display: block;
-  object-fit: cover;
+  object-fit: fill;
   border-radius: 6px;
 }
 
-.boss-image-popup-sheet {
-  width: min(800px, 100%);
+.clan-tactic-table__boss-wrap {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
-.boss-image-popup-search-row {
-  margin-bottom: 12px;
-}
-
-.boss-image-popup-scroll {
-  max-height: min(480px, 50vh);
-}
-
-.boss-image-popup-footer {
+.clan-tactic-table__boss-del {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: pointer;
   display: flex;
-  justify-content: flex-end;
-  padding-top: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.clan-tactic-table__boss-del:hover {
+  background: rgba(0, 0, 0, 0.75);
 }

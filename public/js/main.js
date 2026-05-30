@@ -3113,6 +3113,14 @@
   const clanWriteLinkInsert = document.getElementById('clan-write-link-insert');
   const clanWriteLinkCancel = document.getElementById('clan-write-link-cancel');
   const clanWriteBossImageInput = document.getElementById('clan-write-boss-image-input');
+  const tacticCharPopup = document.getElementById('tactic-character-popup');
+  const tacticCharPopupGrid = document.getElementById('tactic-character-popup-grid');
+  const tacticCharPopupSearch = document.getElementById('tactic-character-popup-search');
+  const tacticCharPopupClose = document.getElementById('tactic-character-popup-close');
+  const tacticCharPopupCancel = document.getElementById('tactic-character-popup-cancel');
+  const tacticCharPopupConfirm = document.getElementById('tactic-character-popup-confirm');
+  let tacticCharTargetCell = null;
+  let tacticCharSelectedId = null;
   const clanCommentWriteForm = document.getElementById('clan-comment-write-form');
   const clanCommentInput = document.getElementById('clan-comment-input');
   const clanCommentSubmit = document.getElementById('clan-comment-submit');
@@ -3623,6 +3631,7 @@
         if (row === 0) cell.classList.add('clan-tactic-table__grid-cell--head');
         if (row === 0 && col === 0) {
           cell.classList.add('clan-tactic-table__boss-cell');
+          cell.contentEditable = 'false';
           const bossBtn = document.createElement('button');
           bossBtn.type = 'button';
           bossBtn.className = 'clan-tactic-table__boss-btn';
@@ -3637,6 +3646,19 @@
             }
           });
           cell.appendChild(bossBtn);
+        } else if (row === 0 && col >= 1) {
+          cell.classList.add('clan-tactic-table__char-cell');
+          cell.contentEditable = 'false';
+          const charBtn = document.createElement('button');
+          charBtn.type = 'button';
+          charBtn.className = 'clan-tactic-table__char-btn';
+          charBtn.innerHTML = '<span class="clan-tactic-table__boss-icon">+</span><span class="clan-tactic-table__boss-label">캐릭터</span>';
+          charBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openTacticCharPopup(cell);
+          });
+          cell.appendChild(charBtn);
         } else {
           cell.innerHTML = '<br>';
         }
@@ -3901,20 +3923,179 @@
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
+      const cell = input._bossTargetCell;
+      const btn = cell?.querySelector('.clan-tactic-table__boss-btn');
+      if (!cell || !btn) return;
+      btn.remove();
+
+      const wrap = document.createElement('div');
+      wrap.className = 'clan-tactic-table__boss-wrap';
+
       const img = document.createElement('img');
       img.src = reader.result;
       img.alt = '보스';
       img.className = 'clan-tactic-table__boss-img';
-      const btn = input._bossTargetCell?.querySelector('.clan-tactic-table__boss-btn');
-      const cell = input._bossTargetCell;
-      if (cell && btn) {
-        btn.remove();
-        cell.appendChild(img);
-      }
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'clan-tactic-table__boss-del';
+      delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+      delBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        wrap.remove();
+        cell.appendChild(createBossImageButton(cell));
+      });
+
+      wrap.appendChild(img);
+      wrap.appendChild(delBtn);
+      cell.appendChild(wrap);
+
       delete input._bossTargetCell;
     };
     reader.readAsDataURL(file);
     if (input) input.value = '';
   });
+
+  function createBossImageButton(cell) {
+    const bossBtn = document.createElement('button');
+    bossBtn.type = 'button';
+    bossBtn.className = 'clan-tactic-table__boss-btn';
+    bossBtn.innerHTML = '<span class="clan-tactic-table__boss-icon">+</span><span class="clan-tactic-table__boss-label">보스</span>';
+    bossBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const input = document.getElementById('clan-write-boss-image-input');
+      if (input) {
+        input._bossTargetCell = cell;
+        input.click();
+      }
+    });
+    return bossBtn;
+  }
+
+  function openTacticCharPopup(cell) {
+    if (!tacticCharPopup || !tacticCharPopupGrid) return;
+    tacticCharTargetCell = cell;
+    tacticCharSelectedId = null;
+    tacticCharPopup.hidden = false;
+    if (tacticCharPopupSearch) tacticCharPopupSearch.value = '';
+    ensureCharactersLoaded().then((list) => {
+      renderTacticCharPicker(list);
+      tacticCharPopupGrid.focus();
+    });
+  }
+
+  function closeTacticCharPopup() {
+    if (tacticCharPopup) tacticCharPopup.hidden = true;
+    tacticCharTargetCell = null;
+    tacticCharSelectedId = null;
+  }
+
+  function renderTacticCharPicker(list) {
+    if (!tacticCharPopupGrid) return;
+    tacticCharPopupGrid.innerHTML = '';
+    list.forEach((c) => {
+      const id = String(c.id);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'character-picker-btn tactic-char-picker-btn';
+      btn.dataset.characterId = id;
+      btn.setAttribute('role', 'listitem');
+
+      const thumb = document.createElement('div');
+      thumb.className = 'character-thumb';
+      const img = document.createElement('img');
+      img.alt = c.name || '캐릭터';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.src = c.imageUrl || `/api/characters/${encodeURIComponent(id)}/image`;
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'character-name';
+      nameEl.textContent = c.name || '';
+
+      thumb.appendChild(img);
+      btn.appendChild(thumb);
+      btn.appendChild(nameEl);
+
+      btn.addEventListener('click', () => {
+        tacticCharSelectedId = id;
+        const allBtns = tacticCharPopupGrid.querySelectorAll('.tactic-char-picker-btn');
+        allBtns.forEach((b) => b.classList.remove('is-selected'));
+        btn.classList.add('is-selected');
+      });
+
+      tacticCharPopupGrid.appendChild(btn);
+    });
+  }
+
+  tacticCharPopupSearch?.addEventListener('input', () => {
+    const q = (tacticCharPopupSearch.value || '').trim().toLowerCase();
+    const buttons = tacticCharPopupGrid?.querySelectorAll('.tactic-char-picker-btn');
+    if (!buttons) return;
+    buttons.forEach((btn) => {
+      const id = btn.dataset.characterId || '';
+      const name = (btn.querySelector('.character-name')?.textContent || '').toLowerCase();
+      if (!q || id.includes(q) || name.includes(q)) {
+        btn.classList.remove('character-picker-btn--filtered-out');
+      } else {
+        btn.classList.add('character-picker-btn--filtered-out');
+      }
+    });
+  });
+
+  tacticCharPopupConfirm?.addEventListener('click', () => {
+    if (!tacticCharTargetCell || !tacticCharSelectedId) return;
+    ensureCharactersLoaded().then((list) => {
+      const c = list.find((x) => String(x.id) === tacticCharSelectedId);
+      if (!c) return;
+      const cell = tacticCharTargetCell;
+      const btn = cell.querySelector('.clan-tactic-table__char-btn');
+      if (btn) btn.remove();
+
+      const wrap = document.createElement('div');
+      wrap.className = 'clan-tactic-table__boss-wrap';
+
+      const img = document.createElement('img');
+      img.src = c.imageUrl || `/api/characters/${encodeURIComponent(tacticCharSelectedId)}/image`;
+      img.alt = c.name || '캐릭터';
+      img.className = 'clan-tactic-table__boss-img';
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'clan-tactic-table__boss-del';
+      delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+      delBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        wrap.remove();
+        cell.appendChild(createCharImageButton(cell));
+      });
+
+      wrap.appendChild(img);
+      wrap.appendChild(delBtn);
+      cell.appendChild(wrap);
+
+      closeTacticCharPopup();
+    });
+  });
+
+  function createCharImageButton(cell) {
+    const charBtn = document.createElement('button');
+    charBtn.type = 'button';
+    charBtn.className = 'clan-tactic-table__char-btn';
+    charBtn.innerHTML = '<span class="clan-tactic-table__boss-icon">+</span><span class="clan-tactic-table__boss-label">캐릭터</span>';
+    charBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openTacticCharPopup(cell);
+    });
+    return charBtn;
+  }
+
+  tacticCharPopupClose?.addEventListener('click', () => { closeTacticCharPopup(); });
+  tacticCharPopupCancel?.addEventListener('click', () => { closeTacticCharPopup(); });
+  tacticCharPopup?.querySelector('[data-close-tactic-char]')?.addEventListener('click', () => { closeTacticCharPopup(); });
 
 })();
