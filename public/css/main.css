@@ -3888,3 +3888,71 @@ button.future-type-badge {
   flex-shrink: 0;
   margin-left: auto;
 }
+
+.clan-tactic-table__boss-cell {
+  text-align: center;
+  vertical-align: middle;
+  padding: 4px;
+}
+
+.clan-tactic-table__boss-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  min-height: 54px;
+  padding: 6px 4px;
+  border: 1.5px dashed var(--border);
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-secondary, #666);
+  font: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.clan-tactic-table__boss-btn:hover {
+  border-color: var(--nav-active, #4a6cf7);
+  background: rgba(74, 108, 247, 0.06);
+  color: var(--nav-active, #4a6cf7);
+}
+
+.clan-tactic-table__boss-icon {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.clan-tactic-table__boss-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.clan-tactic-table__boss-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+}
+
+.boss-image-popup-sheet {
+  width: min(800px, 100%);
+}
+
+.boss-image-popup-search-row {
+  margin-bottom: 12px;
+}
+
+.boss-image-popup-scroll {
+  max-height: min(480px, 50vh);
+}
+
+.boss-image-popup-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+}
