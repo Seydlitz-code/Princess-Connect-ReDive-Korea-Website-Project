@@ -3939,7 +3939,7 @@
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
       delBtn.className = 'clan-tactic-table__boss-del';
-      delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+      delBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
       delBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -4065,7 +4065,7 @@
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
       delBtn.className = 'clan-tactic-table__boss-del';
-      delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+      delBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
       delBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();

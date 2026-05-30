@@ -3758,10 +3758,10 @@ button.future-type-badge {
   text-align: center;
   vertical-align: middle;
   padding: 0;
-  width: 128px;
-  min-width: 128px;
-  max-width: 128px;
-  height: 128px;
+  width: 64px;
+  min-width: 64px;
+  max-width: 64px;
+  height: 64px;
 }
 
 .clan-tactic-table__char-btn {
@@ -3769,13 +3769,13 @@ button.future-type-badge {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 1px;
   width: 100%;
   height: 100%;
-  min-height: 120px;
-  padding: 6px 4px;
-  border: 2px solid var(--nav-active, #1976d2);
-  border-radius: 8px;
+  min-height: 56px;
+  padding: 3px 2px;
+  border: 1.5px solid var(--nav-active, #1976d2);
+  border-radius: 6px;
   background: rgba(25, 118, 210, 0.08);
   cursor: pointer;
   color: var(--nav-active, #1976d2);
@@ -3945,10 +3945,10 @@ button.future-type-badge {
   text-align: center;
   vertical-align: middle;
   padding: 0;
-  width: 128px;
-  min-width: 128px;
-  max-width: 128px;
-  height: 128px;
+  width: 64px;
+  min-width: 64px;
+  max-width: 64px;
+  height: 64px;
 }
 
 .clan-tactic-table__boss-btn {
@@ -3956,13 +3956,13 @@ button.future-type-badge {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 1px;
   width: 100%;
   height: 100%;
-  min-height: 120px;
-  padding: 6px 4px;
-  border: 2px solid var(--nav-active, #1976d2);
-  border-radius: 8px;
+  min-height: 56px;
+  padding: 3px 2px;
+  border: 1.5px solid var(--nav-active, #1976d2);
+  border-radius: 6px;
   background: rgba(25, 118, 210, 0.08);
   cursor: pointer;
   color: var(--nav-active, #1976d2);
@@ -3975,42 +3975,42 @@ button.future-type-badge {
 }
 
 .clan-tactic-table__boss-icon {
-  font-size: 1.5rem;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1;
 }
 
 .clan-tactic-table__boss-label {
-  font-size: 0.75rem;
+  font-size: 0.55rem;
   font-weight: 600;
   line-height: 1;
 }
 
 .clan-tactic-table__boss-img {
-  width: 128px;
-  height: 128px;
+  width: 64px;
+  height: 64px;
   display: block;
   object-fit: fill;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .clan-tactic-table__boss-wrap {
   position: relative;
-  width: 128px;
-  height: 128px;
-  border-radius: 6px;
+  width: 64px;
+  height: 64px;
+  border-radius: 4px;
   overflow: hidden;
 }
 
 .clan-tactic-table__boss-del {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 20px;
-  height: 20px;
+  top: 2px;
+  right: 2px;
+  width: 14px;
+  height: 14px;
   padding: 0;
   border: none;
-  border-radius: 4px;
+  border-radius: 3px;
   background: rgba(0, 0, 0, 0.5);
   color: #fff;
   cursor: pointer;
