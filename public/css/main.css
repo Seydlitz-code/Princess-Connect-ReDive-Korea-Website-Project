@@ -3707,6 +3707,53 @@ button.future-type-badge {
   height: auto;
 }
 
+.clan-tactic-table-wrap {
+  display: block;
+  width: 100%;
+  margin: 12px 0;
+  white-space: normal;
+}
+
+.clan-tactic-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+.clan-tactic-table td {
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  vertical-align: top;
+}
+
+.clan-tactic-table__main-cell {
+  width: 42%;
+  min-height: 160px;
+}
+
+.clan-tactic-table__grid-cell {
+  min-height: 32px;
+}
+
+.clan-tactic-table__grid-cell--head {
+  min-height: 72px;
+}
+
+.clan-tactic-table__footer-narrow {
+  width: 48px;
+  padding: 6px 4px;
+}
+
+.clan-tactic-table__footer-wide {
+  min-height: 28px;
+}
+
+.clan-detail-body .clan-tactic-table-wrap {
+  white-space: normal;
+}
+
 .clan-write-link-popup {
   margin-top: 12px;
   padding: 14px 16px;

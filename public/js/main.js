@@ -3100,6 +3100,7 @@
   const clanWriteBtnImage = document.getElementById('clan-write-btn-image');
   const clanWriteBtnVideo = document.getElementById('clan-write-btn-video');
   const clanWriteBtnLink = document.getElementById('clan-write-btn-link');
+  const clanWriteBtnTactic = document.getElementById('clan-write-btn-tactic');
   const clanWriteFontsize = document.getElementById('clan-write-fontsize');
   const clanWriteBtnBold = document.getElementById('clan-write-btn-bold');
   const clanWriteBtnItalic = document.getElementById('clan-write-btn-italic');
@@ -3577,27 +3578,85 @@
     document.execCommand(command, false, value || null);
   }
 
+  function insertNodeAtCursor(node) {
+    if (!clanWriteContent || !node) return;
+    clanWriteContent.focus();
+    const sel = window.getSelection();
+    if (sel.rangeCount) {
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(node);
+      range.setStartAfter(node);
+      range.setEndAfter(node);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else {
+      clanWriteContent.appendChild(node);
+    }
+  }
+
+  function createTacticTableElement() {
+    const wrap = document.createElement('div');
+    wrap.className = 'clan-tactic-table-wrap';
+
+    const table = document.createElement('table');
+    table.className = 'clan-tactic-table';
+
+    const tbody = document.createElement('tbody');
+
+    for (let row = 0; row < 4; row += 1) {
+      const tr = document.createElement('tr');
+      tr.className = row === 0 ? 'clan-tactic-table__row clan-tactic-table__row--head' : 'clan-tactic-table__row';
+
+      if (row === 0) {
+        const mainCell = document.createElement('td');
+        mainCell.className = 'clan-tactic-table__main-cell';
+        mainCell.rowSpan = 4;
+        mainCell.innerHTML = '<br>';
+        tr.appendChild(mainCell);
+      }
+
+      for (let col = 0; col < 6; col += 1) {
+        const cell = document.createElement('td');
+        cell.className = 'clan-tactic-table__grid-cell';
+        if (row === 0) cell.classList.add('clan-tactic-table__grid-cell--head');
+        cell.innerHTML = '<br>';
+        tr.appendChild(cell);
+      }
+
+      tbody.appendChild(tr);
+    }
+
+    const footerRow = document.createElement('tr');
+    footerRow.className = 'clan-tactic-table__footer-row';
+
+    const narrowCell = document.createElement('td');
+    narrowCell.className = 'clan-tactic-table__footer-narrow';
+    narrowCell.innerHTML = '<br>';
+
+    const wideCell = document.createElement('td');
+    wideCell.className = 'clan-tactic-table__footer-wide';
+    wideCell.colSpan = 6;
+    wideCell.innerHTML = '<br>';
+
+    footerRow.appendChild(narrowCell);
+    footerRow.appendChild(wideCell);
+    tbody.appendChild(footerRow);
+
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    return wrap;
+  }
+
   function insertFileAtCursor(file, type) {
     if (!clanWriteContent) return;
-    clanWriteContent.focus();
     const reader = new FileReader();
     reader.onload = () => {
       const el = document.createElement(type === 'video' ? 'video' : 'img');
       el.src = reader.result;
       if (type === 'video') el.setAttribute('controls', '');
       el.style.maxWidth = '100%';
-      const sel = window.getSelection();
-      if (sel.rangeCount) {
-        const range = sel.getRangeAt(0);
-        range.deleteContents();
-        range.insertNode(el);
-        range.setStartAfter(el);
-        range.setEndAfter(el);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      } else {
-        clanWriteContent.appendChild(el);
-      }
+      insertNodeAtCursor(el);
     };
     reader.readAsDataURL(file);
   }
@@ -3653,6 +3712,10 @@
       clanWriteLinkInput.value = '';
       clanWriteLinkInput.focus();
     }
+  });
+
+  clanWriteBtnTactic?.addEventListener('click', () => {
+    insertNodeAtCursor(createTacticTableElement());
   });
 
   clanWriteLinkCancel?.addEventListener('click', () => {
