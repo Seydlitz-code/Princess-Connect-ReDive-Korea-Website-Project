@@ -3112,12 +3112,7 @@
   const clanWriteLinkInput = document.getElementById('clan-write-link-input');
   const clanWriteLinkInsert = document.getElementById('clan-write-link-insert');
   const clanWriteLinkCancel = document.getElementById('clan-write-link-cancel');
-  const bossImagePopup = document.getElementById('boss-image-popup');
-  const bossImagePopupGrid = document.getElementById('boss-image-popup-grid');
-  const bossImagePopupSearch = document.getElementById('boss-image-popup-search');
-  const bossImagePopupClose = document.getElementById('boss-image-popup-close');
-  const bossImagePopupCancel = document.getElementById('boss-image-popup-cancel');
-  let bossImageTargetCell = null;
+  const clanWriteBossImageInput = document.getElementById('clan-write-boss-image-input');
   const clanCommentWriteForm = document.getElementById('clan-comment-write-form');
   const clanCommentInput = document.getElementById('clan-comment-input');
   const clanCommentSubmit = document.getElementById('clan-comment-submit');
@@ -3626,7 +3621,7 @@
         const cell = document.createElement('td');
         cell.className = 'clan-tactic-table__grid-cell';
         if (row === 0) cell.classList.add('clan-tactic-table__grid-cell--head');
-        if (row === 0 && col === 1) {
+        if (row === 0 && col === 0) {
           cell.classList.add('clan-tactic-table__boss-cell');
           const bossBtn = document.createElement('button');
           bossBtn.type = 'button';
@@ -3635,7 +3630,11 @@
           bossBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            openBossImagePopup(cell);
+            const input = document.getElementById('clan-write-boss-image-input');
+            if (input) {
+              input._bossTargetCell = cell;
+              input.click();
+            }
           });
           cell.appendChild(bossBtn);
         } else {
@@ -3896,86 +3895,26 @@
     } catch (_) { /* ignore */ }
   }
 
-  function openBossImagePopup(cell) {
-    if (!bossImagePopup || !bossImagePopupGrid) return;
-    bossImageTargetCell = cell;
-    bossImagePopup.hidden = false;
-    if (bossImagePopupSearch) bossImagePopupSearch.value = '';
-    ensureCharactersLoaded().then((list) => {
-      renderBossImagePicker(list);
-      bossImagePopupGrid.focus();
-    });
-  }
-
-  function closeBossImagePopup() {
-    if (bossImagePopup) bossImagePopup.hidden = true;
-    bossImageTargetCell = null;
-  }
-
-  function renderBossImagePicker(list) {
-    if (!bossImagePopupGrid) return;
-    bossImagePopupGrid.innerHTML = '';
-    list.forEach((c) => {
-      const id = String(c.id);
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'character-picker-btn boss-image-picker-btn';
-      btn.dataset.characterId = id;
-      btn.setAttribute('role', 'listitem');
-
-      const thumb = document.createElement('div');
-      thumb.className = 'character-thumb';
+  clanWriteBossImageInput?.addEventListener('change', () => {
+    const input = clanWriteBossImageInput;
+    const file = input?.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
       const img = document.createElement('img');
-      img.alt = c.name || '캐릭터';
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.src = c.imageUrl || `/api/characters/${encodeURIComponent(id)}/image`;
-
-      const nameEl = document.createElement('div');
-      nameEl.className = 'character-name';
-      nameEl.textContent = c.name || '';
-
-      thumb.appendChild(img);
-      btn.appendChild(thumb);
-      btn.appendChild(nameEl);
-
-      btn.addEventListener('click', () => {
-        if (!bossImageTargetCell) return;
-        const bossImg = document.createElement('img');
-        bossImg.src = c.imageUrl || `/api/characters/${encodeURIComponent(id)}/image`;
-        bossImg.alt = c.name || '보스';
-        bossImg.className = 'clan-tactic-table__boss-img';
-        bossImg.style.width = '100%';
-        bossImg.style.height = 'auto';
-        bossImg.style.display = 'block';
-        bossImg.style.borderRadius = '6px';
-        bossImageTargetCell.innerHTML = '';
-        bossImageTargetCell.appendChild(bossImg);
-        closeBossImagePopup();
-      });
-
-      bossImagePopupGrid.appendChild(btn);
-    });
-  }
-
-  bossImagePopupSearch?.addEventListener('input', () => {
-    const q = (bossImagePopupSearch.value || '').trim().toLowerCase();
-    const buttons = bossImagePopupGrid?.querySelectorAll('.boss-image-picker-btn');
-    if (!buttons) return;
-    buttons.forEach((btn) => {
-      const id = btn.dataset.characterId || '';
-      const name = (btn.querySelector('.character-name')?.textContent || '').toLowerCase();
-      if (!q || id.includes(q) || name.includes(q)) {
-        btn.classList.remove('character-picker-btn--filtered-out');
-      } else {
-        btn.classList.add('character-picker-btn--filtered-out');
+      img.src = reader.result;
+      img.alt = '보스';
+      img.className = 'clan-tactic-table__boss-img';
+      const btn = input._bossTargetCell?.querySelector('.clan-tactic-table__boss-btn');
+      const cell = input._bossTargetCell;
+      if (cell && btn) {
+        btn.remove();
+        cell.appendChild(img);
       }
-    });
+      delete input._bossTargetCell;
+    };
+    reader.readAsDataURL(file);
+    if (input) input.value = '';
   });
-
-  bossImagePopupClose?.addEventListener('click', () => { closeBossImagePopup(); });
-  bossImagePopupCancel?.addEventListener('click', () => { closeBossImagePopup(); });
-
-  bossImagePopup?.querySelector('[data-close-boss-popup]')?.addEventListener('click', () => { closeBossImagePopup(); });
 
 })();

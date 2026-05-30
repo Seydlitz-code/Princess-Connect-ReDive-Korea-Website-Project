@@ -250,6 +250,7 @@
               </div>
               <input type="file" id="clan-write-image-input" accept="image/*" hidden />
               <input type="file" id="clan-write-video-input" accept="video/*" hidden />
+              <input type="file" id="clan-write-boss-image-input" accept="image/*" hidden />
               <footer class="modal-footer clan-write-footer">
                 <button type="button" class="btn btn-outline" id="clan-write-cancel">취소</button>
                 <button type="submit" class="btn btn-primary" id="clan-write-submit">작성</button>
@@ -829,36 +830,6 @@
             <button type="submit" class="btn btn-primary btn-lg btn-login-submit" id="login-submit-btn">로그인</button>
           </footer>
         </form>
-      </div>
-    </div>
-
-    <div class="modal-root" id="boss-image-popup" role="dialog" aria-modal="true" aria-labelledby="boss-image-popup-heading" hidden>
-      <div class="modal-backdrop" data-close-boss-popup tabindex="-1"></div>
-      <div class="modal-sheet boss-image-popup-sheet" role="document">
-        <button type="button" class="modal-back link-back" id="boss-image-popup-close">
-          <span aria-hidden="true">←</span> 뒤로 가기
-        </button>
-        <header class="modal-head">
-          <h2 id="boss-image-popup-heading" class="modal-title">보스 이미지 선택</h2>
-        </header>
-        <div class="boss-image-popup-search-row">
-          <label class="visually-hidden" for="boss-image-popup-search">캐릭터 이름 검색</label>
-          <input
-            type="search"
-            id="boss-image-popup-search"
-            class="future-character-search"
-            placeholder="캐릭터 명을 입력하세요"
-            autocomplete="off"
-            spellcheck="false"
-            enterkeyhint="search"
-          />
-        </div>
-        <div class="character-grid-scroll boss-image-popup-scroll" tabindex="0">
-          <div id="boss-image-popup-grid" class="character-grid character-grid--cols-8" role="list" aria-label="보스 이미지 선택"></div>
-        </div>
-        <footer class="modal-footer boss-image-popup-footer">
-          <button type="button" class="btn btn-outline" id="boss-image-popup-cancel">취소</button>
-        </footer>
       </div>
     </div>
 
