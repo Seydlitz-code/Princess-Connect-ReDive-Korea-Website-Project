@@ -3628,7 +3628,7 @@
     const themeRow = document.createElement('tr');
     themeRow.className = 'clan-tactic-table__theme-row';
     const themeCell = document.createElement('td');
-    themeCell.colSpan = 7;
+    themeCell.colSpan = 8;
     themeCell.contentEditable = 'false';
 
     const themeInner = document.createElement('div');
@@ -3703,7 +3703,7 @@
         continue;
       }
 
-      for (let col = 0; col < 6; col += 1) {
+      for (let col = 0; col < 7; col += 1) {
         const cell = document.createElement('td');
         cell.className = 'clan-tactic-table__grid-cell';
         if (row === 0) cell.classList.add('clan-tactic-table__grid-cell--head');
@@ -3725,50 +3725,13 @@
             }
           });
           cell.appendChild(bossBtn);
-        } else if (row === 0 && col === 1) {
-          cell.classList.add('clan-tactic-table__char-cell');
-          cell.contentEditable = 'false';
-
-          const nameWrap = document.createElement('div');
-          nameWrap.className = 'clan-tactic-table__bossname-wrap';
-
-          const nameLabel = document.createElement('label');
-          nameLabel.className = 'clan-tactic-table__bossname-label';
-          nameLabel.textContent = '\uBCF4\uC2A4\uBA85';
-
-          const nameInput = document.createElement('input');
-          nameInput.type = 'text';
-          nameInput.className = 'clan-tactic-table__bossname-input';
-          nameInput.placeholder = '\uBCF4\uC2A4\uBA85';
-          nameInput.maxLength = 8;
-          nameInput.autocomplete = 'off';
-          nameInput.addEventListener('input', () => {
-            const len = nameInput.value.length;
-            let fs = 12;
-            if (len > 3) fs = 10;
-            if (len > 5) fs = 8;
-            if (len > 6) fs = 7;
-            nameInput.style.fontSize = fs + 'px';
-          });
-
-          nameWrap.appendChild(nameLabel);
-          nameWrap.appendChild(nameInput);
-          cell.appendChild(nameWrap);
-        } else if (row === 0 && col === 2) {
-          cell.classList.add('clan-tactic-table__char-cell');
-          cell.contentEditable = 'false';
-          cell.innerHTML = '<span class="clan-tactic-table__star-icon">&#9733;</span>';
-        } else if (row === 0 && col === 3) {
-          cell.classList.add('clan-tactic-table__char-cell');
-          cell.contentEditable = 'false';
-          cell.innerHTML = '<span class="clan-tactic-table__rank-text">RANK</span>';
-        } else if (row === 0 && col >= 4) {
+        } else if (row === 0 && col >= 2) {
           cell.classList.add('clan-tactic-table__char-cell');
           cell.contentEditable = 'false';
           const charBtn = document.createElement('button');
           charBtn.type = 'button';
           charBtn.className = 'clan-tactic-table__char-btn';
-          charBtn.innerHTML = '<span class="clan-tactic-table__boss-icon">+</span><span class="clan-tactic-table__boss-label">\uCE90\uB9AD\uD130</span>';
+          charBtn.innerHTML = '<span class="clan-tactic-table__boss-icon">+</span><span class="clan-tactic-table__boss-label">캐릭터</span>';
           charBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -3793,7 +3756,7 @@
 
     const wideCell = document.createElement('td');
     wideCell.className = 'clan-tactic-table__footer-wide';
-    wideCell.colSpan = 6;
+    wideCell.colSpan = 7;
     wideCell.innerHTML = '<br>';
 
     footerRow.appendChild(narrowCell);

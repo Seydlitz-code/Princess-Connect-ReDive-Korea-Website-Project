@@ -3784,7 +3784,7 @@ button.future-type-badge {
   font-weight: 600;
   border: 1px solid #666;
   border-radius: 4px;
-  text-align: center;
+  text-align: right;
   background: #fff;
   color: #000;
 }
@@ -3793,59 +3793,6 @@ button.future-type-badge {
   outline: none;
   border-color: #000;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.12);
-}
-
-.clan-tactic-table__bossname-wrap {
-  padding: 4px 2px;
-}
-
-.clan-tactic-table__bossname-label {
-  display: block;
-  font-size: 0.55rem;
-  font-weight: 700;
-  color: #666;
-  margin-bottom: 2px;
-  text-align: center;
-}
-
-.clan-tactic-table__bossname-input {
-  width: 100%;
-  padding: 2px 4px;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  border: 1px solid #999;
-  border-radius: 4px;
-  text-align: center;
-  background: #fff;
-  color: #000;
-}
-
-.clan-tactic-table__bossname-input:focus {
-  outline: none;
-  border-color: #000;
-}
-
-.clan-tactic-table__star-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  font-size: 2rem;
-  color: #facc15;
-}
-
-.clan-tactic-table__rank-text {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: #000;
-  letter-spacing: 0.05em;
 }
 
 .clan-tactic-table__grid-cell {
