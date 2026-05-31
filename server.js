@@ -104,6 +104,34 @@ let characterLibrary = null;
 
 const MAX_OWNED_CHARACTERS_PER_REGISTER = 500;
 const FUTURE_SIGHT_MONTH_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const FUTURE_SIGHT_MAINTENANCE_KST_HOUR = 0;
+const FUTURE_SIGHT_MAINTENANCE_KST_MINUTE = 5;
+const KST_TIMEZONE = 'Asia/Seoul';
+
+function getKstDateParts(now = new Date()) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: KST_TIMEZONE,
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false,
+    })
+      .formatToParts(now)
+      .filter((part) => part.type !== 'literal')
+      .map((part) => [part.type, Number(part.value)])
+  );
+  if (parts.hour === 24) parts.hour = 0;
+  return parts;
+}
+
+function currentKoreanYearMonthKey(now = new Date()) {
+  const parts = getKstDateParts(now);
+  return `${parts.year}-${parts.month}`;
+}
 
 function nicknameCodepointLen(s) {
   return [...String(s || '')].length;
@@ -119,7 +147,7 @@ function isValidNicknameChars(s) {
 }
 
 function currentKoreanMonthNumber(now = new Date()) {
-  return now.getMonth() + 1;
+  return getKstDateParts(now).month;
 }
 
 function normalizeMonthNumber(value) {
@@ -322,7 +350,15 @@ function normalizeFutureSightState(value) {
 function applyFutureSightMonthMaintenance(value, now = new Date()) {
   const state = normalizeFutureSightState(value);
   const lastCheckedMs = state.lastMonthCheckedAt ? Date.parse(state.lastMonthCheckedAt) : NaN;
-  if (Number.isFinite(lastCheckedMs) && now.getTime() - lastCheckedMs < FUTURE_SIGHT_MONTH_CHECK_INTERVAL_MS) {
+  const lastCheckedKey = Number.isFinite(lastCheckedMs)
+    ? currentKoreanYearMonthKey(new Date(lastCheckedMs))
+    : null;
+  const monthChanged = !lastCheckedKey || currentKoreanYearMonthKey(now) !== lastCheckedKey;
+  if (
+    !monthChanged &&
+    Number.isFinite(lastCheckedMs) &&
+    now.getTime() - lastCheckedMs < FUTURE_SIGHT_MONTH_CHECK_INTERVAL_MS
+  ) {
     return { state, changed: false };
   }
 
@@ -354,6 +390,53 @@ function applyFutureSightMonthMaintenance(value, now = new Date()) {
     state: { version: 1, lastMonthCheckedAt: now.toISOString(), months },
     changed: true,
   };
+}
+
+async function runFutureSightMaintenanceJob(now = new Date()) {
+  if (!pool) return { changed: false };
+  const r = await pool.query('SELECT data FROM site_future_sight WHERE id = 1 LIMIT 1');
+  const raw = r.rowCount > 0 ? r.rows[0].data : defaultFutureSightState();
+  const maintained = applyFutureSightMonthMaintenance(raw, now);
+  if (maintained.changed || r.rowCount === 0) {
+    await pool.query(
+      `INSERT INTO site_future_sight (id, data, updated_at)
+       VALUES (1, $1::jsonb, NOW())
+       ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
+      [JSON.stringify(maintained.state)]
+    );
+  }
+  return maintained;
+}
+
+function msUntilNextKstClock(hour, minute, now = Date.now()) {
+  for (let offsetMs = 60_000; offsetMs <= 86_400_000; offsetMs += 60_000) {
+    const parts = getKstDateParts(new Date(now + offsetMs));
+    if (parts.hour === hour && parts.minute === minute) return offsetMs;
+  }
+  return 86_400_000;
+}
+
+function scheduleFutureSightMaintenanceDaily() {
+  const scheduleNext = () => {
+    const delayMs = msUntilNextKstClock(
+      FUTURE_SIGHT_MAINTENANCE_KST_HOUR,
+      FUTURE_SIGHT_MAINTENANCE_KST_MINUTE
+    );
+    const timer = setTimeout(async () => {
+      try {
+        const result = await runFutureSightMaintenanceJob();
+        if (result.changed) {
+          console.log('[future-sight] 월별 유지보수: 이전 달 데이터를 정리했습니다.');
+        }
+      } catch (err) {
+        console.error('[future-sight] 월별 유지보수 실패:', err);
+      } finally {
+        scheduleNext();
+      }
+    }, delayMs);
+    timer.unref();
+  };
+  scheduleNext();
 }
 
 async function hydrateFutureSightState(pgPool, state) {
@@ -1500,16 +1583,7 @@ app.get('/api/future-sight', async (req, res) => {
   if (!requirePool(res)) return;
   try {
     const r = await pool.query('SELECT data, updated_at AS "updatedAt" FROM site_future_sight WHERE id = 1 LIMIT 1');
-    const raw = r.rowCount > 0 ? r.rows[0].data : defaultFutureSightState();
-    const maintained = applyFutureSightMonthMaintenance(raw);
-    if (maintained.changed || r.rowCount === 0) {
-      await pool.query(
-        `INSERT INTO site_future_sight (id, data, updated_at)
-         VALUES (1, $1::jsonb, NOW())
-         ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-        [JSON.stringify(maintained.state)]
-      );
-    }
+    const maintained = await runFutureSightMaintenanceJob();
     const data = await hydrateFutureSightState(pool, maintained.state);
     res.setHeader('Cache-Control', 'private, no-store');
     res.json({ ok: true, data, updatedAt: r.rows[0]?.updatedAt || null });
@@ -2077,6 +2151,18 @@ async function start() {
   if (characterLibrary) {
     console.log(`캐릭터 정적 라이브러리 사용: ${characterLibrary.list.length}건 (public/data/characters.json)`);
   }
+  try {
+    const bootMaintained = await runFutureSightMaintenanceJob();
+    if (bootMaintained.changed) {
+      console.log('[future-sight] 기동 시 월별 유지보수를 적용했습니다.');
+    }
+  } catch (err) {
+    console.error('[future-sight] 기동 시 월별 유지보수 실패:', err);
+  }
+  scheduleFutureSightMaintenanceDaily();
+  console.log(
+    `[future-sight] 매일 KST ${String(FUTURE_SIGHT_MAINTENANCE_KST_HOUR).padStart(2, '0')}:${String(FUTURE_SIGHT_MAINTENANCE_KST_MINUTE).padStart(2, '0')}에 월별 유지보수를 실행합니다.`
+  );
   httpServer = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server listening on ${PORT}`);
     if (process.env.NODE_ENV === 'production' && !(process.env.SESSION_SECRET || '').trim()) {

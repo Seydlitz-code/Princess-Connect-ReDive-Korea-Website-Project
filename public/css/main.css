@@ -3894,12 +3894,13 @@ button.future-type-badge {
   text-align: center;
 }
 
-.clan-tactic-table__star-grade-cell:not(.clan-tactic-table__star-grade-cell--active) {
-  pointer-events: none;
-}
-
 .clan-tactic-table__star-grade-cell--active {
   pointer-events: auto;
+  overflow: visible;
+}
+
+.clan-tactic-table__star-grade-cell:not(.clan-tactic-table__star-grade-cell--active) {
+  pointer-events: none;
 }
 
 .clan-tactic-table__star-grade-slot[hidden] {
@@ -3907,86 +3908,127 @@ button.future-type-badge {
 }
 
 .clan-tactic-table__star-grade-dial {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
+  position: relative;
+  display: block;
   width: 100%;
   max-width: 100%;
-  min-height: 26px;
   pointer-events: auto;
 }
 
-.clan-tactic-table__star-grade-btn {
-  flex: 0 0 13px;
-  width: 13px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid #bbb;
-  border-radius: 2px;
-  background: #f3f4f6;
-  color: #374151;
-  font-size: 0.45rem;
-  line-height: 1;
+.clan-tactic-table__star-grade-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  width: 100%;
+  min-height: 22px;
+  padding: 2px 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
   cursor: pointer;
-  display: inline-flex;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.clan-tactic-table__star-grade-trigger:hover {
+  background: #fafafa;
+}
+
+.clan-tactic-table__star-grade-chevron {
+  flex: 0 0 auto;
+  font-size: 0.65rem;
+  line-height: 1;
+  color: #374151;
+}
+
+.clan-tactic-table__star-grade-menu {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  min-width: 118px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  box-sizing: border-box;
+}
+
+.clan-tactic-table__star-grade-item {
+  margin: 0;
+  padding: 0;
+}
+
+.clan-tactic-table__star-grade-option {
+  display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
 }
 
-.clan-tactic-table__star-grade-btn:hover {
-  background: #e5e7eb;
+.clan-tactic-table__star-grade-option:hover,
+.clan-tactic-table__star-grade-option.is-selected {
+  background: #e5e5e5;
 }
 
-.clan-tactic-table__star-grade-display {
-  flex: 1 1 auto;
-  min-width: 0;
+.clan-tactic-table__star-grade-icons {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
-  gap: 0;
-  overflow: hidden;
-  line-height: 1;
-  padding: 0 1px;
-}
-
-.clan-tactic-table__star-grade-star {
-  font-size: 0.52rem;
+  gap: 1px;
   line-height: 1;
 }
 
-.clan-tactic-table__star-grade-display[data-grade='5'] .clan-tactic-table__star-grade-star,
-.clan-tactic-table__star-grade-display[data-grade='6'] .clan-tactic-table__star-grade-star {
-  font-size: 0.42rem;
+.clan-tactic-table__star-grade-trigger .clan-tactic-table__star-grade-icons {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.clan-tactic-table__star-grade-display[data-grade='1'] .clan-tactic-table__star-grade-star,
-.clan-tactic-table__star-grade-display[data-grade='2'] .clan-tactic-table__star-grade-star {
-  color: #9ca3af;
+.clan-tactic-table__star-grade-trigger .clan-tactic-table__sg-star {
+  font-size: 0.48rem;
 }
 
-.clan-tactic-table__star-grade-display[data-grade='3'] .clan-tactic-table__star-grade-star {
-  color: #facc15;
+.clan-tactic-table__star-grade-option .clan-tactic-table__sg-star {
+  font-size: 0.72rem;
 }
 
-.clan-tactic-table__star-grade-display[data-grade='4'] .clan-tactic-table__star-grade-star {
-  background: linear-gradient(135deg, #fb7185, #ec4899);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.clan-tactic-table__star-grade-icons[data-grade='6'] .clan-tactic-table__sg-star {
+  font-size: 0.62rem;
 }
 
-.clan-tactic-table__star-grade-display[data-grade='5'] .clan-tactic-table__star-grade-star {
-  background: linear-gradient(135deg, #f472b6, #a855f7, #3b82f6, #22d3ee);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.clan-tactic-table__star-grade-trigger .clan-tactic-table__star-grade-icons[data-grade='6'] .clan-tactic-table__sg-star {
+  font-size: 0.4rem;
 }
 
-.clan-tactic-table__star-grade-display[data-grade='6'] .clan-tactic-table__star-grade-star {
-  color: #22d3ee;
-  text-shadow: 0 0 2px rgba(34, 211, 238, 0.85);
+.clan-tactic-table__sg-star {
+  display: inline-block;
+  line-height: 1;
+}
+
+.clan-tactic-table__sg-star--filled {
+  color: #f5c400;
+}
+
+.clan-tactic-table__sg-star--empty {
+  color: #b8e4ff;
+  -webkit-text-stroke: 0.6px #1a56c4;
+  paint-order: stroke fill;
+}
+
+.clan-tactic-table__sg-star--pink {
+  color: #f5b4d4;
 }
 
 .clan-tactic-table__rank-input-cell {
@@ -4183,19 +4225,88 @@ button.future-type-badge {
 
 .tactic-character-popup-sheet {
   width: min(960px, 98vw);
-  aspect-ratio: unset;
-  height: auto;
   max-height: min(92vh, 780px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 22px 26px 20px;
 }
 
 #tactic-character-popup {
   --tactic-char-picker-row-h: 94px;
 }
 
-#tactic-character-popup .boss-image-popup-scroll {
+.tactic-character-popup-head {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tactic-character-popup-title {
+  margin: 0;
+  text-align: left;
+  font-size: clamp(1.05rem, 2.8vw, 1.35rem);
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.tactic-character-popup-search-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-left: auto;
+  width: min(100%, 420px);
+}
+
+.tactic-character-popup-search {
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 11px;
+  font: inherit;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.tactic-character-popup-search:focus-visible {
+  outline: 2px solid var(--nav-active);
+  outline-offset: 1px;
+}
+
+.tactic-character-popup-search-btn {
+  flex-shrink: 0;
+  width: 44px;
+  border: 1px solid var(--pink);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--pink);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.tactic-character-popup-search-btn:hover {
+  background: var(--pink);
+  color: #fff;
+}
+
+.tactic-character-popup-search-btn:focus-visible {
+  outline: 2px solid var(--pink);
+  outline-offset: 2px;
+}
+
+#tactic-character-popup .tactic-character-popup-grid-scroll {
   flex: 0 0 auto;
   min-height: calc(var(--tactic-char-picker-row-h) * 5 + 8px * 4);
   max-height: calc(var(--tactic-char-picker-row-h) * 5 + 8px * 4);
+  margin-bottom: 16px;
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -4206,6 +4317,46 @@ button.future-type-badge {
 
 #tactic-character-popup .character-grid {
   grid-template-columns: repeat(10, minmax(0, 1fr));
+}
+
+.tactic-character-popup-empty {
+  margin: 24px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.tactic-character-popup-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 0;
+  flex-shrink: 0;
+}
+
+.tactic-character-popup-btn {
+  min-width: 88px;
+  padding: 10px 28px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #111;
+  color: #fff;
+  border: 1px solid #111;
+  transition: background-color 0.12s ease;
+}
+
+.tactic-character-popup-btn:hover {
+  background: #333;
+  border-color: #333;
+}
+
+.tactic-character-popup-btn:focus-visible {
+  outline: 2px solid var(--nav-active);
+  outline-offset: 2px;
 }
 
 .boss-image-popup-sheet > .modal-back,

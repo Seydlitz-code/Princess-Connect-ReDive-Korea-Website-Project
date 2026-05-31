@@ -835,31 +835,37 @@
 
     <div class="modal-root" id="tactic-character-popup" role="dialog" aria-modal="true" aria-labelledby="tactic-character-popup-heading" hidden>
       <div class="modal-backdrop" data-close-tactic-char tabindex="-1"></div>
-      <div class="modal-sheet boss-image-popup-sheet tactic-character-popup-sheet" role="document">
-        <button type="button" class="modal-back link-back" id="tactic-character-popup-close">
-          <span aria-hidden="true">←</span> 뒤로 가기
-        </button>
-        <header class="modal-head">
-          <h2 id="tactic-character-popup-heading" class="modal-title">캐릭터 선택</h2>
+      <div class="modal-sheet tactic-character-popup-sheet" role="document">
+        <header class="modal-head tactic-character-popup-head">
+          <h2 id="tactic-character-popup-heading" class="modal-title tactic-character-popup-title">텍틱 캐릭터 추가하기</h2>
+          <div class="tactic-character-popup-search-row">
+            <label class="visually-hidden" for="tactic-character-popup-search">캐릭터 이름 검색</label>
+            <input
+              type="search"
+              id="tactic-character-popup-search"
+              class="tactic-character-popup-search"
+              placeholder="캐릭터 명을 입력하세요"
+              autocomplete="off"
+              spellcheck="false"
+              enterkeyhint="search"
+            />
+            <button type="button" class="tactic-character-popup-search-btn" id="tactic-character-popup-search-btn" aria-label="검색">
+              <svg class="tactic-character-popup-search-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 4 10.99 4 7.5S7.01 1 9.5 1 15 3.01 15 7.5 12.99 14 9.5 14z"
+                />
+              </svg>
+            </button>
+          </div>
         </header>
-        <div class="boss-image-popup-search-row">
-          <label class="visually-hidden" for="tactic-character-popup-search">캐릭터 이름 검색</label>
-          <input
-            type="search"
-            id="tactic-character-popup-search"
-            class="future-character-search"
-            placeholder="캐릭터 명을 입력하세요"
-            autocomplete="off"
-            spellcheck="false"
-            enterkeyhint="search"
-          />
+        <div class="character-grid-scroll tactic-character-popup-grid-scroll" tabindex="0">
+          <div id="tactic-character-popup-grid" class="character-grid character-grid--cols-10" role="list" aria-label="텍틱 캐릭터 선택"></div>
+          <p id="tactic-character-popup-empty" class="tactic-character-popup-empty" hidden role="status">검색 결과가 없습니다.</p>
         </div>
-        <div class="character-grid-scroll boss-image-popup-scroll" tabindex="0">
-          <div id="tactic-character-popup-grid" class="character-grid character-grid--cols-10" role="list" aria-label="캐릭터 선택"></div>
-        </div>
-        <footer class="modal-footer boss-image-popup-footer">
-          <button type="button" class="btn btn-outline" id="tactic-character-popup-cancel">취소</button>
-          <button type="button" class="btn btn-primary" id="tactic-character-popup-confirm">확인</button>
+        <footer class="modal-footer tactic-character-popup-footer">
+          <button type="button" class="tactic-character-popup-btn" id="tactic-character-popup-cancel">취소</button>
+          <button type="button" class="tactic-character-popup-btn" id="tactic-character-popup-confirm">확인</button>
         </footer>
       </div>
     </div>

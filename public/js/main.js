@@ -3139,9 +3139,10 @@
   const tacticCharPopup = document.getElementById('tactic-character-popup');
   const tacticCharPopupGrid = document.getElementById('tactic-character-popup-grid');
   const tacticCharPopupSearch = document.getElementById('tactic-character-popup-search');
-  const tacticCharPopupClose = document.getElementById('tactic-character-popup-close');
   const tacticCharPopupCancel = document.getElementById('tactic-character-popup-cancel');
   const tacticCharPopupConfirm = document.getElementById('tactic-character-popup-confirm');
+  const tacticCharPopupSearchBtn = document.getElementById('tactic-character-popup-search-btn');
+  const tacticCharPopupEmpty = document.getElementById('tactic-character-popup-empty');
   let tacticCharTargetCell = null;
   let tacticCharSelectedId = null;
   const clanCommentWriteForm = document.getElementById('clan-comment-write-form');
@@ -3648,6 +3649,37 @@
   const TACTIC_STAR_GRADE_MAX = 6;
   const TACTIC_STAR_GRADE_DEFAULT = 3;
 
+  function buildStarGradeIcons(grade) {
+    const wrap = document.createElement('span');
+    wrap.className = 'clan-tactic-table__star-grade-icons';
+    wrap.dataset.grade = String(grade);
+    wrap.setAttribute('aria-hidden', 'true');
+
+    const g = Math.min(TACTIC_STAR_GRADE_MAX, Math.max(TACTIC_STAR_GRADE_MIN, grade));
+    if (g <= 5) {
+      for (let i = 0; i < 5; i += 1) {
+        const star = document.createElement('span');
+        star.className = i < g
+          ? 'clan-tactic-table__sg-star clan-tactic-table__sg-star--filled'
+          : 'clan-tactic-table__sg-star clan-tactic-table__sg-star--empty';
+        star.textContent = '\u2605';
+        wrap.appendChild(star);
+      }
+    } else {
+      for (let i = 0; i < 5; i += 1) {
+        const star = document.createElement('span');
+        star.className = 'clan-tactic-table__sg-star clan-tactic-table__sg-star--filled';
+        star.textContent = '\u2605';
+        wrap.appendChild(star);
+      }
+      const pinkStar = document.createElement('span');
+      pinkStar.className = 'clan-tactic-table__sg-star clan-tactic-table__sg-star--pink';
+      pinkStar.textContent = '\u2605';
+      wrap.appendChild(pinkStar);
+    }
+    return wrap;
+  }
+
   function createStarGradeDial(initialGrade = TACTIC_STAR_GRADE_DEFAULT) {
     const dial = document.createElement('div');
     dial.className = 'clan-tactic-table__star-grade-dial';
@@ -3655,21 +3687,22 @@
 
     let grade = Math.min(TACTIC_STAR_GRADE_MAX, Math.max(TACTIC_STAR_GRADE_MIN, initialGrade));
 
-    const prevBtn = document.createElement('button');
-    prevBtn.type = 'button';
-    prevBtn.className = 'clan-tactic-table__star-grade-btn clan-tactic-table__star-grade-btn--prev';
-    prevBtn.setAttribute('aria-label', '이전 성급');
-    prevBtn.innerHTML = '<span aria-hidden="true">&#9664;</span>';
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'clan-tactic-table__star-grade-trigger';
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.setAttribute('aria-label', `${grade}\uC131 \uC120\uD0DD`);
 
-    const display = document.createElement('div');
-    display.className = 'clan-tactic-table__star-grade-display';
-    display.setAttribute('role', 'status');
+    const chevron = document.createElement('span');
+    chevron.className = 'clan-tactic-table__star-grade-chevron';
+    chevron.setAttribute('aria-hidden', 'true');
+    chevron.textContent = '\u25BE';
 
-    const nextBtn = document.createElement('button');
-    nextBtn.type = 'button';
-    nextBtn.className = 'clan-tactic-table__star-grade-btn clan-tactic-table__star-grade-btn--next';
-    nextBtn.setAttribute('aria-label', '다음 성급');
-    nextBtn.innerHTML = '<span aria-hidden="true">&#9654;</span>';
+    const menu = document.createElement('ul');
+    menu.className = 'clan-tactic-table__star-grade-menu';
+    menu.setAttribute('role', 'listbox');
+    menu.hidden = true;
 
     const hiddenInput = document.createElement('input');
     hiddenInput.type = 'hidden';
@@ -3677,45 +3710,83 @@
     hiddenInput.value = String(grade);
     hiddenInput.contentEditable = 'false';
 
-    function renderGrade() {
-      display.dataset.grade = String(grade);
-      display.innerHTML = '';
-      for (let i = 0; i < grade; i += 1) {
-        const star = document.createElement('span');
-        star.className = 'clan-tactic-table__star-grade-star';
-        star.textContent = '\u2605';
-        star.setAttribute('aria-hidden', 'true');
-        display.appendChild(star);
-      }
-      display.setAttribute('aria-label', `${grade}\uC131`);
+    function closeMenu() {
+      menu.hidden = true;
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    function openMenu() {
+      menu.hidden = false;
+      trigger.setAttribute('aria-expanded', 'true');
+    }
+
+    function setGrade(nextGrade) {
+      grade = Math.min(TACTIC_STAR_GRADE_MAX, Math.max(TACTIC_STAR_GRADE_MIN, nextGrade));
       hiddenInput.value = String(grade);
+      trigger.setAttribute('aria-label', `${grade}\uC131 \uC120\uD0DD`);
+      const currentIcons = trigger.querySelector('.clan-tactic-table__star-grade-icons');
+      if (currentIcons) currentIcons.replaceWith(buildStarGradeIcons(grade));
+      menu.querySelectorAll('.clan-tactic-table__star-grade-option').forEach((btn) => {
+        btn.classList.toggle('is-selected', Number(btn.dataset.grade) === grade);
+      });
+      closeMenu();
     }
 
-    function stepGrade(delta) {
-      grade += delta;
-      if (grade < TACTIC_STAR_GRADE_MIN) grade = TACTIC_STAR_GRADE_MAX;
-      if (grade > TACTIC_STAR_GRADE_MAX) grade = TACTIC_STAR_GRADE_MIN;
-      renderGrade();
+    function renderTriggerIcons() {
+      const existing = trigger.querySelector('.clan-tactic-table__star-grade-icons');
+      const icons = buildStarGradeIcons(grade);
+      if (existing) existing.replaceWith(icons);
+      else trigger.insertBefore(icons, chevron);
     }
 
-    prevBtn.addEventListener('click', (e) => {
+    for (let g = TACTIC_STAR_GRADE_MIN; g <= TACTIC_STAR_GRADE_MAX; g += 1) {
+      const item = document.createElement('li');
+      item.className = 'clan-tactic-table__star-grade-item';
+      item.setAttribute('role', 'presentation');
+
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'clan-tactic-table__star-grade-option';
+      option.dataset.grade = String(g);
+      option.setAttribute('role', 'option');
+      option.setAttribute('aria-selected', g === grade ? 'true' : 'false');
+      if (g === grade) option.classList.add('is-selected');
+      option.appendChild(buildStarGradeIcons(g));
+      option.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setGrade(g);
+        option.setAttribute('aria-selected', 'true');
+        menu.querySelectorAll('.clan-tactic-table__star-grade-option').forEach((btn) => {
+          btn.setAttribute('aria-selected', btn === option ? 'true' : 'false');
+        });
+      });
+
+      item.appendChild(option);
+      menu.appendChild(item);
+    }
+
+    trigger.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      stepGrade(-1);
+      if (menu.hidden) openMenu();
+      else closeMenu();
     });
-    nextBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      stepGrade(1);
-    });
+
     dial.addEventListener('mousedown', (e) => {
       e.stopPropagation();
     });
 
-    renderGrade();
-    dial.appendChild(prevBtn);
-    dial.appendChild(display);
-    dial.appendChild(nextBtn);
+    const onDocumentClick = (e) => {
+      if (!dial.contains(e.target)) closeMenu();
+    };
+    document.addEventListener('click', onDocumentClick);
+    dial._starGradeDocCleanup = () => document.removeEventListener('click', onDocumentClick);
+
+    renderTriggerIcons();
+    trigger.appendChild(chevron);
+    dial.appendChild(trigger);
+    dial.appendChild(menu);
     dial.appendChild(hiddenInput);
     return dial;
   }
@@ -3754,6 +3825,9 @@
 
     const slot = gradeCell.querySelector('.clan-tactic-table__star-grade-slot');
     if (slot) {
+      slot.querySelectorAll('.clan-tactic-table__star-grade-dial').forEach((dial) => {
+        if (typeof dial._starGradeDocCleanup === 'function') dial._starGradeDocCleanup();
+      });
       slot.innerHTML = '';
       slot.hidden = true;
     }
@@ -4431,9 +4505,11 @@
     tacticCharSelectedId = null;
     tacticCharPopup.hidden = false;
     if (tacticCharPopupSearch) tacticCharPopupSearch.value = '';
+    if (tacticCharPopupEmpty) tacticCharPopupEmpty.hidden = true;
     ensureCharactersLoaded().then((list) => {
       renderTacticCharPicker(list);
-      tacticCharPopupGrid.focus();
+      filterTacticCharPicker();
+      tacticCharPopupSearch?.focus();
     });
   }
 
@@ -4478,20 +4554,34 @@
     });
   }
 
-  tacticCharPopupSearch?.addEventListener('input', () => {
-    const q = (tacticCharPopupSearch.value || '').trim().toLowerCase();
+  function filterTacticCharPicker() {
+    const q = (tacticCharPopupSearch?.value || '').trim().toLowerCase();
     const buttons = tacticCharPopupGrid?.querySelectorAll('.tactic-char-picker-btn');
     if (!buttons) return;
+    let visibleCount = 0;
     buttons.forEach((btn) => {
       const id = btn.dataset.characterId || '';
       const name = (btn.querySelector('.character-name')?.textContent || '').toLowerCase();
       if (!q || id.includes(q) || name.includes(q)) {
         btn.classList.remove('character-picker-btn--filtered-out');
+        visibleCount += 1;
       } else {
         btn.classList.add('character-picker-btn--filtered-out');
       }
     });
+    if (tacticCharPopupEmpty) {
+      tacticCharPopupEmpty.hidden = !q || visibleCount > 0;
+    }
+  }
+
+  tacticCharPopupSearch?.addEventListener('input', filterTacticCharPicker);
+  tacticCharPopupSearch?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      filterTacticCharPicker();
+    }
   });
+  tacticCharPopupSearchBtn?.addEventListener('click', filterTacticCharPicker);
 
   tacticCharPopupConfirm?.addEventListener('click', () => {
     if (!tacticCharTargetCell || !tacticCharSelectedId) return;
@@ -4545,7 +4635,6 @@
     return charBtn;
   }
 
-  tacticCharPopupClose?.addEventListener('click', () => { closeTacticCharPopup(); });
   tacticCharPopupCancel?.addEventListener('click', () => { closeTacticCharPopup(); });
   tacticCharPopup?.querySelector('[data-close-tactic-char]')?.addEventListener('click', () => { closeTacticCharPopup(); });
 
