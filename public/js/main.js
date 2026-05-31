@@ -3625,10 +3625,16 @@
         tr.appendChild(mainCell);
       }
 
+      if (row === 2) {
+        tbody.appendChild(tr);
+        continue;
+      }
+
       for (let col = 0; col < 6; col += 1) {
         const cell = document.createElement('td');
         cell.className = 'clan-tactic-table__grid-cell';
         if (row === 0) cell.classList.add('clan-tactic-table__grid-cell--head');
+        if (row === 1) cell.rowSpan = 2;
         if (row === 0 && col === 0) {
           cell.classList.add('clan-tactic-table__boss-cell');
           cell.contentEditable = 'false';
@@ -3935,6 +3941,8 @@
       img.src = reader.result;
       img.alt = '보스';
       img.className = 'clan-tactic-table__boss-img';
+      img.width = 64;
+      img.height = 64;
 
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
@@ -4061,6 +4069,8 @@
       img.src = c.imageUrl || `/api/characters/${encodeURIComponent(tacticCharSelectedId)}/image`;
       img.alt = c.name || '캐릭터';
       img.className = 'clan-tactic-table__boss-img';
+      img.width = 64;
+      img.height = 64;
 
       const delBtn = document.createElement('button');
       delBtn.type = 'button';

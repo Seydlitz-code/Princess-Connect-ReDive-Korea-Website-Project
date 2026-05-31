@@ -4011,7 +4011,7 @@ button.future-type-badge {
   padding: 0;
   border: none;
   border-radius: 3px;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(220, 38, 38, 0.8);
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -4020,5 +4020,5 @@ button.future-type-badge {
 }
 
 .clan-tactic-table__boss-del:hover {
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(185, 28, 28, 0.9);
 }
