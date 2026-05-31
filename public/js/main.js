@@ -3628,7 +3628,7 @@
     const themeRow = document.createElement('tr');
     themeRow.className = 'clan-tactic-table__theme-row';
     const themeCell = document.createElement('td');
-    themeCell.colSpan = 8;
+    themeCell.colSpan = 7;
     themeCell.contentEditable = 'false';
 
     const themeInner = document.createElement('div');
@@ -3658,14 +3658,14 @@
     applyTheme(themeRow, 1);
     tbody.appendChild(themeRow);
 
-    for (let row = 0; row < 4; row += 1) {
+    for (let row = 0; row < 6; row += 1) {
       const tr = document.createElement('tr');
       tr.className = row === 0 ? 'clan-tactic-table__row clan-tactic-table__row--head' : 'clan-tactic-table__row';
 
       if (row === 0) {
         const mainCell = document.createElement('td');
         mainCell.className = 'clan-tactic-table__main-cell';
-        mainCell.rowSpan = 4;
+        mainCell.rowSpan = 6;
         mainCell.contentEditable = 'false';
 
         const dmgWrap = document.createElement('div');
@@ -3698,16 +3698,16 @@
         tr.appendChild(mainCell);
       }
 
-      if (row === 2) {
+      if (row === 2 || row === 4) {
         tbody.appendChild(tr);
         continue;
       }
 
-      for (let col = 0; col < 7; col += 1) {
+      for (let col = 0; col < 6; col += 1) {
         const cell = document.createElement('td');
         cell.className = 'clan-tactic-table__grid-cell';
         if (row === 0) cell.classList.add('clan-tactic-table__grid-cell--head');
-        if (row === 1) cell.rowSpan = 2;
+        if (row === 1 || row === 3) cell.rowSpan = 2;
         if (row === 0 && col === 0) {
           cell.classList.add('clan-tactic-table__boss-cell');
           cell.contentEditable = 'false';
@@ -3725,7 +3725,7 @@
             }
           });
           cell.appendChild(bossBtn);
-        } else if (row === 0 && col >= 2) {
+        } else if (row === 0 && col >= 1) {
           cell.classList.add('clan-tactic-table__char-cell');
           cell.contentEditable = 'false';
           const charBtn = document.createElement('button');
@@ -3756,7 +3756,7 @@
 
     const wideCell = document.createElement('td');
     wideCell.className = 'clan-tactic-table__footer-wide';
-    wideCell.colSpan = 7;
+    wideCell.colSpan = 6;
     wideCell.innerHTML = '<br>';
 
     footerRow.appendChild(narrowCell);
