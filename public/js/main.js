@@ -3613,6 +3613,51 @@
 
     const tbody = document.createElement('tbody');
 
+    const THEME_COLORS = ['#ff5da2', '#1976d2', '#16a34a', '#f59e0b', '#7c3aed'];
+    let currentTheme = 1;
+
+    function applyTheme(themeRow, themeNum) {
+      currentTheme = themeNum;
+      if (themeRow) {
+        themeRow.style.background = THEME_COLORS[themeNum - 1];
+      }
+      const label = table.querySelector('.clan-tactic-table__theme-label');
+      if (label) label.textContent = `\uD14D\uD2F1 \uD14C\uB9C8 ${themeNum}`;
+    }
+
+    const themeRow = document.createElement('tr');
+    themeRow.className = 'clan-tactic-table__theme-row';
+    const themeCell = document.createElement('td');
+    themeCell.colSpan = 7;
+    themeCell.contentEditable = 'false';
+
+    const themeInner = document.createElement('div');
+    themeInner.className = 'clan-tactic-table__theme-inner';
+
+    const themeLabel = document.createElement('span');
+    themeLabel.className = 'clan-tactic-table__theme-label';
+    themeLabel.textContent = '\uD14D\uD2F1 \uD14C\uB9C8 1';
+
+    const themeSelect = document.createElement('select');
+    themeSelect.className = 'clan-tactic-table__theme-select';
+    for (let i = 1; i <= 5; i += 1) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `\uD14D\uD2F1 \uD14C\uB9C8 ${i}`;
+      themeSelect.appendChild(opt);
+    }
+    themeSelect.value = '1';
+    themeSelect.addEventListener('change', () => {
+      applyTheme(themeRow, Number(themeSelect.value));
+    });
+
+    themeInner.appendChild(themeLabel);
+    themeInner.appendChild(themeSelect);
+    themeCell.appendChild(themeInner);
+    themeRow.appendChild(themeCell);
+    applyTheme(themeRow, 1);
+    tbody.appendChild(themeRow);
+
     for (let row = 0; row < 4; row += 1) {
       const tr = document.createElement('tr');
       tr.className = row === 0 ? 'clan-tactic-table__row clan-tactic-table__row--head' : 'clan-tactic-table__row';
@@ -3621,7 +3666,35 @@
         const mainCell = document.createElement('td');
         mainCell.className = 'clan-tactic-table__main-cell';
         mainCell.rowSpan = 4;
-        mainCell.innerHTML = '<br>';
+        mainCell.contentEditable = 'false';
+
+        const dmgWrap = document.createElement('div');
+        dmgWrap.className = 'clan-tactic-table__damage-wrap';
+
+        const dmgLabel = document.createElement('label');
+        dmgLabel.className = 'clan-tactic-table__damage-label';
+        dmgLabel.textContent = '\uB370\uBBF8\uC9C0';
+
+        const dmgInput = document.createElement('input');
+        dmgInput.type = 'text';
+        dmgInput.className = 'clan-tactic-table__damage-input';
+        dmgInput.placeholder = '0';
+        dmgInput.inputMode = 'numeric';
+        dmgInput.autocomplete = 'off';
+        dmgInput.addEventListener('input', () => {
+          let raw = dmgInput.value.replace(/[^0-9]/g, '');
+          if (raw.length > 10) raw = raw.slice(0, 10);
+          if (raw === '') {
+            dmgInput.value = '';
+          } else {
+            const num = parseInt(raw, 10);
+            dmgInput.value = num.toLocaleString('ko-KR');
+          }
+        });
+
+        dmgWrap.appendChild(dmgLabel);
+        dmgWrap.appendChild(dmgInput);
+        mainCell.appendChild(dmgWrap);
         tr.appendChild(mainCell);
       }
 
@@ -3652,13 +3725,50 @@
             }
           });
           cell.appendChild(bossBtn);
-        } else if (row === 0 && col >= 1) {
+        } else if (row === 0 && col === 1) {
+          cell.classList.add('clan-tactic-table__char-cell');
+          cell.contentEditable = 'false';
+
+          const nameWrap = document.createElement('div');
+          nameWrap.className = 'clan-tactic-table__bossname-wrap';
+
+          const nameLabel = document.createElement('label');
+          nameLabel.className = 'clan-tactic-table__bossname-label';
+          nameLabel.textContent = '\uBCF4\uC2A4\uBA85';
+
+          const nameInput = document.createElement('input');
+          nameInput.type = 'text';
+          nameInput.className = 'clan-tactic-table__bossname-input';
+          nameInput.placeholder = '\uBCF4\uC2A4\uBA85';
+          nameInput.maxLength = 8;
+          nameInput.autocomplete = 'off';
+          nameInput.addEventListener('input', () => {
+            const len = nameInput.value.length;
+            let fs = 12;
+            if (len > 3) fs = 10;
+            if (len > 5) fs = 8;
+            if (len > 6) fs = 7;
+            nameInput.style.fontSize = fs + 'px';
+          });
+
+          nameWrap.appendChild(nameLabel);
+          nameWrap.appendChild(nameInput);
+          cell.appendChild(nameWrap);
+        } else if (row === 0 && col === 2) {
+          cell.classList.add('clan-tactic-table__char-cell');
+          cell.contentEditable = 'false';
+          cell.innerHTML = '<span class="clan-tactic-table__star-icon">&#9733;</span>';
+        } else if (row === 0 && col === 3) {
+          cell.classList.add('clan-tactic-table__char-cell');
+          cell.contentEditable = 'false';
+          cell.innerHTML = '<span class="clan-tactic-table__rank-text">RANK</span>';
+        } else if (row === 0 && col >= 4) {
           cell.classList.add('clan-tactic-table__char-cell');
           cell.contentEditable = 'false';
           const charBtn = document.createElement('button');
           charBtn.type = 'button';
           charBtn.className = 'clan-tactic-table__char-btn';
-          charBtn.innerHTML = '<span class="clan-tactic-table__boss-icon">+</span><span class="clan-tactic-table__boss-label">캐릭터</span>';
+          charBtn.innerHTML = '<span class="clan-tactic-table__boss-icon">+</span><span class="clan-tactic-table__boss-label">\uCE90\uB9AD\uD130</span>';
           charBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -3943,6 +4053,11 @@
       img.className = 'clan-tactic-table__boss-img';
       img.width = 64;
       img.height = 64;
+      img.style.width = '64px';
+      img.style.height = '64px';
+      img.style.objectFit = 'fill';
+      img.style.display = 'block';
+      img.style.borderRadius = '4px';
 
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
@@ -4071,6 +4186,11 @@
       img.className = 'clan-tactic-table__boss-img';
       img.width = 64;
       img.height = 64;
+      img.style.width = '64px';
+      img.style.height = '64px';
+      img.style.objectFit = 'fill';
+      img.style.display = 'block';
+      img.style.borderRadius = '4px';
 
       const delBtn = document.createElement('button');
       delBtn.type = 'button';

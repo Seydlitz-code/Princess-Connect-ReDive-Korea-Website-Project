@@ -1565,11 +1565,11 @@ button.future-type-badge {
 }
 
 .owned-characters-modal-sheet {
-  width: min(960px, 100%);
+  width: min(960px, 95vw);
+  aspect-ratio: 16 / 9;
   max-height: min(92vh, 880px);
   display: flex;
   flex-direction: column;
-  /* 모달 시트 자체는 스크롤하지 않음 — 내부 character-grid-scroll만 스크롤 */
   overflow: hidden;
 }
 
@@ -1611,11 +1611,23 @@ button.future-type-badge {
 /* 푸터(저장하기·취소)가 절대로 압축되거나 잘리지 않도록 */
 .owned-characters-modal-footer {
   flex-shrink: 0;
-  margin-top: 16px !important; /* .modal-footer의 26px을 덮어씀 */
+  margin-top: 16px !important;
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
   padding-bottom: 2px;
+}
+
+.owned-characters-modal-footer .btn-outline {
+  background: #fff;
+  color: #dc2626;
+  border: 1.5px solid #dc2626;
+}
+
+.owned-characters-modal-footer .btn-outline:hover {
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
 }
 
 @media (max-width: 900px) {
@@ -2462,6 +2474,18 @@ button.future-type-badge {
   gap: 10px;
   flex-wrap: wrap;
   margin-left: auto;
+}
+
+.future-character-modal-footer-actions .btn-outline {
+  background: #fff;
+  color: #dc2626;
+  border: 1.5px solid #dc2626;
+}
+
+.future-character-modal-footer-actions .btn-outline:hover {
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
 }
 
 .future-category-stack {
@@ -3707,6 +3731,13 @@ button.future-type-badge {
   height: auto;
 }
 
+.clan-write-editor .clan-tactic-table__boss-img {
+  width: 64px;
+  height: 64px;
+  max-width: none;
+  object-fit: fill;
+}
+
 .clan-tactic-table-wrap {
   display: block;
   width: 100%;
@@ -3718,12 +3749,12 @@ button.future-type-badge {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  border: 3px solid var(--pink);
+  border: 3px solid #000;
   background: #fff;
 }
 
 .clan-tactic-table td {
-  border: 3px solid var(--pink);
+  border: 3px solid #000;
   padding: 6px 8px;
   vertical-align: top;
 }
@@ -3731,6 +3762,90 @@ button.future-type-badge {
 .clan-tactic-table__main-cell {
   width: 42%;
   min-height: 160px;
+}
+
+.clan-tactic-table__damage-wrap {
+  padding: 8px 4px;
+}
+
+.clan-tactic-table__damage-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.clan-tactic-table__damage-input {
+  width: 100%;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid #666;
+  border-radius: 4px;
+  text-align: center;
+  background: #fff;
+  color: #000;
+}
+
+.clan-tactic-table__damage-input:focus {
+  outline: none;
+  border-color: #000;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.12);
+}
+
+.clan-tactic-table__bossname-wrap {
+  padding: 4px 2px;
+}
+
+.clan-tactic-table__bossname-label {
+  display: block;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #666;
+  margin-bottom: 2px;
+  text-align: center;
+}
+
+.clan-tactic-table__bossname-input {
+  width: 100%;
+  padding: 2px 4px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #999;
+  border-radius: 4px;
+  text-align: center;
+  background: #fff;
+  color: #000;
+}
+
+.clan-tactic-table__bossname-input:focus {
+  outline: none;
+  border-color: #000;
+}
+
+.clan-tactic-table__star-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 2rem;
+  color: #facc15;
+}
+
+.clan-tactic-table__rank-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #000;
+  letter-spacing: 0.05em;
 }
 
 .clan-tactic-table__grid-cell {
@@ -3752,6 +3867,43 @@ button.future-type-badge {
 
 .clan-detail-body .clan-tactic-table-wrap {
   white-space: normal;
+}
+
+.clan-tactic-table__theme-row td {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  border: 3px solid #000;
+}
+
+.clan-tactic-table__theme-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.clan-tactic-table__theme-label {
+  white-space: nowrap;
+}
+
+.clan-tactic-table__theme-select {
+  appearance: auto;
+  padding: 2px 6px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 4px;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  cursor: pointer;
+}
+
+.clan-tactic-table__theme-select option {
+  color: #000;
+  background: #fff;
 }
 
 .clan-tactic-table__char-cell {
@@ -3788,15 +3940,28 @@ button.future-type-badge {
 }
 
 .boss-image-popup-sheet {
-  width: min(800px, 100%);
+  width: min(800px, 95vw);
+  aspect-ratio: 16 / 9;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.boss-image-popup-sheet > .modal-back,
+.boss-image-popup-sheet > .modal-head {
+  flex-shrink: 0;
 }
 
 .boss-image-popup-search-row {
+  flex-shrink: 0;
   margin-bottom: 12px;
 }
 
 .boss-image-popup-scroll {
-  max-height: min(480px, 50vh);
+  flex: 1 1 auto;
+  min-height: 200px;
+  max-height: none;
 }
 
 .boss-image-popup-footer {
@@ -3804,6 +3969,19 @@ button.future-type-badge {
   justify-content: flex-end;
   gap: 8px;
   padding-top: 12px;
+  flex-shrink: 0;
+}
+
+.boss-image-popup-footer .btn-outline {
+  background: #fff;
+  color: #dc2626;
+  border: 1.5px solid #dc2626;
+}
+
+.boss-image-popup-footer .btn-outline:hover {
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
 }
 
 .clan-write-link-popup {
