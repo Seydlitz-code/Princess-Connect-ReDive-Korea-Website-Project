@@ -3621,8 +3621,6 @@
       if (themeRow) {
         themeRow.style.background = THEME_COLORS[themeNum - 1];
       }
-      const label = table.querySelector('.clan-tactic-table__theme-label');
-      if (label) label.textContent = `\uD14D\uD2F1 \uD14C\uB9C8 ${themeNum}`;
     }
 
     const themeRow = document.createElement('tr');
@@ -3634,12 +3632,9 @@
     const themeInner = document.createElement('div');
     themeInner.className = 'clan-tactic-table__theme-inner';
 
-    const themeLabel = document.createElement('span');
-    themeLabel.className = 'clan-tactic-table__theme-label';
-    themeLabel.textContent = '\uD14D\uD2F1 \uD14C\uB9C8 1';
-
     const themeSelect = document.createElement('select');
     themeSelect.className = 'clan-tactic-table__theme-select';
+    themeSelect.setAttribute('aria-label', '\uD14D\uD2F1 \uD14C\uB9C8 \uC120\uD0DD');
     for (let i = 1; i <= 5; i += 1) {
       const opt = document.createElement('option');
       opt.value = i;
@@ -3651,27 +3646,26 @@
       applyTheme(themeRow, Number(themeSelect.value));
     });
 
-    themeInner.appendChild(themeLabel);
     themeInner.appendChild(themeSelect);
     themeCell.appendChild(themeInner);
     themeRow.appendChild(themeCell);
     applyTheme(themeRow, 1);
     tbody.appendChild(themeRow);
 
-    for (let row = 0; row < 6; row += 1) {
+    for (let row = 0; row < 4; row += 1) {
       const tr = document.createElement('tr');
       tr.className = row === 0 ? 'clan-tactic-table__row clan-tactic-table__row--head' : 'clan-tactic-table__row';
 
       if (row === 0) {
         const mainCell = document.createElement('td');
         mainCell.className = 'clan-tactic-table__main-cell';
-        mainCell.rowSpan = 6;
+        mainCell.rowSpan = 4;
         mainCell.contentEditable = 'false';
 
         const dmgInput = document.createElement('input');
         dmgInput.type = 'text';
         dmgInput.className = 'clan-tactic-table__damage-input';
-        dmgInput.placeholder = '\uB370\uBBF8\uC9C0\uB97C \uC785\uB825\uD558\uC138\uC694';
+        dmgInput.placeholder = '\uD14D\uD2F1 \uB370\uBBF8\uC9C0\uB97C \uC785\uB825\uD558\uC138\uC694.';
         dmgInput.inputMode = 'numeric';
         dmgInput.autocomplete = 'off';
         dmgInput.addEventListener('input', () => {
@@ -3699,7 +3693,7 @@
         const bossBtn = document.createElement('button');
         bossBtn.type = 'button';
         bossBtn.className = 'clan-tactic-table__boss-btn';
-        bossBtn.innerHTML = '<span class="clan-tactic-table__boss-icon">+</span><span class="clan-tactic-table__boss-label">보스</span>';
+        bossBtn.innerHTML = '<span class="clan-tactic-table__slot-label">\uBCF4\uC2A4 \uC774\uBBF8\uC9C0</span>';
         bossBtn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -3711,45 +3705,37 @@
         });
         col0Cell.appendChild(bossBtn);
       } else if (row === 1) {
-        col0Cell.classList.add('clan-tactic-table__char-cell');
+        col0Cell.classList.add('clan-tactic-table__name-cell');
         col0Cell.contentEditable = 'false';
         const nameInput = document.createElement('input');
         nameInput.type = 'text';
         nameInput.className = 'clan-tactic-table__bossname-input';
-        nameInput.placeholder = '\uBCF4\uC2A4 \uC774\uB984 \uC785\uB825';
+        nameInput.placeholder = '\uBCF4\uC2A4\uBA85 \uC785\uB825';
         nameInput.maxLength = 8;
         nameInput.autocomplete = 'off';
         col0Cell.appendChild(nameInput);
       } else if (row === 2) {
-        col0Cell.classList.add('clan-tactic-table__char-cell');
+        col0Cell.classList.add('clan-tactic-table__star-cell');
         col0Cell.contentEditable = 'false';
         col0Cell.innerHTML = '<span class="clan-tactic-table__star-icon">&#9733;</span>';
       } else if (row === 3) {
-        col0Cell.classList.add('clan-tactic-table__char-cell');
+        col0Cell.classList.add('clan-tactic-table__rank-cell');
         col0Cell.contentEditable = 'false';
         col0Cell.innerHTML = '<span class="clan-tactic-table__rank-text">RANK</span>';
-      } else {
-        col0Cell.innerHTML = '<br>';
       }
       tr.appendChild(col0Cell);
-
-      if (row === 2 || row === 4) {
-        tbody.appendChild(tr);
-        continue;
-      }
 
       for (let col = 1; col < 6; col += 1) {
         const cell = document.createElement('td');
         cell.className = 'clan-tactic-table__grid-cell';
         if (row === 0) cell.classList.add('clan-tactic-table__grid-cell--head');
-        if (row === 1 || row === 3) cell.rowSpan = 2;
         if (row === 0) {
           cell.classList.add('clan-tactic-table__char-cell');
           cell.contentEditable = 'false';
           const charBtn = document.createElement('button');
           charBtn.type = 'button';
           charBtn.className = 'clan-tactic-table__char-btn';
-          charBtn.innerHTML = '<span class="clan-tactic-table__boss-icon">+</span><span class="clan-tactic-table__boss-label">캐릭터</span>';
+          charBtn.innerHTML = '<span class="clan-tactic-table__slot-label">\uCE90\uB9AD\uD130 \uCD94\uAC00</span>';
           charBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -4065,7 +4051,7 @@
     const bossBtn = document.createElement('button');
     bossBtn.type = 'button';
     bossBtn.className = 'clan-tactic-table__boss-btn';
-    bossBtn.innerHTML = '<span class="clan-tactic-table__boss-icon">+</span><span class="clan-tactic-table__boss-label">보스</span>';
+    bossBtn.innerHTML = '<span class="clan-tactic-table__slot-label">\uBCF4\uC2A4 \uC774\uBBF8\uC9C0</span>';
     bossBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -4196,7 +4182,7 @@
     const charBtn = document.createElement('button');
     charBtn.type = 'button';
     charBtn.className = 'clan-tactic-table__char-btn';
-    charBtn.innerHTML = '<span class="clan-tactic-table__boss-icon">+</span><span class="clan-tactic-table__boss-label">캐릭터</span>';
+    charBtn.innerHTML = '<span class="clan-tactic-table__slot-label">\uCE90\uB9AD\uD130 \uCD94\uAC00</span>';
     charBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
