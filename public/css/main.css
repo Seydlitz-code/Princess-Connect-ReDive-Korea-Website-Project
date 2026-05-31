@@ -938,6 +938,10 @@ body.is-mypage-route .mypage-shell {
   grid-template-columns: repeat(8, minmax(0, 1fr));
 }
 
+.character-grid--cols-10 {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+}
+
 .character-owned-cell {
   display: flex;
   flex-direction: column;
@@ -2808,6 +2812,14 @@ button.future-type-badge {
   display: block;
 }
 
+.character-thumb__img--missing {
+  visibility: hidden;
+}
+
+.character-thumb:has(.character-thumb__img--missing) {
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+}
+
 .character-picker-btn.is-selected .character-thumb {
   border-color: #16a34a;
   box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.45);
@@ -4167,6 +4179,33 @@ button.future-type-badge {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.tactic-character-popup-sheet {
+  width: min(960px, 98vw);
+  aspect-ratio: unset;
+  height: auto;
+  max-height: min(92vh, 780px);
+}
+
+#tactic-character-popup {
+  --tactic-char-picker-row-h: 94px;
+}
+
+#tactic-character-popup .boss-image-popup-scroll {
+  flex: 0 0 auto;
+  min-height: calc(var(--tactic-char-picker-row-h) * 5 + 8px * 4);
+  max-height: calc(var(--tactic-char-picker-row-h) * 5 + 8px * 4);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#tactic-character-popup .tactic-char-picker-btn {
+  min-height: var(--tactic-char-picker-row-h);
+}
+
+#tactic-character-popup .character-grid {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
 }
 
 .boss-image-popup-sheet > .modal-back,

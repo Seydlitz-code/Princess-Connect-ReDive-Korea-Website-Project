@@ -2709,6 +2709,35 @@
     return charactersLoadPromise;
   }
 
+  function getCharacterImageApiUrl(characterId) {
+    return `/api/characters/${encodeURIComponent(String(characterId))}/image`;
+  }
+
+  function bindCharacterImage(img, character, { eager = false } = {}) {
+    const apiUrl = getCharacterImageApiUrl(character?.id || '');
+    const staticUrl = typeof character?.imageUrl === 'string' && character.imageUrl.length > 0
+      ? character.imageUrl
+      : '';
+
+    img.alt = character?.name || '캐릭터';
+    img.loading = eager ? 'eager' : 'lazy';
+    img.decoding = 'async';
+    img.classList.remove('character-thumb__img--missing');
+
+    img.addEventListener('error', () => {
+      if (img.dataset.fallback !== 'static' && staticUrl) {
+        img.dataset.fallback = 'static';
+        img.src = staticUrl;
+        return;
+      }
+      img.classList.add('character-thumb__img--missing');
+      img.removeAttribute('src');
+    });
+
+    img.dataset.fallback = 'api';
+    img.src = apiUrl;
+  }
+
   /**
    * 캐릭터 선택 그리드를 렌더링한다.
    * getSelection/setSelection 콜백으로 Set 참조를 런타임에 읽어
@@ -2728,10 +2757,7 @@
       const thumb = document.createElement('div');
       thumb.className = 'character-thumb';
       const img = document.createElement('img');
-      img.alt = c.name || '캐릭터';
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.src = c.imageUrl || `/api/characters/${encodeURIComponent(id)}/image`;
+      bindCharacterImage(img, c);
 
       const nameEl = document.createElement('div');
       nameEl.className = 'character-name';
@@ -2769,10 +2795,7 @@
       const thumb = document.createElement('div');
       thumb.className = 'character-thumb character-thumb--readonly';
       const img = document.createElement('img');
-      img.alt = c.name || '캐릭터';
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.src = c.imageUrl || `/api/characters/${encodeURIComponent(id)}/image`;
+      bindCharacterImage(img, c);
 
       const nameEl = document.createElement('div');
       nameEl.className = 'character-name';
@@ -4434,10 +4457,7 @@
       const thumb = document.createElement('div');
       thumb.className = 'character-thumb';
       const img = document.createElement('img');
-      img.alt = c.name || '캐릭터';
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.src = c.imageUrl || `/api/characters/${encodeURIComponent(id)}/image`;
+      bindCharacterImage(img, c, { eager: true });
 
       const nameEl = document.createElement('div');
       nameEl.className = 'character-name';
@@ -4486,8 +4506,7 @@
       wrap.className = 'clan-tactic-table__boss-wrap';
 
       const img = document.createElement('img');
-      img.src = c.imageUrl || `/api/characters/${encodeURIComponent(tacticCharSelectedId)}/image`;
-      img.alt = c.name || '캐릭터';
+      bindCharacterImage(img, c, { eager: true });
       img.className = 'clan-tactic-table__boss-img';
       img.width = 64;
       img.height = 64;
