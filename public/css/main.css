@@ -3753,6 +3753,10 @@ button.future-type-badge {
   background: #fff;
 }
 
+.clan-tactic-table__col-slot {
+  width: 64px;
+}
+
 .clan-tactic-table td {
   border: 1px solid #000;
   padding: 6px 8px;
@@ -3760,7 +3764,7 @@ button.future-type-badge {
 }
 
 .clan-tactic-table__main-cell {
-  width: 42%;
+  width: auto;
   min-height: 160px;
   padding: 0;
   vertical-align: middle;
@@ -3819,9 +3823,24 @@ button.future-type-badge {
 .clan-tactic-table__name-cell,
 .clan-tactic-table__star-cell,
 .clan-tactic-table__rank-cell {
+  width: 64px;
+  min-width: 64px;
+  max-width: 64px;
+  padding: 2px 4px;
+  box-sizing: border-box;
   text-align: center;
   vertical-align: middle;
-  padding: 4px 6px;
+}
+
+.clan-tactic-table__no-edit {
+  user-select: none;
+  cursor: default;
+  pointer-events: none;
+}
+
+.clan-tactic-table__no-edit .clan-tactic-table__star-icon,
+.clan-tactic-table__no-edit .clan-tactic-table__rank-text {
+  pointer-events: none;
 }
 
 .clan-tactic-table__star-icon {
@@ -3846,16 +3865,167 @@ button.future-type-badge {
   letter-spacing: 0.05em;
 }
 
+.clan-tactic-table__star-grade-cell {
+  padding: 2px 0;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.clan-tactic-table__star-grade-cell:not(.clan-tactic-table__star-grade-cell--active) {
+  pointer-events: none;
+}
+
+.clan-tactic-table__star-grade-cell--active {
+  pointer-events: auto;
+}
+
+.clan-tactic-table__star-grade-slot[hidden] {
+  display: none;
+}
+
+.clan-tactic-table__star-grade-dial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 62px;
+  max-width: 100%;
+  min-height: 26px;
+  pointer-events: auto;
+}
+
+.clan-tactic-table__star-grade-btn {
+  flex: 0 0 13px;
+  width: 13px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #bbb;
+  border-radius: 2px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 0.45rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clan-tactic-table__star-grade-btn:hover {
+  background: #e5e7eb;
+}
+
+.clan-tactic-table__star-grade-display {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 0;
+  overflow: hidden;
+  line-height: 1;
+  padding: 0 1px;
+}
+
+.clan-tactic-table__star-grade-star {
+  font-size: 0.52rem;
+  line-height: 1;
+}
+
+.clan-tactic-table__star-grade-display[data-grade='5'] .clan-tactic-table__star-grade-star,
+.clan-tactic-table__star-grade-display[data-grade='6'] .clan-tactic-table__star-grade-star {
+  font-size: 0.42rem;
+}
+
+.clan-tactic-table__star-grade-display[data-grade='1'] .clan-tactic-table__star-grade-star,
+.clan-tactic-table__star-grade-display[data-grade='2'] .clan-tactic-table__star-grade-star {
+  color: #9ca3af;
+}
+
+.clan-tactic-table__star-grade-display[data-grade='3'] .clan-tactic-table__star-grade-star {
+  color: #facc15;
+}
+
+.clan-tactic-table__star-grade-display[data-grade='4'] .clan-tactic-table__star-grade-star {
+  background: linear-gradient(135deg, #fb7185, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.clan-tactic-table__star-grade-display[data-grade='5'] .clan-tactic-table__star-grade-star {
+  background: linear-gradient(135deg, #f472b6, #a855f7, #3b82f6, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.clan-tactic-table__star-grade-display[data-grade='6'] .clan-tactic-table__star-grade-star {
+  color: #22d3ee;
+  text-shadow: 0 0 2px rgba(34, 211, 238, 0.85);
+}
+
+.clan-tactic-table__rank-input-cell {
+  padding: 2px 4px;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.clan-tactic-table__rank-input-cell:not(.clan-tactic-table__rank-input-cell--active) {
+  pointer-events: none;
+}
+
+.clan-tactic-table__rank-input-cell--active {
+  pointer-events: auto;
+}
+
+.clan-tactic-table__rank-input-slot[hidden] {
+  display: none;
+}
+
+.clan-tactic-table__rank-input {
+  width: 100%;
+  height: 100%;
+  min-height: 22px;
+  padding: 2px 2px;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 600;
+  border: none;
+  text-align: center;
+  background: transparent;
+  color: #000;
+  box-sizing: border-box;
+}
+
+.clan-tactic-table__rank-input:focus {
+  outline: none;
+}
+
+.clan-tactic-table__rank-input::placeholder {
+  font-weight: 400;
+  color: #aaa;
+  font-size: 8px;
+}
+
 .clan-tactic-table__grid-cell {
-  min-height: 32px;
+  width: 64px;
+  min-width: 64px;
+  max-width: 64px;
+  padding: 0;
+  box-sizing: border-box;
+  vertical-align: middle;
+  text-align: center;
 }
 
 .clan-tactic-table__grid-cell--head {
+  height: 64px;
   min-height: 64px;
+  max-height: 64px;
 }
 
 .clan-tactic-table__footer-narrow {
-  width: 48px;
   padding: 6px 4px;
 }
 
@@ -3908,15 +4078,15 @@ button.future-type-badge {
   min-width: 64px;
   max-width: 64px;
   height: 64px;
+  box-sizing: border-box;
 }
 
 .clan-tactic-table__char-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  min-height: 56px;
+  width: 64px;
+  height: 64px;
   padding: 4px 3px;
   border: 1.5px solid var(--nav-active, #1976d2);
   border-radius: 6px;
@@ -3925,6 +4095,7 @@ button.future-type-badge {
   color: var(--nav-active, #1976d2);
   font: inherit;
   transition: background 0.15s ease;
+  box-sizing: border-box;
 }
 
 .clan-tactic-table__char-btn:hover {
@@ -4119,15 +4290,15 @@ button.future-type-badge {
   min-width: 64px;
   max-width: 64px;
   height: 64px;
+  box-sizing: border-box;
 }
 
 .clan-tactic-table__boss-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  min-height: 56px;
+  width: 64px;
+  height: 64px;
   padding: 4px 3px;
   border: 1.5px solid var(--nav-active, #1976d2);
   border-radius: 6px;
@@ -4136,6 +4307,7 @@ button.future-type-badge {
   color: var(--nav-active, #1976d2);
   font: inherit;
   transition: background 0.15s ease;
+  box-sizing: border-box;
 }
 
 .clan-tactic-table__boss-btn:hover {

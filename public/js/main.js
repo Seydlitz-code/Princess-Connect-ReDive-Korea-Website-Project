@@ -3604,6 +3604,210 @@
     }
   }
 
+  function insertNodeAtCursor(node) {
+    if (!clanWriteContent || !node) return;
+    clanWriteContent.focus();
+    const sel = window.getSelection();
+    if (sel.rangeCount) {
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(node);
+      range.setStartAfter(node);
+      range.setEndAfter(node);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else {
+      clanWriteContent.appendChild(node);
+    }
+  }
+
+  const TACTIC_STAR_GRADE_MIN = 1;
+  const TACTIC_STAR_GRADE_MAX = 6;
+  const TACTIC_STAR_GRADE_DEFAULT = 3;
+
+  function createStarGradeDial(initialGrade = TACTIC_STAR_GRADE_DEFAULT) {
+    const dial = document.createElement('div');
+    dial.className = 'clan-tactic-table__star-grade-dial';
+    dial.contentEditable = 'false';
+
+    let grade = Math.min(TACTIC_STAR_GRADE_MAX, Math.max(TACTIC_STAR_GRADE_MIN, initialGrade));
+
+    const prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.className = 'clan-tactic-table__star-grade-btn clan-tactic-table__star-grade-btn--prev';
+    prevBtn.setAttribute('aria-label', '이전 성급');
+    prevBtn.innerHTML = '<span aria-hidden="true">&#9664;</span>';
+
+    const display = document.createElement('div');
+    display.className = 'clan-tactic-table__star-grade-display';
+    display.setAttribute('role', 'status');
+
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = 'clan-tactic-table__star-grade-btn clan-tactic-table__star-grade-btn--next';
+    nextBtn.setAttribute('aria-label', '다음 성급');
+    nextBtn.innerHTML = '<span aria-hidden="true">&#9654;</span>';
+
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.className = 'clan-tactic-table__star-grade-value';
+    hiddenInput.value = String(grade);
+    hiddenInput.contentEditable = 'false';
+
+    function renderGrade() {
+      display.dataset.grade = String(grade);
+      display.innerHTML = '';
+      for (let i = 0; i < grade; i += 1) {
+        const star = document.createElement('span');
+        star.className = 'clan-tactic-table__star-grade-star';
+        star.textContent = '\u2605';
+        star.setAttribute('aria-hidden', 'true');
+        display.appendChild(star);
+      }
+      display.setAttribute('aria-label', `${grade}\uC131`);
+      hiddenInput.value = String(grade);
+    }
+
+    function stepGrade(delta) {
+      grade += delta;
+      if (grade < TACTIC_STAR_GRADE_MIN) grade = TACTIC_STAR_GRADE_MAX;
+      if (grade > TACTIC_STAR_GRADE_MAX) grade = TACTIC_STAR_GRADE_MIN;
+      renderGrade();
+    }
+
+    prevBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      stepGrade(-1);
+    });
+    nextBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      stepGrade(1);
+    });
+    dial.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+    });
+
+    renderGrade();
+    dial.appendChild(prevBtn);
+    dial.appendChild(display);
+    dial.appendChild(nextBtn);
+    dial.appendChild(hiddenInput);
+    return dial;
+  }
+
+  function getTacticStarGradeCell(charCell) {
+    const slot = charCell?.dataset?.tacticSlot;
+    if (!slot) return null;
+    const table = charCell.closest('.clan-tactic-table');
+    if (!table) return null;
+    return table.querySelector(`.clan-tactic-table__star-grade-cell[data-tactic-slot="${slot}"]`);
+  }
+
+  function showTacticStarGradeDial(charCell) {
+    const gradeCell = getTacticStarGradeCell(charCell);
+    if (!gradeCell) return;
+
+    let slot = gradeCell.querySelector('.clan-tactic-table__star-grade-slot');
+    if (!slot) {
+      slot = document.createElement('div');
+      slot.className = 'clan-tactic-table__star-grade-slot';
+      slot.contentEditable = 'false';
+      gradeCell.appendChild(slot);
+    }
+
+    if (!slot.querySelector('.clan-tactic-table__star-grade-dial')) {
+      slot.appendChild(createStarGradeDial());
+    }
+
+    slot.hidden = false;
+    gradeCell.classList.add('clan-tactic-table__star-grade-cell--active');
+  }
+
+  function hideTacticStarGradeDial(charCell) {
+    const gradeCell = getTacticStarGradeCell(charCell);
+    if (!gradeCell) return;
+
+    const slot = gradeCell.querySelector('.clan-tactic-table__star-grade-slot');
+    if (slot) {
+      slot.innerHTML = '';
+      slot.hidden = true;
+    }
+    gradeCell.classList.remove('clan-tactic-table__star-grade-cell--active');
+  }
+
+  function getTacticRankCell(charCell) {
+    const slot = charCell?.dataset?.tacticSlot;
+    if (!slot) return null;
+    const table = charCell.closest('.clan-tactic-table');
+    if (!table) return null;
+    return table.querySelector(`.clan-tactic-table__rank-input-cell[data-tactic-slot="${slot}"]`);
+  }
+
+  function createRankInput() {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'clan-tactic-table__rank-input';
+    input.placeholder = 'RANK \uC785\uB825';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.maxLength = 12;
+    input.addEventListener('input', () => {
+      const sanitized = input.value.replace(/[^0-9+\-]/g, '');
+      if (input.value !== sanitized) input.value = sanitized;
+    });
+    input.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+    });
+    input.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+    return input;
+  }
+
+  function showTacticRankInput(charCell) {
+    const rankCell = getTacticRankCell(charCell);
+    if (!rankCell) return;
+
+    let slot = rankCell.querySelector('.clan-tactic-table__rank-input-slot');
+    if (!slot) {
+      slot = document.createElement('div');
+      slot.className = 'clan-tactic-table__rank-input-slot';
+      slot.contentEditable = 'false';
+      rankCell.appendChild(slot);
+    }
+
+    if (!slot.querySelector('.clan-tactic-table__rank-input')) {
+      slot.appendChild(createRankInput());
+    }
+
+    slot.hidden = false;
+    rankCell.classList.add('clan-tactic-table__rank-input-cell--active');
+  }
+
+  function hideTacticRankInput(charCell) {
+    const rankCell = getTacticRankCell(charCell);
+    if (!rankCell) return;
+
+    const slot = rankCell.querySelector('.clan-tactic-table__rank-input-slot');
+    if (slot) {
+      slot.innerHTML = '';
+      slot.hidden = true;
+    }
+    rankCell.classList.remove('clan-tactic-table__rank-input-cell--active');
+  }
+
+  function showTacticCharSlotExtras(charCell) {
+    showTacticStarGradeDial(charCell);
+    showTacticRankInput(charCell);
+  }
+
+  function hideTacticCharSlotExtras(charCell) {
+    hideTacticStarGradeDial(charCell);
+    hideTacticRankInput(charCell);
+  }
+
   function createTacticTableElement() {
     const wrap = document.createElement('div');
     wrap.className = 'clan-tactic-table-wrap';
@@ -3715,13 +3919,21 @@
         nameInput.autocomplete = 'off';
         col0Cell.appendChild(nameInput);
       } else if (row === 2) {
-        col0Cell.classList.add('clan-tactic-table__star-cell');
+        col0Cell.classList.add('clan-tactic-table__star-cell', 'clan-tactic-table__no-edit');
         col0Cell.contentEditable = 'false';
-        col0Cell.innerHTML = '<span class="clan-tactic-table__star-icon">&#9733;</span>';
+        const starSpan = document.createElement('span');
+        starSpan.className = 'clan-tactic-table__star-icon';
+        starSpan.textContent = '\u2605';
+        starSpan.contentEditable = 'false';
+        col0Cell.appendChild(starSpan);
       } else if (row === 3) {
-        col0Cell.classList.add('clan-tactic-table__rank-cell');
+        col0Cell.classList.add('clan-tactic-table__rank-cell', 'clan-tactic-table__no-edit');
         col0Cell.contentEditable = 'false';
-        col0Cell.innerHTML = '<span class="clan-tactic-table__rank-text">RANK</span>';
+        const rankSpan = document.createElement('span');
+        rankSpan.className = 'clan-tactic-table__rank-text';
+        rankSpan.textContent = 'RANK';
+        rankSpan.contentEditable = 'false';
+        col0Cell.appendChild(rankSpan);
       }
       tr.appendChild(col0Cell);
 
@@ -3732,6 +3944,7 @@
         if (row === 0) {
           cell.classList.add('clan-tactic-table__char-cell');
           cell.contentEditable = 'false';
+          cell.dataset.tacticSlot = String(col);
           const charBtn = document.createElement('button');
           charBtn.type = 'button';
           charBtn.className = 'clan-tactic-table__char-btn';
@@ -3742,6 +3955,14 @@
             openTacticCharPopup(cell);
           });
           cell.appendChild(charBtn);
+        } else if (row === 2) {
+          cell.classList.add('clan-tactic-table__star-grade-cell');
+          cell.dataset.tacticSlot = String(col);
+          cell.contentEditable = 'false';
+        } else if (row === 3) {
+          cell.classList.add('clan-tactic-table__rank-input-cell');
+          cell.dataset.tacticSlot = String(col);
+          cell.contentEditable = 'false';
         } else {
           cell.innerHTML = '<br>';
         }
@@ -3767,6 +3988,15 @@
     footerRow.appendChild(wideCell);
     tbody.appendChild(footerRow);
 
+    const colgroup = document.createElement('colgroup');
+    const colDamage = document.createElement('col');
+    colDamage.className = 'clan-tactic-table__col-damage';
+    const colSlots = document.createElement('col');
+    colSlots.span = 6;
+    colSlots.className = 'clan-tactic-table__col-slot';
+    colgroup.appendChild(colDamage);
+    colgroup.appendChild(colSlots);
+    table.appendChild(colgroup);
     table.appendChild(tbody);
     wrap.appendChild(table);
     return wrap;
@@ -3836,6 +4066,31 @@
       clanWriteLinkInput.value = '';
       clanWriteLinkInput.focus();
     }
+  });
+
+  function isInsideTacticNoEditCell(node) {
+    if (!node) return false;
+    const el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+    if (el?.closest?.('.clan-tactic-table__star-grade-dial')) return false;
+    if (el?.closest?.('.clan-tactic-table__rank-input')) return false;
+    if (el?.closest?.('.clan-tactic-table__star-grade-cell')) return true;
+    if (el?.closest?.('.clan-tactic-table__rank-input-cell')) return true;
+    return Boolean(el?.closest?.('.clan-tactic-table__no-edit'));
+  }
+
+  function blockTacticNoEditInput(e) {
+    const sel = window.getSelection();
+    if (!isInsideTacticNoEditCell(e.target) && !isInsideTacticNoEditCell(sel?.anchorNode)) return;
+    e.preventDefault();
+  }
+
+  clanWriteContent?.addEventListener('beforeinput', blockTacticNoEditInput);
+  clanWriteContent?.addEventListener('paste', blockTacticNoEditInput);
+  clanWriteContent?.addEventListener('keydown', (e) => {
+    const sel = window.getSelection();
+    if (!isInsideTacticNoEditCell(sel?.anchorNode)) return;
+    const blocked = e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter';
+    if (blocked && !e.ctrlKey && !e.metaKey) e.preventDefault();
   });
 
   clanWriteBtnTactic?.addEventListener('click', () => {
@@ -4167,6 +4422,7 @@
         e.preventDefault();
         e.stopPropagation();
         wrap.remove();
+        hideTacticCharSlotExtras(cell);
         cell.appendChild(createCharImageButton(cell));
       });
 
@@ -4174,6 +4430,7 @@
       wrap.appendChild(delBtn);
       cell.appendChild(wrap);
 
+      showTacticCharSlotExtras(cell);
       closeTacticCharPopup();
     });
   });
