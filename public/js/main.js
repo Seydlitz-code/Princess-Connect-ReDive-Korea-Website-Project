@@ -3999,7 +3999,7 @@
 
     const tbody = document.createElement('tbody');
 
-    const THEME_COLORS = ['#ff5da2', '#1976d2', '#16a34a', '#f59e0b', '#7c3aed'];
+    const THEME_COLORS = ['#F06292', '#8BC34A', '#FFEB3B', '#7B1FA2', '#03A9F4'];
     let currentTheme = 1;
 
     function applyTheme(themeRow, themeNum) {
@@ -4127,16 +4127,8 @@
           cell.classList.add('clan-tactic-table__char-cell');
           cell.contentEditable = 'false';
           cell.dataset.tacticSlot = String(col);
-          const charBtn = document.createElement('button');
-          charBtn.type = 'button';
-          charBtn.className = 'clan-tactic-table__char-btn';
-          charBtn.innerHTML = '<span class="clan-tactic-table__slot-label">\uCE90\uB9AD\uD130 \uCD94\uAC00</span>';
-          charBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            openTacticCharPopup(cell);
-          });
-          cell.appendChild(charBtn);
+          const charBtn = createCharImageButton(cell);
+          if (charBtn) cell.appendChild(charBtn);
         } else if (row === 2) {
           cell.classList.add('clan-tactic-table__star-grade-cell');
           cell.dataset.tacticSlot = String(col);
@@ -4154,22 +4146,31 @@
       tbody.appendChild(tr);
     }
 
-    const footerRow = document.createElement('tr');
-    footerRow.className = 'clan-tactic-table__footer-row';
+    const timeRow = document.createElement('tr');
+    timeRow.className = 'clan-tactic-table__footer-row';
 
-    const narrowCell = document.createElement('td');
-    narrowCell.className = 'clan-tactic-table__footer-narrow clan-tactic-table__time-cell';
-    narrowCell.contentEditable = 'false';
-    narrowCell.appendChild(createTacticTimeInput());
+    const timeLabelCell = document.createElement('td');
+    timeLabelCell.className = 'clan-tactic-table__footer-narrow clan-tactic-table__time-cell';
+    timeLabelCell.contentEditable = 'false';
+    timeLabelCell.appendChild(createTacticTimeInput());
+    timeRow.appendChild(timeLabelCell);
 
-    const wideCell = document.createElement('td');
-    wideCell.className = 'clan-tactic-table__footer-wide';
-    wideCell.colSpan = 6;
-    wideCell.innerHTML = '<br>';
+    const timeEmptyCells = document.createElement('td');
+    timeEmptyCells.className = 'clan-tactic-table__footer-wide';
+    timeEmptyCells.colSpan = 6;
+    timeEmptyCells.innerHTML = '<br>';
+    timeRow.appendChild(timeEmptyCells);
+    tbody.appendChild(timeRow);
 
-    footerRow.appendChild(narrowCell);
-    footerRow.appendChild(wideCell);
-    tbody.appendChild(footerRow);
+    const textRow = document.createElement('tr');
+    textRow.className = 'clan-tactic-table__footer-row';
+
+    const textCell = document.createElement('td');
+    textCell.className = 'clan-tactic-table__footer-text';
+    textCell.colSpan = 7;
+    textCell.innerHTML = '<br>';
+    textRow.appendChild(textCell);
+    tbody.appendChild(textRow);
 
     const colgroup = document.createElement('colgroup');
     const colDamage = document.createElement('col');
@@ -4501,6 +4502,7 @@
 
   function openTacticCharPopup(cell) {
     if (!tacticCharPopup || !tacticCharPopupGrid) return;
+    if (cell.querySelector('.clan-tactic-table__boss-wrap')) return;
     tacticCharTargetCell = cell;
     tacticCharSelectedId = null;
     tacticCharPopup.hidden = false;
@@ -4610,7 +4612,8 @@
         e.stopPropagation();
         wrap.remove();
         hideTacticCharSlotExtras(cell);
-        cell.appendChild(createCharImageButton(cell));
+        const newBtn = createCharImageButton(cell);
+        if (newBtn) cell.appendChild(newBtn);
       });
 
       wrap.appendChild(img);
@@ -4623,6 +4626,7 @@
   });
 
   function createCharImageButton(cell) {
+    if (cell.querySelector('.clan-tactic-table__boss-wrap')) return null;
     const charBtn = document.createElement('button');
     charBtn.type = 'button';
     charBtn.className = 'clan-tactic-table__char-btn';

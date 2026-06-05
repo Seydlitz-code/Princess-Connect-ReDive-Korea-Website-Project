@@ -3752,11 +3752,12 @@ button.future-type-badge {
 }
 
 .clan-write-editor .clan-tactic-table__boss-img {
-  width: 100%;
+  width: 64px;
   height: 64px;
   max-width: 64px;
-  max-height: none;
-  object-fit: fill;
+  max-height: 64px;
+  object-fit: cover;
+  aspect-ratio: 1 / 1;
 }
 
 .clan-tactic-table-wrap {
@@ -4142,6 +4143,11 @@ button.future-type-badge {
 
 .clan-tactic-table__footer-wide {
   min-height: 28px;
+}
+
+.clan-tactic-table__footer-text {
+  min-height: 28px;
+  border: 1px solid #000;
 }
 
 .clan-detail-body .clan-tactic-table-wrap {
@@ -4584,11 +4590,12 @@ button.future-type-badge {
 }
 
 .clan-tactic-table__boss-img {
-  width: 100%;
+  width: 64px;
   height: 64px;
   max-width: 64px;
   display: block;
-  object-fit: fill;
+  object-fit: cover;
+  aspect-ratio: 1 / 1;
   border-radius: 4px;
 }
 
