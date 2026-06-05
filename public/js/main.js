@@ -3736,7 +3736,8 @@
       const existing = trigger.querySelector('.clan-tactic-table__star-grade-icons');
       const icons = buildStarGradeIcons(grade);
       if (existing) existing.replaceWith(icons);
-      else trigger.insertBefore(icons, chevron);
+      else if (trigger.contains(chevron)) trigger.insertBefore(icons, chevron);
+      else trigger.appendChild(icons);
     }
 
     for (let g = TACTIC_STAR_GRADE_MIN; g <= TACTIC_STAR_GRADE_MAX; g += 1) {
@@ -3783,8 +3784,8 @@
     document.addEventListener('click', onDocumentClick);
     dial._starGradeDocCleanup = () => document.removeEventListener('click', onDocumentClick);
 
-    renderTriggerIcons();
     trigger.appendChild(chevron);
+    renderTriggerIcons();
     dial.appendChild(trigger);
     dial.appendChild(menu);
     dial.appendChild(hiddenInput);
@@ -4585,12 +4586,18 @@
   });
   tacticCharPopupSearchBtn?.addEventListener('click', filterTacticCharPicker);
 
-  tacticCharPopupConfirm?.addEventListener('click', () => {
-    if (!tacticCharTargetCell || !tacticCharSelectedId) return;
+  tacticCharPopupConfirm?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const selectedId = tacticCharSelectedId;
+    const cell = tacticCharTargetCell;
+    if (!cell || !selectedId) {
+      closeTacticCharPopup();
+      return;
+    }
     ensureCharactersLoaded().then((list) => {
-      const c = list.find((x) => String(x.id) === tacticCharSelectedId);
-      if (!c) return;
-      const cell = tacticCharTargetCell;
+      const c = list.find((x) => String(x.id) === selectedId);
+      if (!c) { closeTacticCharPopup(); return; }
       const btn = cell.querySelector('.clan-tactic-table__char-btn');
       if (btn) btn.remove();
 
@@ -4607,9 +4614,9 @@
       delBtn.type = 'button';
       delBtn.className = 'clan-tactic-table__boss-del';
       delBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
-      delBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+      delBtn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
         wrap.remove();
         hideTacticCharSlotExtras(cell);
         const newBtn = createCharImageButton(cell);
@@ -4621,6 +4628,8 @@
       cell.appendChild(wrap);
 
       showTacticCharSlotExtras(cell);
+      closeTacticCharPopup();
+    }).catch(() => {
       closeTacticCharPopup();
     });
   });
