@@ -4496,11 +4496,34 @@
       wrap.className = 'clan-tactic-table__boss-wrap';
 
       const img = document.createElement('img');
-      img.src = reader.result;
-      img.alt = '보스';
+      img.alt = '\uBCF4\uC2A4';
       img.className = 'clan-tactic-table__boss-img';
       img.width = 38;
       img.height = 38;
+
+      const tempImg = new Image();
+      tempImg.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 38;
+        canvas.height = 38;
+        const ctx = canvas.getContext('2d');
+
+        const scale = Math.min(38 / tempImg.naturalWidth, 38 / tempImg.naturalHeight);
+        const drawW = Math.round(tempImg.naturalWidth * scale);
+        const drawH = Math.round(tempImg.naturalHeight * scale);
+        const offsetX = Math.round((38 - drawW) / 2);
+        const offsetY = Math.round((38 - drawH) / 2);
+
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, 38, 38);
+        ctx.drawImage(tempImg, offsetX, offsetY, drawW, drawH);
+
+        img.src = canvas.toDataURL('image/png');
+      };
+      tempImg.onerror = () => {
+        img.src = reader.result;
+      };
+      tempImg.src = reader.result;
 
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
