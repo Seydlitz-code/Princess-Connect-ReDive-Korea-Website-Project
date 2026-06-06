@@ -3781,12 +3781,21 @@ button.future-type-badge {
   width: 140px;
 }
 
+.clan-tactic-table__col-spacer {
+  width: 12px;
+}
+
 .clan-tactic-table__col-boss {
   width: 80px;
 }
 
 .clan-tactic-table__col-slot {
   width: 80px;
+}
+
+.clan-tactic-table td.clan-tactic-table__spacer-cell {
+  padding: 0;
+  border: none;
 }
 
 .clan-tactic-table td {
