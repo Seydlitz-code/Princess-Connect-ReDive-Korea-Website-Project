@@ -3777,8 +3777,12 @@ button.future-type-badge {
   background: #fff;
 }
 
+.clan-tactic-table__col-narrow {
+  width: 40px;
+}
+
 .clan-tactic-table__col-label {
-  width: 70px;
+  width: 100px;
 }
 
 .clan-tactic-table__col-boss {

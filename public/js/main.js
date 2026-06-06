@@ -4017,7 +4017,7 @@
     const themeRow = document.createElement('tr');
     themeRow.className = 'clan-tactic-table__theme-row';
     const themeCell = document.createElement('td');
-    themeCell.colSpan = 7;
+    themeCell.colSpan = 8;
     themeCell.contentEditable = 'false';
 
     const themeInner = document.createElement('div');
@@ -4047,9 +4047,10 @@
     const tr1 = document.createElement('tr');
     tr1.className = 'clan-tactic-table__row clan-tactic-table__row--head';
 
-    // 0열: 데미지 입력 (rowSpan=4)
+    // 0-1열: 데미지 입력 (colSpan=2, rowSpan=4)  →  40px + 100px = 140px
     const dmgCell = document.createElement('td');
     dmgCell.className = 'clan-tactic-table__main-cell';
+    dmgCell.colSpan = 2;
     dmgCell.rowSpan = 4;
     dmgCell.contentEditable = 'false';
 
@@ -4072,7 +4073,7 @@
     dmgCell.appendChild(dmgInput);
     tr1.appendChild(dmgCell);
 
-    // 1열: 보스 이미지
+    // 2열: 보스 이미지
     const bossCell = document.createElement('td');
     bossCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__grid-cell--head clan-tactic-table__boss-cell';
     bossCell.contentEditable = 'false';
@@ -4092,12 +4093,12 @@
     bossCell.appendChild(bossBtn);
     tr1.appendChild(bossCell);
 
-    // 2-6열: 캐릭터 추가 × 5
-    for (let col = 2; col <= 6; col += 1) {
+    // 3-7열: 캐릭터 추가 × 5
+    for (let col = 3; col <= 7; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__grid-cell--head clan-tactic-table__char-cell';
       cell.contentEditable = 'false';
-      cell.dataset.tacticSlot = String(col - 1);
+      cell.dataset.tacticSlot = String(col - 2);
       const charBtn = createCharImageButton(cell);
       if (charBtn) cell.appendChild(charBtn);
       tr1.appendChild(cell);
@@ -4120,10 +4121,10 @@
     bossNameCell.appendChild(nameInput);
     tr2.appendChild(bossNameCell);
 
-    for (let col = 2; col <= 6; col += 1) {
+    for (let col = 3; col <= 7; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__char-name-cell';
-      cell.dataset.tacticSlot = String(col - 1);
+      cell.dataset.tacticSlot = String(col - 2);
       cell.contentEditable = 'true';
       cell.dataset.placeholder = '\uCE90\uB9AD\uD130\uBA85';
       tr2.appendChild(cell);
@@ -4144,10 +4145,10 @@
     charGradeLabelCell.appendChild(labelSpan);
     tr3.appendChild(charGradeLabelCell);
 
-    for (let col = 2; col <= 6; col += 1) {
+    for (let col = 3; col <= 7; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__star-grade-cell';
-      cell.dataset.tacticSlot = String(col - 1);
+      cell.dataset.tacticSlot = String(col - 2);
       cell.contentEditable = 'false';
       tr3.appendChild(cell);
     }
@@ -4167,10 +4168,10 @@
     rankLabelCell.appendChild(rankSpan);
     tr4.appendChild(rankLabelCell);
 
-    for (let col = 2; col <= 6; col += 1) {
+    for (let col = 3; col <= 7; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__rank-input-cell';
-      cell.dataset.tacticSlot = String(col - 1);
+      cell.dataset.tacticSlot = String(col - 2);
       cell.contentEditable = 'false';
       tr4.appendChild(cell);
     }
@@ -4180,22 +4181,23 @@
     const tr5 = document.createElement('tr');
     tr5.className = 'clan-tactic-table__row';
 
-    // 0열: ':'
+    // 0열: ':'  (좁은 열, 40px)
     const sepCell = document.createElement('td');
     sepCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__sep-cell';
     sepCell.contentEditable = 'false';
     sepCell.textContent = ':';
     tr5.appendChild(sepCell);
 
-    // 1열: '텍틱을 입력하세요.'
+    // 1-2열: '텍틱을 입력하세요.' (colSpan=2, 100px + 150px = 250px)
     const tacticTextCell = document.createElement('td');
     tacticTextCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__tactic-text-cell';
+    tacticTextCell.colSpan = 2;
     tacticTextCell.contentEditable = 'true';
     tacticTextCell.dataset.placeholder = '\uD14D\uD2F1\uC744 \uC785\uB825\uD558\uC138\uC694.';
     tr5.appendChild(tacticTextCell);
 
-    // 2-6열: '오토여부' ×5
-    for (let col = 2; col <= 6; col += 1) {
+    // 3-7열: '오토여부' ×5
+    for (let col = 3; col <= 7; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__auto-cell';
       cell.contentEditable = 'true';
@@ -4205,6 +4207,8 @@
     tbody.appendChild(tr5);
 
     const colgroup = document.createElement('colgroup');
+    const colNarrow = document.createElement('col');
+    colNarrow.className = 'clan-tactic-table__col-narrow';
     const colLabel = document.createElement('col');
     colLabel.className = 'clan-tactic-table__col-label';
     const colBoss = document.createElement('col');
@@ -4212,6 +4216,7 @@
     const colChars = document.createElement('col');
     colChars.span = 5;
     colChars.className = 'clan-tactic-table__col-slot';
+    colgroup.appendChild(colNarrow);
     colgroup.appendChild(colLabel);
     colgroup.appendChild(colBoss);
     colgroup.appendChild(colChars);
