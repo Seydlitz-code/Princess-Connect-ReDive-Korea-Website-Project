@@ -4047,10 +4047,10 @@
     const tr1 = document.createElement('tr');
     tr1.className = 'clan-tactic-table__row clan-tactic-table__row--head';
 
-    // 0열: 데미지 입력 (rowSpan=5)
+    // 0열: 데미지 입력 (rowSpan=4)
     const dmgCell = document.createElement('td');
     dmgCell.className = 'clan-tactic-table__main-cell';
-    dmgCell.rowSpan = 5;
+    dmgCell.rowSpan = 4;
     dmgCell.contentEditable = 'false';
 
     const dmgInput = document.createElement('input');
@@ -4174,26 +4174,19 @@
     }
     tbody.appendChild(tr4);
 
-    // 5행: 구분 행
+    // 4행: 구분 행
     const tr5 = document.createElement('tr');
     tr5.className = 'clan-tactic-table__row';
 
-    // 0열: 텍틱 입력 (데미지 입력 아래)
-    const textCell = document.createElement('td');
-    textCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__text-cell';
-    textCell.contentEditable = 'true';
-    textCell.dataset.placeholder = '\uD14D\uD2F1\uC744 \uC785\uB825\uD558\uC138\uC694.';
-    tr5.appendChild(textCell);
-
-    // 1열: ':' (보스명 아래)
+    // 0열: ':'
     const sepCell = document.createElement('td');
     sepCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__sep-cell';
     sepCell.contentEditable = 'false';
     sepCell.textContent = ':';
     tr5.appendChild(sepCell);
 
-    // 2-6열: 빈칸
-    for (let col = 2; col <= 6; col += 1) {
+    // 1-6열: 빈칸
+    for (let col = 1; col <= 6; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell';
       cell.innerHTML = '<br>';
