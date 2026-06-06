@@ -4494,8 +4494,8 @@
       img.src = reader.result;
       img.alt = '보스';
       img.className = 'clan-tactic-table__boss-img';
-      img.width = 64;
-      img.height = 64;
+      img.width = 38;
+      img.height = 38;
 
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
@@ -4641,8 +4641,8 @@
       const img = document.createElement('img');
       bindCharacterImage(img, c, { eager: true });
       img.className = 'clan-tactic-table__boss-img';
-      img.width = 64;
-      img.height = 64;
+      img.width = 38;
+      img.height = 38;
 
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
