@@ -3752,7 +3752,10 @@
       option.setAttribute('role', 'option');
       option.setAttribute('aria-selected', g === grade ? 'true' : 'false');
       if (g === grade) option.classList.add('is-selected');
-      option.appendChild(buildStarGradeIcons(g));
+      const numSpan = document.createElement('span');
+      numSpan.className = 'clan-tactic-table__star-grade-number';
+      numSpan.textContent = String(g);
+      option.appendChild(numSpan);
       option.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -4010,10 +4013,11 @@
       }
     }
 
+    // 0행: 테마 선택
     const themeRow = document.createElement('tr');
     themeRow.className = 'clan-tactic-table__theme-row';
     const themeCell = document.createElement('td');
-    themeCell.colSpan = 7;
+    themeCell.colSpan = 8;
     themeCell.contentEditable = 'false';
 
     const themeInner = document.createElement('div');
@@ -4039,148 +4043,165 @@
     applyTheme(themeRow, 1);
     tbody.appendChild(themeRow);
 
-    for (let row = 0; row < 4; row += 1) {
-      const tr = document.createElement('tr');
-      tr.className = row === 0 ? 'clan-tactic-table__row clan-tactic-table__row--head' : 'clan-tactic-table__row';
+    // 1행: 헤더 (보스 이미지 + 캐릭터 추가 × 6)
+    const tr1 = document.createElement('tr');
+    tr1.className = 'clan-tactic-table__row clan-tactic-table__row--head';
 
-      if (row === 0) {
-        const mainCell = document.createElement('td');
-        mainCell.className = 'clan-tactic-table__main-cell';
-        mainCell.rowSpan = 4;
-        mainCell.contentEditable = 'false';
+    // 0열: 데미지 입력 (rowSpan=5)
+    const dmgCell = document.createElement('td');
+    dmgCell.className = 'clan-tactic-table__main-cell';
+    dmgCell.rowSpan = 5;
+    dmgCell.contentEditable = 'false';
 
-        const dmgInput = document.createElement('input');
-        dmgInput.type = 'text';
-        dmgInput.className = 'clan-tactic-table__damage-input';
-        dmgInput.placeholder = '\uD14D\uD2F1 \uB370\uBBF8\uC9C0\uB97C \uC785\uB825\uD558\uC138\uC694.';
-        dmgInput.inputMode = 'numeric';
-        dmgInput.autocomplete = 'off';
-        dmgInput.addEventListener('input', () => {
-          let raw = dmgInput.value.replace(/[^0-9]/g, '');
-          if (raw.length > 10) raw = raw.slice(0, 10);
-          if (raw === '') {
-            dmgInput.value = '';
-          } else {
-            const num = parseInt(raw, 10);
-            dmgInput.value = num.toLocaleString('ko-KR');
-          }
-        });
-
-        mainCell.appendChild(dmgInput);
-        tr.appendChild(mainCell);
+    const dmgInput = document.createElement('input');
+    dmgInput.type = 'text';
+    dmgInput.className = 'clan-tactic-table__damage-input';
+    dmgInput.placeholder = '\uD14D\uD2F1 \uB370\uBBF8\uC9C0\uB97C \uC785\uB825\uD558\uC138\uC694.';
+    dmgInput.inputMode = 'numeric';
+    dmgInput.autocomplete = 'off';
+    dmgInput.addEventListener('input', () => {
+      let raw = dmgInput.value.replace(/[^0-9]/g, '');
+      if (raw.length > 10) raw = raw.slice(0, 10);
+      if (raw === '') {
+        dmgInput.value = '';
+      } else {
+        const num = parseInt(raw, 10);
+        dmgInput.value = num.toLocaleString('ko-KR');
       }
+    });
+    dmgCell.appendChild(dmgInput);
+    tr1.appendChild(dmgCell);
 
-      const col0Cell = document.createElement('td');
-      col0Cell.className = 'clan-tactic-table__grid-cell';
-      if (row === 0) col0Cell.classList.add('clan-tactic-table__grid-cell--head');
-
-      if (row === 0) {
-        col0Cell.classList.add('clan-tactic-table__boss-cell');
-        col0Cell.contentEditable = 'false';
-        const bossBtn = document.createElement('button');
-        bossBtn.type = 'button';
-        bossBtn.className = 'clan-tactic-table__boss-btn';
-        bossBtn.innerHTML = '<span class="clan-tactic-table__slot-label">\uBCF4\uC2A4 \uC774\uBBF8\uC9C0</span>';
-        bossBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const input = document.getElementById('clan-write-boss-image-input');
-          if (input) {
-            input._bossTargetCell = col0Cell;
-            input.click();
-          }
-        });
-        col0Cell.appendChild(bossBtn);
-      } else if (row === 1) {
-        col0Cell.classList.add('clan-tactic-table__name-cell');
-        col0Cell.contentEditable = 'false';
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.className = 'clan-tactic-table__bossname-input';
-        nameInput.placeholder = '\uBCF4\uC2A4\uBA85 \uC785\uB825';
-        nameInput.maxLength = 8;
-        nameInput.autocomplete = 'off';
-        col0Cell.appendChild(nameInput);
-      } else if (row === 2) {
-        col0Cell.classList.add('clan-tactic-table__star-cell', 'clan-tactic-table__no-edit');
-        col0Cell.contentEditable = 'false';
-        const starSpan = document.createElement('span');
-        starSpan.className = 'clan-tactic-table__star-icon';
-        starSpan.textContent = '\u2605';
-        starSpan.contentEditable = 'false';
-        col0Cell.appendChild(starSpan);
-      } else if (row === 3) {
-        col0Cell.classList.add('clan-tactic-table__rank-cell', 'clan-tactic-table__no-edit');
-        col0Cell.contentEditable = 'false';
-        const rankSpan = document.createElement('span');
-        rankSpan.className = 'clan-tactic-table__rank-text';
-        rankSpan.textContent = 'RANK';
-        rankSpan.contentEditable = 'false';
-        col0Cell.appendChild(rankSpan);
+    // 1열: 보스 이미지
+    const bossCell = document.createElement('td');
+    bossCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__grid-cell--head clan-tactic-table__boss-cell';
+    bossCell.contentEditable = 'false';
+    const bossBtn = document.createElement('button');
+    bossBtn.type = 'button';
+    bossBtn.className = 'clan-tactic-table__boss-btn';
+    bossBtn.innerHTML = '<span class="clan-tactic-table__slot-label">\uBCF4\uC2A4 \uC774\uBBF8\uC9C0</span>';
+    bossBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const input = document.getElementById('clan-write-boss-image-input');
+      if (input) {
+        input._bossTargetCell = bossCell;
+        input.click();
       }
-      tr.appendChild(col0Cell);
+    });
+    bossCell.appendChild(bossBtn);
+    tr1.appendChild(bossCell);
 
-      for (let col = 1; col < 6; col += 1) {
-        const cell = document.createElement('td');
-        cell.className = 'clan-tactic-table__grid-cell';
-        if (row === 0) cell.classList.add('clan-tactic-table__grid-cell--head');
-        if (row === 0) {
-          cell.classList.add('clan-tactic-table__char-cell');
-          cell.contentEditable = 'false';
-          cell.dataset.tacticSlot = String(col);
-          const charBtn = createCharImageButton(cell);
-          if (charBtn) cell.appendChild(charBtn);
-        } else if (row === 2) {
-          cell.classList.add('clan-tactic-table__star-grade-cell');
-          cell.dataset.tacticSlot = String(col);
-          cell.contentEditable = 'false';
-        } else if (row === 3) {
-          cell.classList.add('clan-tactic-table__rank-input-cell');
-          cell.dataset.tacticSlot = String(col);
-          cell.contentEditable = 'false';
-        } else {
-          cell.innerHTML = '<br>';
-        }
-        tr.appendChild(cell);
-      }
-
-      tbody.appendChild(tr);
+    // 2-7열: 캐릭터 추가 × 6
+    for (let col = 2; col <= 7; col += 1) {
+      const cell = document.createElement('td');
+      cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__grid-cell--head clan-tactic-table__char-cell';
+      cell.contentEditable = 'false';
+      cell.dataset.tacticSlot = String(col - 1);
+      const charBtn = createCharImageButton(cell);
+      if (charBtn) cell.appendChild(charBtn);
+      tr1.appendChild(cell);
     }
+    tbody.appendChild(tr1);
 
-    const timeRow = document.createElement('tr');
-    timeRow.className = 'clan-tactic-table__footer-row';
+    // 2행: 보스명 입력
+    const tr2 = document.createElement('tr');
+    tr2.className = 'clan-tactic-table__row';
 
-    const timeLabelCell = document.createElement('td');
-    timeLabelCell.className = 'clan-tactic-table__footer-narrow clan-tactic-table__time-cell';
-    timeLabelCell.contentEditable = 'false';
-    timeLabelCell.appendChild(createTacticTimeInput());
-    timeRow.appendChild(timeLabelCell);
+    const bossNameCell = document.createElement('td');
+    bossNameCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__name-cell';
+    bossNameCell.contentEditable = 'false';
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.className = 'clan-tactic-table__bossname-input';
+    nameInput.placeholder = '\uBCF4\uC2A4\uBA85 \uC785\uB825';
+    nameInput.maxLength = 8;
+    nameInput.autocomplete = 'off';
+    bossNameCell.appendChild(nameInput);
+    tr2.appendChild(bossNameCell);
 
-    const timeEmptyCells = document.createElement('td');
-    timeEmptyCells.className = 'clan-tactic-table__footer-wide';
-    timeEmptyCells.colSpan = 6;
-    timeEmptyCells.innerHTML = '<br>';
-    timeRow.appendChild(timeEmptyCells);
-    tbody.appendChild(timeRow);
+    for (let col = 2; col <= 7; col += 1) {
+      const cell = document.createElement('td');
+      cell.className = 'clan-tactic-table__grid-cell';
+      cell.innerHTML = '<br>';
+      tr2.appendChild(cell);
+    }
+    tbody.appendChild(tr2);
 
-    const textRow = document.createElement('tr');
-    textRow.className = 'clan-tactic-table__footer-row';
+    // 3행: 캐릭터 성급
+    const tr3 = document.createElement('tr');
+    tr3.className = 'clan-tactic-table__row';
+
+    const charGradeLabelCell = document.createElement('td');
+    charGradeLabelCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__star-cell clan-tactic-table__no-edit';
+    charGradeLabelCell.contentEditable = 'false';
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'clan-tactic-table__star-label';
+    labelSpan.textContent = '\uCE90\uB9AD\uD130 \uC131\uAE09';
+    labelSpan.contentEditable = 'false';
+    charGradeLabelCell.appendChild(labelSpan);
+    tr3.appendChild(charGradeLabelCell);
+
+    for (let col = 2; col <= 7; col += 1) {
+      const cell = document.createElement('td');
+      cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__star-grade-cell';
+      cell.dataset.tacticSlot = String(col - 1);
+      cell.contentEditable = 'false';
+      tr3.appendChild(cell);
+    }
+    tbody.appendChild(tr3);
+
+    // 4행: RANK
+    const tr4 = document.createElement('tr');
+    tr4.className = 'clan-tactic-table__row';
+
+    const rankLabelCell = document.createElement('td');
+    rankLabelCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__rank-cell clan-tactic-table__no-edit';
+    rankLabelCell.contentEditable = 'false';
+    const rankSpan = document.createElement('span');
+    rankSpan.className = 'clan-tactic-table__rank-text';
+    rankSpan.textContent = 'RANK';
+    rankSpan.contentEditable = 'false';
+    rankLabelCell.appendChild(rankSpan);
+    tr4.appendChild(rankLabelCell);
+
+    for (let col = 2; col <= 7; col += 1) {
+      const cell = document.createElement('td');
+      cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__rank-input-cell';
+      cell.dataset.tacticSlot = String(col - 1);
+      cell.contentEditable = 'false';
+      tr4.appendChild(cell);
+    }
+    tbody.appendChild(tr4);
+
+    // 5행: 구분 행
+    const tr5 = document.createElement('tr');
+    tr5.className = 'clan-tactic-table__row';
+
+    const sepCell = document.createElement('td');
+    sepCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__sep-cell';
+    sepCell.contentEditable = 'false';
+    sepCell.textContent = ':';
+    tr5.appendChild(sepCell);
 
     const textCell = document.createElement('td');
-    textCell.className = 'clan-tactic-table__footer-text';
+    textCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__text-cell';
     textCell.colSpan = 7;
     textCell.innerHTML = '<br>';
-    textRow.appendChild(textCell);
-    tbody.appendChild(textRow);
+    tr5.appendChild(textCell);
+    tbody.appendChild(tr5);
 
     const colgroup = document.createElement('colgroup');
-    const colDamage = document.createElement('col');
-    colDamage.className = 'clan-tactic-table__col-damage';
-    const colSlots = document.createElement('col');
-    colSlots.span = 6;
-    colSlots.className = 'clan-tactic-table__col-slot';
-    colgroup.appendChild(colDamage);
-    colgroup.appendChild(colSlots);
+    const colLabel = document.createElement('col');
+    colLabel.className = 'clan-tactic-table__col-label';
+    const colBoss = document.createElement('col');
+    colBoss.className = 'clan-tactic-table__col-boss';
+    const colChars = document.createElement('col');
+    colChars.span = 6;
+    colChars.className = 'clan-tactic-table__col-slot';
+    colgroup.appendChild(colLabel);
+    colgroup.appendChild(colBoss);
+    colgroup.appendChild(colChars);
     table.appendChild(colgroup);
     table.appendChild(tbody);
     wrap.appendChild(table);
