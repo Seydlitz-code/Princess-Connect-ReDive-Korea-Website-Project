@@ -3817,6 +3817,20 @@ button.future-type-badge {
   font-weight: 400;
   font-size: 0.8rem;
 }
+
+.clan-tactic-table__char-name-cell {
+  text-align: center;
+  vertical-align: middle;
+  font-size: 0.8rem;
+  min-height: 28px;
+  padding: 2px 4px;
+}
+
+.clan-tactic-table__char-name-cell:empty::before {
+  content: attr(data-placeholder);
+  color: #999;
+  pointer-events: none;
+  font-size: 0.75rem;
 }
 
 .clan-detail-body .clan-tactic-table-wrap {

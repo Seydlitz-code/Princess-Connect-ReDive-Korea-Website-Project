@@ -4122,8 +4122,10 @@
 
     for (let col = 2; col <= 6; col += 1) {
       const cell = document.createElement('td');
-      cell.className = 'clan-tactic-table__grid-cell';
-      cell.innerHTML = '<br>';
+      cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__char-name-cell';
+      cell.dataset.tacticSlot = String(col - 1);
+      cell.contentEditable = 'true';
+      cell.dataset.placeholder = '\uCE90\uB9AD\uD130\uBA85';
       tr2.appendChild(cell);
     }
     tbody.appendChild(tr2);
