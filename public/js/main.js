@@ -4485,65 +4485,91 @@
     const input = clanWriteBossImageInput;
     const file = input?.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const cell = input._bossTargetCell;
-      const btn = cell?.querySelector('.clan-tactic-table__boss-btn');
-      if (!cell || !btn) return;
-      btn.remove();
 
-      const wrap = document.createElement('div');
-      wrap.className = 'clan-tactic-table__boss-wrap';
+    const cell = input._bossTargetCell;
+    const btn = cell?.querySelector('.clan-tactic-table__boss-btn');
+    if (!cell || !btn) return;
 
-      const img = document.createElement('img');
-      img.alt = '\uBCF4\uC2A4';
-      img.className = 'clan-tactic-table__boss-img';
-      img.width = 38;
-      img.height = 38;
-
-      const tempImg = new Image();
-      tempImg.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 38;
-        canvas.height = 38;
-        const ctx = canvas.getContext('2d');
-
-        const scale = Math.min(38 / tempImg.naturalWidth, 38 / tempImg.naturalHeight);
-        const drawW = Math.round(tempImg.naturalWidth * scale);
-        const drawH = Math.round(tempImg.naturalHeight * scale);
-        const offsetX = Math.round((38 - drawW) / 2);
-        const offsetY = Math.round((38 - drawH) / 2);
-
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, 38, 38);
-        ctx.drawImage(tempImg, offsetX, offsetY, drawW, drawH);
-
-        img.src = canvas.toDataURL('image/png');
-      };
-      tempImg.onerror = () => {
-        img.src = reader.result;
-      };
-      tempImg.src = reader.result;
-
-      const delBtn = document.createElement('button');
-      delBtn.type = 'button';
-      delBtn.className = 'clan-tactic-table__boss-del';
-      delBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
-      delBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        wrap.remove();
-        cell.appendChild(createBossImageButton(cell));
+    const dataUrl = (() => {
+      const r = new FileReader();
+      return new Promise((resolve, reject) => {
+        r.onload = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+        r.readAsDataURL(file);
       });
+    })();
 
-      wrap.appendChild(img);
-      wrap.appendChild(delBtn);
-      cell.appendChild(wrap);
-
-      delete input._bossTargetCell;
-    };
-    reader.readAsDataURL(file);
     if (input) input.value = '';
+
+    (async () => {
+      try {
+        const src = await dataUrl;
+        await new Promise((resolve) => {
+          const tempImg = new Image();
+          tempImg.onload = resolve;
+          tempImg.onerror = resolve;
+          tempImg.src = src;
+        });
+
+        const CANVAS_SIZE = 200;
+        const canvas = document.createElement('canvas');
+        canvas.width = CANVAS_SIZE;
+        canvas.height = CANVAS_SIZE;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+        const tempImg = new Image();
+        await new Promise((resolve) => {
+          tempImg.onload = resolve;
+          tempImg.onerror = resolve;
+          tempImg.src = src;
+        });
+
+        if (tempImg.naturalWidth > 0 && tempImg.naturalHeight > 0) {
+          const scale = Math.min(CANVAS_SIZE / tempImg.naturalWidth, CANVAS_SIZE / tempImg.naturalHeight);
+          const drawW = Math.round(tempImg.naturalWidth * scale);
+          const drawH = Math.round(tempImg.naturalHeight * scale);
+          const offsetX = Math.round((CANVAS_SIZE - drawW) / 2);
+          const offsetY = Math.round((CANVAS_SIZE - drawH) / 2);
+          ctx.drawImage(tempImg, offsetX, offsetY, drawW, drawH);
+        }
+
+        const squaredDataUrl = canvas.toDataURL('image/png');
+
+        btn.remove();
+
+        const wrap = document.createElement('div');
+        wrap.className = 'clan-tactic-table__boss-wrap';
+
+        const img = document.createElement('img');
+        img.src = squaredDataUrl;
+        img.alt = '\uBCF4\uC2A4';
+        img.className = 'clan-tactic-table__boss-img';
+        img.width = 19;
+        img.height = 19;
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'clan-tactic-table__boss-del';
+        delBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+        delBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          wrap.remove();
+          cell.appendChild(createBossImageButton(cell));
+        });
+
+        wrap.appendChild(img);
+        wrap.appendChild(delBtn);
+        cell.appendChild(wrap);
+
+        delete input._bossTargetCell;
+      } catch (err) {
+        btn.remove();
+        cell.appendChild(createBossImageButton(cell));
+      }
+    })();
   });
 
   function createBossImageButton(cell) {
@@ -4669,8 +4695,8 @@
       const img = document.createElement('img');
       bindCharacterImage(img, c, { eager: true });
       img.className = 'clan-tactic-table__boss-img';
-      img.width = 38;
-      img.height = 38;
+      img.width = 19;
+      img.height = 19;
 
       const delBtn = document.createElement('button');
       delBtn.type = 'button';

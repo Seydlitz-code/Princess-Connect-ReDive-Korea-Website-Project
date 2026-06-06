@@ -3772,7 +3772,6 @@ button.future-type-badge {
   width: 100%;
   min-width: 780px;
   border-collapse: collapse;
-  table-layout: fixed;
   border: 1px solid #000;
   background: #fff;
 }
@@ -4201,10 +4200,10 @@ button.future-type-badge {
   text-align: center;
   vertical-align: middle;
   padding: 0;
-  width: 38px;
-  min-width: 38px;
-  max-width: 38px;
-  height: 38px;
+  width: 19px;
+  min-width: 19px;
+  max-width: 19px;
+  height: 19px;
   box-sizing: border-box;
 }
 
@@ -4212,12 +4211,12 @@ button.future-type-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 19px;
+  height: 19px;
   max-width: 100%;
-  padding: 2px;
-  border: 1.5px solid var(--nav-active, #1976d2);
-  border-radius: 6px;
+  padding: 1px;
+  border: 1px solid var(--nav-active, #1976d2);
+  border-radius: 4px;
   background: rgba(25, 118, 210, 0.08);
   cursor: pointer;
   color: var(--nav-active, #1976d2);
@@ -4550,10 +4549,10 @@ button.future-type-badge {
   text-align: center;
   vertical-align: middle;
   padding: 0;
-  width: 38px;
-  min-width: 38px;
-  max-width: 38px;
-  height: 38px;
+  width: 19px;
+  min-width: 19px;
+  max-width: 19px;
+  height: 19px;
   box-sizing: border-box;
 }
 
@@ -4561,12 +4560,12 @@ button.future-type-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 19px;
+  height: 19px;
   max-width: 100%;
-  padding: 2px;
-  border: 1.5px solid var(--nav-active, #1976d2);
-  border-radius: 6px;
+  padding: 1px;
+  border: 1px solid var(--nav-active, #1976d2);
+  border-radius: 4px;
   background: rgba(25, 118, 210, 0.08);
   cursor: pointer;
   color: var(--nav-active, #1976d2);
