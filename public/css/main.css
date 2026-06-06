@@ -3770,7 +3770,7 @@ button.future-type-badge {
 
 .clan-tactic-table {
   width: 100%;
-  min-width: 860px;
+  min-width: 780px;
   border-collapse: collapse;
   table-layout: fixed;
   border: 1px solid #000;
@@ -3778,7 +3778,7 @@ button.future-type-badge {
 }
 
 .clan-tactic-table__col-label {
-  width: 120px;
+  width: 140px;
 }
 
 .clan-tactic-table__col-boss {
@@ -4186,6 +4186,12 @@ button.future-type-badge {
   vertical-align: top;
   min-height: 60px;
   padding: 8px;
+}
+
+.clan-tactic-table__text-cell:empty::before {
+  content: attr(data-placeholder);
+  color: #999;
+  pointer-events: none;
 }
 
 .clan-detail-body .clan-tactic-table-wrap {

@@ -4017,7 +4017,7 @@
     const themeRow = document.createElement('tr');
     themeRow.className = 'clan-tactic-table__theme-row';
     const themeCell = document.createElement('td');
-    themeCell.colSpan = 8;
+    themeCell.colSpan = 7;
     themeCell.contentEditable = 'false';
 
     const themeInner = document.createElement('div');
@@ -4043,7 +4043,7 @@
     applyTheme(themeRow, 1);
     tbody.appendChild(themeRow);
 
-    // 1행: 헤더 (보스 이미지 + 캐릭터 추가 × 6)
+    // 1행: 헤더 (보스 이미지 + 캐릭터 추가 × 5)
     const tr1 = document.createElement('tr');
     tr1.className = 'clan-tactic-table__row clan-tactic-table__row--head';
 
@@ -4092,8 +4092,8 @@
     bossCell.appendChild(bossBtn);
     tr1.appendChild(bossCell);
 
-    // 2-7열: 캐릭터 추가 × 6
-    for (let col = 2; col <= 7; col += 1) {
+    // 2-6열: 캐릭터 추가 × 5
+    for (let col = 2; col <= 6; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__grid-cell--head clan-tactic-table__char-cell';
       cell.contentEditable = 'false';
@@ -4120,7 +4120,7 @@
     bossNameCell.appendChild(nameInput);
     tr2.appendChild(bossNameCell);
 
-    for (let col = 2; col <= 7; col += 1) {
+    for (let col = 2; col <= 6; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell';
       cell.innerHTML = '<br>';
@@ -4142,7 +4142,7 @@
     charGradeLabelCell.appendChild(labelSpan);
     tr3.appendChild(charGradeLabelCell);
 
-    for (let col = 2; col <= 7; col += 1) {
+    for (let col = 2; col <= 6; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__star-grade-cell';
       cell.dataset.tacticSlot = String(col - 1);
@@ -4165,7 +4165,7 @@
     rankLabelCell.appendChild(rankSpan);
     tr4.appendChild(rankLabelCell);
 
-    for (let col = 2; col <= 7; col += 1) {
+    for (let col = 2; col <= 6; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__rank-input-cell';
       cell.dataset.tacticSlot = String(col - 1);
@@ -4186,8 +4186,9 @@
 
     const textCell = document.createElement('td');
     textCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__text-cell';
-    textCell.colSpan = 7;
-    textCell.innerHTML = '<br>';
+    textCell.colSpan = 6;
+    textCell.contentEditable = 'true';
+    textCell.dataset.placeholder = '\uD14D\uD2F1\uC744 \uC785\uB825\uD558\uC138\uC694.';
     tr5.appendChild(textCell);
     tbody.appendChild(tr5);
 
@@ -4197,7 +4198,7 @@
     const colBoss = document.createElement('col');
     colBoss.className = 'clan-tactic-table__col-boss';
     const colChars = document.createElement('col');
-    colChars.span = 6;
+    colChars.span = 5;
     colChars.className = 'clan-tactic-table__col-slot';
     colgroup.appendChild(colLabel);
     colgroup.appendChild(colBoss);
