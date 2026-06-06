@@ -4195,6 +4195,35 @@
     }
     tbody.appendChild(tr4);
 
+    // 5행: 구분 행 (타임라인 + 오토여부)
+    const tr5 = document.createElement('tr');
+    tr5.className = 'clan-tactic-table__row';
+
+    // 0열: ':'
+    const sepCell = document.createElement('td');
+    sepCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__sep-cell';
+    sepCell.contentEditable = 'false';
+    sepCell.textContent = ':';
+    tr5.appendChild(sepCell);
+
+    // 1-2열: '텍틱을 입력하세요.' (colSpan=2)
+    const tacticTextCell = document.createElement('td');
+    tacticTextCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__tactic-text-cell';
+    tacticTextCell.colSpan = 2;
+    tacticTextCell.contentEditable = 'true';
+    tacticTextCell.dataset.placeholder = '\uD14D\uD2F1\uC744 \uC785\uB825\uD558\uC138\uC694.';
+    tr5.appendChild(tacticTextCell);
+
+    // 3-7열: '오토여부' ×5
+    for (let col = 3; col <= 7; col += 1) {
+      const cell = document.createElement('td');
+      cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__auto-cell';
+      cell.contentEditable = 'true';
+      cell.dataset.placeholder = '\uC624\uD1A0\uC5EC\uBD80';
+      tr5.appendChild(cell);
+    }
+    tbody.appendChild(tr5);
+
     const colgroup = document.createElement('colgroup');
     const colLabel = document.createElement('col');
     colLabel.className = 'clan-tactic-table__col-label';

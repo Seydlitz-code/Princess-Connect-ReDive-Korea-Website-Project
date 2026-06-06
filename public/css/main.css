@@ -4187,20 +4187,37 @@ button.future-type-badge {
   font-size: 1rem;
   color: #000;
   vertical-align: middle;
-  width: 40px;
   padding: 4px;
 }
 
-.clan-tactic-table__text-cell {
+.clan-tactic-table__tactic-text-cell {
   vertical-align: top;
   min-height: 60px;
   padding: 8px;
 }
 
-.clan-tactic-table__text-cell:empty::before {
+.clan-tactic-table__tactic-text-cell:empty::before {
   content: attr(data-placeholder);
   color: #999;
   pointer-events: none;
+}
+
+.clan-tactic-table__auto-cell {
+  text-align: center;
+  vertical-align: middle;
+  font-weight: 700;
+  font-size: 0.85rem;
+  min-height: 40px;
+  padding: 4px;
+}
+
+.clan-tactic-table__auto-cell:empty::before {
+  content: attr(data-placeholder);
+  color: #999;
+  pointer-events: none;
+  font-weight: 400;
+  font-size: 0.8rem;
+}
 }
 
 .clan-detail-body .clan-tactic-table-wrap {
