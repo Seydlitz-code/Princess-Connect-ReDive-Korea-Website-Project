@@ -3788,7 +3788,7 @@ button.future-type-badge {
 }
 
 .clan-tactic-table__col-slot {
-  width: 40px;
+  width: 60px;
 }
 
 .clan-tactic-table__tactic-text-cell {
@@ -4193,7 +4193,7 @@ button.future-type-badge {
   text-align: center;
   vertical-align: middle;
   padding: 0;
-  height: 10px;
+  height: 50px;
   box-sizing: border-box;
 }
 
@@ -4201,12 +4201,12 @@ button.future-type-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 10px;
-  height: 10px;
+  width: 50px;
+  height: 50px;
   max-width: 100%;
-  padding: 0;
-  border: 1px solid var(--nav-active, #1976d2);
-  border-radius: 2px;
+  padding: 2px;
+  border: 1.5px solid var(--nav-active, #1976d2);
+  border-radius: 6px;
   background: rgba(25, 118, 210, 0.08);
   cursor: pointer;
   color: var(--nav-active, #1976d2);
@@ -4539,7 +4539,7 @@ button.future-type-badge {
   text-align: center;
   vertical-align: middle;
   padding: 0;
-  height: 10px;
+  height: 50px;
   box-sizing: border-box;
 }
 
@@ -4547,12 +4547,12 @@ button.future-type-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 10px;
-  height: 10px;
+  width: 50px;
+  height: 50px;
   max-width: 100%;
-  padding: 0;
-  border: 1px solid var(--nav-active, #1976d2);
-  border-radius: 2px;
+  padding: 2px;
+  border: 1.5px solid var(--nav-active, #1976d2);
+  border-radius: 6px;
   background: rgba(25, 118, 210, 0.08);
   cursor: pointer;
   color: var(--nav-active, #1976d2);
@@ -4566,9 +4566,9 @@ button.future-type-badge {
 }
 
 .clan-tactic-table__slot-label {
-  font-size: 0.45rem;
+  font-size: 0.6rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.25;
   text-align: center;
   word-break: keep-all;
 }
