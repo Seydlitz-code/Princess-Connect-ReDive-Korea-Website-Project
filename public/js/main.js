@@ -4017,7 +4017,7 @@
     const themeRow = document.createElement('tr');
     themeRow.className = 'clan-tactic-table__theme-row';
     const themeCell = document.createElement('td');
-    themeCell.colSpan = 8;
+    themeCell.colSpan = 7;
     themeCell.contentEditable = 'false';
 
     const themeInner = document.createElement('div');
@@ -4072,13 +4072,7 @@
     dmgCell.appendChild(dmgInput);
     tr1.appendChild(dmgCell);
 
-    // 1열: 구분 열 (빈칸)
-    const spacer1 = document.createElement('td');
-    spacer1.className = 'clan-tactic-table__grid-cell clan-tactic-table__grid-cell--head clan-tactic-table__spacer-cell';
-    spacer1.contentEditable = 'false';
-    tr1.appendChild(spacer1);
-
-    // 2열: 보스 이미지
+    // 1열: 보스 이미지
     const bossCell = document.createElement('td');
     bossCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__grid-cell--head clan-tactic-table__boss-cell';
     bossCell.contentEditable = 'false';
@@ -4098,12 +4092,12 @@
     bossCell.appendChild(bossBtn);
     tr1.appendChild(bossCell);
 
-    // 3-7열: 캐릭터 추가 × 5
-    for (let col = 3; col <= 7; col += 1) {
+    // 2-6열: 캐릭터 추가 × 5
+    for (let col = 2; col <= 6; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__grid-cell--head clan-tactic-table__char-cell';
       cell.contentEditable = 'false';
-      cell.dataset.tacticSlot = String(col - 2);
+      cell.dataset.tacticSlot = String(col - 1);
       const charBtn = createCharImageButton(cell);
       if (charBtn) cell.appendChild(charBtn);
       tr1.appendChild(cell);
@@ -4113,11 +4107,6 @@
     // 2행: 보스명 입력
     const tr2 = document.createElement('tr');
     tr2.className = 'clan-tactic-table__row';
-
-    const spacer2 = document.createElement('td');
-    spacer2.className = 'clan-tactic-table__grid-cell clan-tactic-table__spacer-cell';
-    spacer2.contentEditable = 'false';
-    tr2.appendChild(spacer2);
 
     const bossNameCell = document.createElement('td');
     bossNameCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__name-cell';
@@ -4131,7 +4120,7 @@
     bossNameCell.appendChild(nameInput);
     tr2.appendChild(bossNameCell);
 
-    for (let col = 3; col <= 7; col += 1) {
+    for (let col = 2; col <= 6; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell';
       cell.innerHTML = '<br>';
@@ -4143,11 +4132,6 @@
     const tr3 = document.createElement('tr');
     tr3.className = 'clan-tactic-table__row';
 
-    const spacer3 = document.createElement('td');
-    spacer3.className = 'clan-tactic-table__grid-cell clan-tactic-table__spacer-cell';
-    spacer3.contentEditable = 'false';
-    tr3.appendChild(spacer3);
-
     const charGradeLabelCell = document.createElement('td');
     charGradeLabelCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__star-cell clan-tactic-table__no-edit';
     charGradeLabelCell.contentEditable = 'false';
@@ -4158,10 +4142,10 @@
     charGradeLabelCell.appendChild(labelSpan);
     tr3.appendChild(charGradeLabelCell);
 
-    for (let col = 3; col <= 7; col += 1) {
+    for (let col = 2; col <= 6; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__star-grade-cell';
-      cell.dataset.tacticSlot = String(col - 2);
+      cell.dataset.tacticSlot = String(col - 1);
       cell.contentEditable = 'false';
       tr3.appendChild(cell);
     }
@@ -4170,11 +4154,6 @@
     // 4행: RANK
     const tr4 = document.createElement('tr');
     tr4.className = 'clan-tactic-table__row';
-
-    const spacer4 = document.createElement('td');
-    spacer4.className = 'clan-tactic-table__grid-cell clan-tactic-table__spacer-cell';
-    spacer4.contentEditable = 'false';
-    tr4.appendChild(spacer4);
 
     const rankLabelCell = document.createElement('td');
     rankLabelCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__rank-cell clan-tactic-table__no-edit';
@@ -4186,10 +4165,10 @@
     rankLabelCell.appendChild(rankSpan);
     tr4.appendChild(rankLabelCell);
 
-    for (let col = 3; col <= 7; col += 1) {
+    for (let col = 2; col <= 6; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__rank-input-cell';
-      cell.dataset.tacticSlot = String(col - 2);
+      cell.dataset.tacticSlot = String(col - 1);
       cell.contentEditable = 'false';
       tr4.appendChild(cell);
     }
@@ -4206,16 +4185,15 @@
     sepCell.textContent = ':';
     tr5.appendChild(sepCell);
 
-    // 1-2열: '텍틱을 입력하세요.' (colSpan=2)
+    // 1열: '텍틱을 입력하세요.'
     const tacticTextCell = document.createElement('td');
     tacticTextCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__tactic-text-cell';
-    tacticTextCell.colSpan = 2;
     tacticTextCell.contentEditable = 'true';
     tacticTextCell.dataset.placeholder = '\uD14D\uD2F1\uC744 \uC785\uB825\uD558\uC138\uC694.';
     tr5.appendChild(tacticTextCell);
 
-    // 3-7열: '오토여부' ×5
-    for (let col = 3; col <= 7; col += 1) {
+    // 2-6열: '오토여부' ×5
+    for (let col = 2; col <= 6; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__auto-cell';
       cell.contentEditable = 'true';
@@ -4227,15 +4205,12 @@
     const colgroup = document.createElement('colgroup');
     const colLabel = document.createElement('col');
     colLabel.className = 'clan-tactic-table__col-label';
-    const colSpacer = document.createElement('col');
-    colSpacer.className = 'clan-tactic-table__col-spacer';
     const colBoss = document.createElement('col');
     colBoss.className = 'clan-tactic-table__col-boss';
     const colChars = document.createElement('col');
     colChars.span = 5;
     colChars.className = 'clan-tactic-table__col-slot';
     colgroup.appendChild(colLabel);
-    colgroup.appendChild(colSpacer);
     colgroup.appendChild(colBoss);
     colgroup.appendChild(colChars);
     table.appendChild(colgroup);
