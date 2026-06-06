@@ -3833,6 +3833,329 @@ button.future-type-badge {
   font-size: 0.75rem;
 }
 
+.clan-tactic-table td {
+  border: 1px solid #000;
+  padding: 6px 8px;
+  vertical-align: top;
+}
+
+.clan-tactic-table__main-cell {
+  width: auto;
+  min-height: 160px;
+  padding: 0;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.clan-tactic-table__damage-input {
+  width: 100%;
+  height: 100%;
+  min-height: 160px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  text-align: center;
+  background: transparent;
+  color: #000;
+  box-sizing: border-box;
+}
+
+.clan-tactic-table__damage-input:focus {
+  outline: none;
+}
+
+.clan-tactic-table__damage-input::placeholder {
+  font-weight: 400;
+  font-size: 0.95rem;
+  color: #aaa;
+  text-align: center;
+}
+
+.clan-tactic-table__bossname-input {
+  width: 100%;
+  height: 100%;
+  padding: 2px 4px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  border: none;
+  text-align: center;
+  background: transparent;
+  color: #000;
+}
+
+.clan-tactic-table__bossname-input:focus {
+  outline: none;
+}
+
+.clan-tactic-table__bossname-input::placeholder {
+  font-weight: 400;
+  color: #aaa;
+  font-size: 10px;
+}
+
+.clan-tactic-table__name-cell,
+.clan-tactic-table__star-cell,
+.clan-tactic-table__rank-cell {
+  width: 64px;
+  min-width: 64px;
+  max-width: 64px;
+  padding: 2px 4px;
+  box-sizing: border-box;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.clan-tactic-table__no-edit {
+  user-select: none;
+  cursor: default;
+  pointer-events: none;
+}
+
+.clan-tactic-table__no-edit .clan-tactic-table__star-label,
+.clan-tactic-table__no-edit .clan-tactic-table__rank-text {
+  pointer-events: none;
+}
+
+.clan-tactic-table__star-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #000;
+  line-height: 1.2;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.clan-tactic-table__sep-cell {
+  text-align: center;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #000;
+  vertical-align: middle;
+  padding: 4px;
+}
+
+.clan-tactic-table__rank-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #000;
+  letter-spacing: 0.05em;
+}
+
+.clan-tactic-table__rank-input {
+  width: 100%;
+  height: 100%;
+  min-height: 22px;
+  padding: 2px 2px;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 600;
+  border: none;
+  text-align: center;
+  background: transparent;
+  color: #000;
+  box-sizing: border-box;
+}
+
+.clan-tactic-table__rank-input:focus {
+  outline: none;
+}
+
+.clan-tactic-table__rank-input::placeholder {
+  font-weight: 400;
+  color: #aaa;
+  font-size: 8px;
+}
+
+.clan-tactic-table__grid-cell {
+  width: 64px;
+  min-width: 64px;
+  max-width: 64px;
+  padding: 0;
+  box-sizing: border-box;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.clan-tactic-table__grid-cell--head {
+  height: 64px;
+  min-height: 64px;
+  max-height: 64px;
+}
+
+.clan-tactic-table__star-grade-cell {
+  padding: 2px 0;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.clan-tactic-table__star-grade-cell--active {
+  pointer-events: auto;
+  overflow: visible;
+}
+
+.clan-tactic-table__star-grade-cell:not(.clan-tactic-table__star-grade-cell--active) {
+  pointer-events: none;
+}
+
+.clan-tactic-table__star-grade-slot[hidden] {
+  display: none;
+}
+
+.clan-tactic-table__star-grade-dial {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  pointer-events: auto;
+}
+
+.clan-tactic-table__star-grade-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  width: 100%;
+  min-height: 22px;
+  padding: 2px 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.clan-tactic-table__star-grade-trigger:hover {
+  background: #fafafa;
+}
+
+.clan-tactic-table__star-grade-chevron {
+  flex: 0 0 auto;
+  font-size: 0.65rem;
+  line-height: 1;
+  color: #374151;
+}
+
+.clan-tactic-table__star-grade-menu {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  min-width: 118px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  box-sizing: border-box;
+}
+
+.clan-tactic-table__star-grade-item {
+  margin: 0;
+  padding: 0;
+}
+
+.clan-tactic-table__star-grade-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.clan-tactic-table__star-grade-option:hover,
+.clan-tactic-table__star-grade-option.is-selected {
+  background: #e5e5e5;
+}
+
+.clan-tactic-table__star-grade-icons {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 1px;
+  line-height: 1;
+}
+
+.clan-tactic-table__star-grade-trigger .clan-tactic-table__star-grade-icons {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.clan-tactic-table__star-grade-trigger .clan-tactic-table__sg-star {
+  font-size: 0.48rem;
+}
+
+.clan-tactic-table__star-grade-option .clan-tactic-table__sg-star {
+  font-size: 0.72rem;
+}
+
+.clan-tactic-table__star-grade-icons[data-grade='6'] .clan-tactic-table__sg-star {
+  font-size: 0.62rem;
+}
+
+.clan-tactic-table__star-grade-trigger .clan-tactic-table__star-grade-icons[data-grade='6'] .clan-tactic-table__sg-star {
+  font-size: 0.4rem;
+}
+
+.clan-tactic-table__sg-star {
+  display: inline-block;
+  line-height: 1;
+}
+
+.clan-tactic-table__sg-star--filled {
+  color: #f5c400;
+}
+
+.clan-tactic-table__sg-star--empty {
+  color: #b8e4ff;
+  -webkit-text-stroke: 0.6px #1a56c4;
+  paint-order: stroke fill;
+}
+
+.clan-tactic-table__sg-star--pink {
+  color: #f5b4d4;
+}
+
+.clan-tactic-table__rank-input-cell {
+  padding: 2px 4px;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.clan-tactic-table__rank-input-cell:not(.clan-tactic-table__rank-input-cell--active) {
+  pointer-events: none;
+}
+
+.clan-tactic-table__rank-input-cell--active {
+  pointer-events: auto;
+}
+
+.clan-tactic-table__rank-input-slot[hidden] {
+  display: none;
+}
+
 .clan-detail-body .clan-tactic-table-wrap {
   white-space: normal;
 }
