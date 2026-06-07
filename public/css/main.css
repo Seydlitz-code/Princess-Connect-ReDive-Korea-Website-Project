@@ -3784,11 +3784,11 @@ button.future-type-badge {
 }
 
 .clan-tactic-table__col-boss {
-  width: 150px;
+  width: 75px;
 }
 
 .clan-tactic-table__col-slot {
-  width: 60px;
+  width: 75px;
 }
 
 .clan-tactic-table__tactic-text-cell {
@@ -4193,7 +4193,7 @@ button.future-type-badge {
   text-align: center;
   vertical-align: middle;
   padding: 0;
-  height: 50px;
+  height: 75px;
   box-sizing: border-box;
 }
 
@@ -4201,10 +4201,10 @@ button.future-type-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 50px;
-  height: 50px;
+  width: 75px;
+  height: 75px;
   max-width: 100%;
-  padding: 2px;
+  padding: 4px 2px;
   border: 1.5px solid var(--nav-active, #1976d2);
   border-radius: 6px;
   background: rgba(25, 118, 210, 0.08);
@@ -4539,7 +4539,7 @@ button.future-type-badge {
   text-align: center;
   vertical-align: middle;
   padding: 0;
-  height: 50px;
+  height: 75px;
   box-sizing: border-box;
 }
 
@@ -4547,10 +4547,10 @@ button.future-type-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 50px;
-  height: 50px;
+  width: 75px;
+  height: 75px;
   max-width: 100%;
-  padding: 2px;
+  padding: 4px 2px;
   border: 1.5px solid var(--nav-active, #1976d2);
   border-radius: 6px;
   background: rgba(25, 118, 210, 0.08);
@@ -4566,7 +4566,7 @@ button.future-type-badge {
 }
 
 .clan-tactic-table__slot-label {
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   font-weight: 600;
   line-height: 1.25;
   text-align: center;

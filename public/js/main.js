@@ -4532,8 +4532,8 @@
         img.src = squaredDataUrl;
         img.alt = '\uBCF4\uC2A4';
         img.className = 'clan-tactic-table__boss-img';
-        img.width = 50;
-        img.height = 50;
+        img.width = 75;
+        img.height = 75;
 
         const delBtn = document.createElement('button');
         delBtn.type = 'button';
@@ -4681,8 +4681,8 @@
       const img = document.createElement('img');
       bindCharacterImage(img, c, { eager: true });
       img.className = 'clan-tactic-table__boss-img';
-      img.width = 50;
-      img.height = 50;
+      img.width = 75;
+      img.height = 75;
 
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
