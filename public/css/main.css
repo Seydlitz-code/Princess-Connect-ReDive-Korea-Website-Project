@@ -4021,13 +4021,14 @@ button.future-type-badge {
 .clan-tactic-table__star-grade-trigger {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 2px;
-  width: 100%;
+  width: 50px;
+  margin: 0 auto;
   min-height: 22px;
   padding: 2px 4px;
   border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #fff;
   cursor: pointer;
   font: inherit;
@@ -4050,7 +4051,7 @@ button.future-type-badge {
 
 .clan-tactic-table__star-grade-chevron {
   flex: 0 0 auto;
-  font-size: 0.65rem;
+  font-size: 0.55rem;
   line-height: 1;
   color: #374151;
 }
