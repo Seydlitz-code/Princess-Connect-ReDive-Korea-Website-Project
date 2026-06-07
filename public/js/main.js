@@ -4504,8 +4504,8 @@
     (async () => {
       try {
         const src = await dataUrl;
+        const tempImg = new Image();
         await new Promise((resolve) => {
-          const tempImg = new Image();
           tempImg.onload = resolve;
           tempImg.onerror = resolve;
           tempImg.src = src;
@@ -4516,23 +4516,9 @@
         canvas.width = CANVAS_SIZE;
         canvas.height = CANVAS_SIZE;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-
-        const tempImg = new Image();
-        await new Promise((resolve) => {
-          tempImg.onload = resolve;
-          tempImg.onerror = resolve;
-          tempImg.src = src;
-        });
 
         if (tempImg.naturalWidth > 0 && tempImg.naturalHeight > 0) {
-          const scale = Math.min(CANVAS_SIZE / tempImg.naturalWidth, CANVAS_SIZE / tempImg.naturalHeight);
-          const drawW = Math.round(tempImg.naturalWidth * scale);
-          const drawH = Math.round(tempImg.naturalHeight * scale);
-          const offsetX = Math.round((CANVAS_SIZE - drawW) / 2);
-          const offsetY = Math.round((CANVAS_SIZE - drawH) / 2);
-          ctx.drawImage(tempImg, offsetX, offsetY, drawW, drawH);
+          ctx.drawImage(tempImg, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
         }
 
         const squaredDataUrl = canvas.toDataURL('image/png');
