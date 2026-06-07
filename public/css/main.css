@@ -3791,7 +3791,7 @@ button.future-type-badge {
   width: 75px;
 }
 
-.clan-tactic-table__tactic-text-cell {
+td.clan-tactic-table__tactic-text-cell {
   vertical-align: top;
   min-height: 60px;
   padding: 8px;
@@ -3803,7 +3803,7 @@ button.future-type-badge {
   pointer-events: none;
 }
 
-.clan-tactic-table__auto-cell {
+td.clan-tactic-table__auto-cell {
   text-align: center;
   vertical-align: middle;
   font-weight: 700;
@@ -3820,7 +3820,7 @@ button.future-type-badge {
   font-size: 0.8rem;
 }
 
-.clan-tactic-table__char-name-cell {
+td.clan-tactic-table__char-name-cell {
   text-align: center;
   vertical-align: middle;
   font-size: 0.8rem;
@@ -3841,7 +3841,7 @@ button.future-type-badge {
   vertical-align: top;
 }
 
-.clan-tactic-table__main-cell {
+td.clan-tactic-table__main-cell {
   width: auto;
   min-height: 160px;
   padding: 0;
@@ -3898,9 +3898,9 @@ button.future-type-badge {
   font-size: 10px;
 }
 
-.clan-tactic-table__name-cell,
-.clan-tactic-table__star-cell,
-.clan-tactic-table__rank-cell {
+td.clan-tactic-table__name-cell,
+td.clan-tactic-table__star-cell,
+td.clan-tactic-table__rank-cell {
   width: 64px;
   min-width: 64px;
   max-width: 64px;
@@ -3935,7 +3935,7 @@ button.future-type-badge {
   word-break: keep-all;
 }
 
-.clan-tactic-table__sep-cell {
+td.clan-tactic-table__sep-cell {
   text-align: center;
   font-weight: 700;
   font-size: 1rem;
@@ -3981,7 +3981,7 @@ button.future-type-badge {
   font-size: 8px;
 }
 
-.clan-tactic-table__grid-cell {
+td.clan-tactic-table__grid-cell {
   padding: 0;
   box-sizing: border-box;
   vertical-align: middle;
@@ -3991,7 +3991,7 @@ button.future-type-badge {
 .clan-tactic-table__grid-cell--head {
 }
 
-.clan-tactic-table__star-grade-cell {
+td.clan-tactic-table__star-grade-cell {
   padding: 2px 0;
   vertical-align: middle;
   text-align: center;
@@ -4145,7 +4145,7 @@ button.future-type-badge {
   color: #f5b4d4;
 }
 
-.clan-tactic-table__rank-input-cell {
+td.clan-tactic-table__rank-input-cell {
   padding: 2px 4px;
   vertical-align: middle;
   text-align: center;
@@ -4200,7 +4200,7 @@ button.future-type-badge {
   background: #fff;
 }
 
-.clan-tactic-table__char-cell {
+td.clan-tactic-table__char-cell {
   text-align: center;
   vertical-align: middle;
   padding: 0;
@@ -4546,7 +4546,7 @@ button.future-type-badge {
   margin-left: auto;
 }
 
-.clan-tactic-table__boss-cell {
+td.clan-tactic-table__boss-cell {
   text-align: center;
   vertical-align: middle;
   padding: 0;
