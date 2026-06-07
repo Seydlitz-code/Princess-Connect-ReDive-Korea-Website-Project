@@ -3724,20 +3724,28 @@
       grade = Math.min(TACTIC_STAR_GRADE_MAX, Math.max(TACTIC_STAR_GRADE_MIN, nextGrade));
       hiddenInput.value = String(grade);
       trigger.setAttribute('aria-label', `${grade}\uC131 \uC120\uD0DD`);
-      const currentIcons = trigger.querySelector('.clan-tactic-table__star-grade-icons');
-      if (currentIcons) currentIcons.replaceWith(buildStarGradeIcons(grade));
+      const currentLabel = trigger.querySelector('.clan-tactic-table__star-grade-label');
+      if (currentLabel) currentLabel.textContent = `${grade}\uC131`;
       menu.querySelectorAll('.clan-tactic-table__star-grade-option').forEach((btn) => {
         btn.classList.toggle('is-selected', Number(btn.dataset.grade) === grade);
       });
       closeMenu();
     }
 
-    function renderTriggerIcons() {
-      const existing = trigger.querySelector('.clan-tactic-table__star-grade-icons');
-      const icons = buildStarGradeIcons(grade);
-      if (existing) existing.replaceWith(icons);
-      else if (trigger.contains(chevron)) trigger.insertBefore(icons, chevron);
-      else trigger.appendChild(icons);
+    function renderTriggerLabel() {
+      const existing = trigger.querySelector('.clan-tactic-table__star-grade-label');
+      if (existing) existing.textContent = `${grade}\uC131`;
+      else if (trigger.contains(chevron)) {
+        const label = document.createElement('span');
+        label.className = 'clan-tactic-table__star-grade-label';
+        label.textContent = `${grade}\uC131`;
+        trigger.insertBefore(label, chevron);
+      } else {
+        const label = document.createElement('span');
+        label.className = 'clan-tactic-table__star-grade-label';
+        label.textContent = `${grade}\uC131`;
+        trigger.appendChild(label);
+      }
     }
 
     for (let g = TACTIC_STAR_GRADE_MIN; g <= TACTIC_STAR_GRADE_MAX; g += 1) {
@@ -3788,7 +3796,7 @@
     dial._starGradeDocCleanup = () => document.removeEventListener('click', onDocumentClick);
 
     trigger.appendChild(chevron);
-    renderTriggerIcons();
+    renderTriggerLabel();
     dial.appendChild(trigger);
     dial.appendChild(menu);
     dial.appendChild(hiddenInput);

@@ -4038,6 +4038,16 @@ button.future-type-badge {
   background: #fafafa;
 }
 
+.clan-tactic-table__star-grade-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #000;
+  line-height: 1;
+}
+
 .clan-tactic-table__star-grade-chevron {
   flex: 0 0 auto;
   font-size: 0.65rem;
@@ -4204,7 +4214,7 @@ button.future-type-badge {
   width: 75px;
   height: 75px;
   max-width: 100%;
-  padding: 4px 2px;
+  padding: 3px;
   border: 1.5px solid var(--nav-active, #1976d2);
   border-radius: 6px;
   background: rgba(25, 118, 210, 0.08);
@@ -4550,7 +4560,7 @@ button.future-type-badge {
   width: 75px;
   height: 75px;
   max-width: 100%;
-  padding: 4px 2px;
+  padding: 3px;
   border: 1.5px solid var(--nav-active, #1976d2);
   border-radius: 6px;
   background: rgba(25, 118, 210, 0.08);
