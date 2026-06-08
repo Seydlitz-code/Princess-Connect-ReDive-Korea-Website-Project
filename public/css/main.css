@@ -3853,10 +3853,12 @@ td.clan-tactic-table__auto-cell {
 
 td.clan-tactic-table__main-cell {
   width: auto;
-  min-height: 160px;
+  min-height: var(--tactic-image-slot-size, 82.5px);
+  height: var(--tactic-image-slot-size, 82.5px);
   padding: 0;
   vertical-align: middle;
   text-align: center;
+  box-sizing: border-box;
 }
 
 td.clan-tactic-table__main-cell--placeholder {
@@ -3869,7 +3871,6 @@ td.clan-tactic-table__main-cell--placeholder {
 .clan-tactic-table__damage-input {
   width: 100%;
   height: 100%;
-  min-height: 160px;
   padding: 8px 12px;
   font: inherit;
   font-size: 2rem;
