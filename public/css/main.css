@@ -3768,7 +3768,7 @@ button.future-type-badge {
 
 .clan-tactic-table {
   --tactic-image-size: 75px;
-  --tactic-image-slot-size: 78.75px;
+  --tactic-image-slot-size: 82.5px;
   width: 100%;
   min-width: 780px;
   border-collapse: collapse;
@@ -4211,6 +4211,7 @@ td.clan-tactic-table__char-cell {
   max-width: var(--tactic-image-slot-size);
   height: var(--tactic-image-slot-size);
   box-sizing: border-box;
+  line-height: 0;
 }
 
 .clan-tactic-table__char-btn {
@@ -4227,6 +4228,7 @@ td.clan-tactic-table__char-cell {
   cursor: pointer;
   color: var(--nav-active, #1976d2);
   font: inherit;
+  vertical-align: middle;
   transition: background 0.15s ease;
   box-sizing: border-box;
 }
@@ -4560,6 +4562,7 @@ td.clan-tactic-table__boss-cell {
   max-width: var(--tactic-image-slot-size);
   height: var(--tactic-image-slot-size);
   box-sizing: border-box;
+  line-height: 0;
 }
 
 .clan-tactic-table__boss-btn {
@@ -4576,6 +4579,7 @@ td.clan-tactic-table__boss-cell {
   cursor: pointer;
   color: var(--nav-active, #1976d2);
   font: inherit;
+  vertical-align: middle;
   transition: background 0.15s ease;
   box-sizing: border-box;
 }
@@ -4621,6 +4625,9 @@ td.clan-tactic-table__boss-cell {
   display: inline-block;
   width: var(--tactic-image-size);
   height: var(--tactic-image-size);
+  margin: 0 auto;
+  vertical-align: middle;
+  line-height: 0;
   border-radius: 4px;
   overflow: hidden;
 }
