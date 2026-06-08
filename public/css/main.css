@@ -3767,6 +3767,8 @@ button.future-type-badge {
 }
 
 .clan-tactic-table {
+  --tactic-image-size: 75px;
+  --tactic-image-slot-size: 78.75px;
   width: 100%;
   min-width: 780px;
   border-collapse: collapse;
@@ -3784,11 +3786,11 @@ button.future-type-badge {
 }
 
 .clan-tactic-table__col-boss {
-  width: 75px;
+  width: var(--tactic-image-slot-size);
 }
 
 .clan-tactic-table__col-slot {
-  width: 75px;
+  width: var(--tactic-image-slot-size);
 }
 
 td.clan-tactic-table__tactic-text-cell {
@@ -4204,7 +4206,8 @@ td.clan-tactic-table__char-cell {
   text-align: center;
   vertical-align: middle;
   padding: 0;
-  height: 75px;
+  width: var(--tactic-image-slot-size);
+  height: var(--tactic-image-slot-size);
   box-sizing: border-box;
 }
 
@@ -4212,8 +4215,8 @@ td.clan-tactic-table__char-cell {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 75px;
-  height: 75px;
+  width: var(--tactic-image-size);
+  height: var(--tactic-image-size);
   max-width: 100%;
   padding: 3px;
   border: 1.5px solid var(--nav-active, #1976d2);
@@ -4550,7 +4553,8 @@ td.clan-tactic-table__boss-cell {
   text-align: center;
   vertical-align: middle;
   padding: 0;
-  height: 75px;
+  width: var(--tactic-image-slot-size);
+  height: var(--tactic-image-slot-size);
   box-sizing: border-box;
 }
 
@@ -4558,8 +4562,8 @@ td.clan-tactic-table__boss-cell {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 75px;
-  height: 75px;
+  width: var(--tactic-image-size);
+  height: var(--tactic-image-size);
   max-width: 100%;
   padding: 3px;
   border: 1.5px solid var(--nav-active, #1976d2);
@@ -4599,7 +4603,10 @@ td.clan-tactic-table__boss-cell {
 .clan-tactic-table__boss-img {
   display: block;
   margin: 0 auto;
-  max-width: 100%;
+  width: var(--tactic-image-size);
+  height: var(--tactic-image-size);
+  max-width: var(--tactic-image-size);
+  max-height: var(--tactic-image-size);
   object-fit: contain;
   aspect-ratio: 1 / 1;
   border-radius: 4px;
@@ -4608,6 +4615,8 @@ td.clan-tactic-table__boss-cell {
 .clan-tactic-table__boss-wrap {
   position: relative;
   display: inline-block;
+  width: var(--tactic-image-size);
+  height: var(--tactic-image-size);
   border-radius: 4px;
   overflow: hidden;
 }

@@ -3918,6 +3918,7 @@
   }
 
   const TACTIC_TIME_MAX_TOTAL_SEC = 91;
+  const TACTIC_IMAGE_SIZE = 75;
 
   function createTacticTimeInput() {
     const wrap = document.createElement('div');
@@ -4540,8 +4541,8 @@
         img.src = squaredDataUrl;
         img.alt = '\uBCF4\uC2A4';
         img.className = 'clan-tactic-table__boss-img';
-        img.width = 75;
-        img.height = 75;
+        img.width = TACTIC_IMAGE_SIZE;
+        img.height = TACTIC_IMAGE_SIZE;
 
         const delBtn = document.createElement('button');
         delBtn.type = 'button';
@@ -4689,8 +4690,8 @@
       const img = document.createElement('img');
       bindCharacterImage(img, c, { eager: true });
       img.className = 'clan-tactic-table__boss-img';
-      img.width = 75;
-      img.height = 75;
+      img.width = TACTIC_IMAGE_SIZE;
+      img.height = TACTIC_IMAGE_SIZE;
 
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
