@@ -3813,7 +3813,6 @@ td.clan-tactic-table__auto-cell {
   vertical-align: middle;
   font-weight: 700;
   font-size: 0.85rem;
-  min-height: 40px;
   padding: 4px;
   height: 32px;
   box-sizing: border-box;
@@ -3827,7 +3826,7 @@ td.clan-tactic-table__auto-cell {
   font-size: 0.8rem;
 }
 
-td.clan-tactic-table__char-name-cell {
+.clan-tactic-table td.clan-tactic-table__char-name-cell {
   text-align: center;
   vertical-align: middle;
   font-size: 0.8rem;
