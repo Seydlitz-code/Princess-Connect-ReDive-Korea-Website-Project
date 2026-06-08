@@ -4098,11 +4098,10 @@
     const tr1 = document.createElement('tr');
     tr1.className = 'clan-tactic-table__row clan-tactic-table__row--head';
 
-    // 0-1열: 데미지 입력 (colSpan=2, rowSpan=4)  →  40px + 100px = 140px
+    // 0-1열: 데미지 입력 (colSpan=2)  →  80px + 130px = 210px
     const dmgCell = document.createElement('td');
     dmgCell.className = 'clan-tactic-table__main-cell';
     dmgCell.colSpan = 2;
-    dmgCell.rowSpan = 4;
     dmgCell.contentEditable = 'false';
 
     const dmgInput = document.createElement('input');
@@ -4160,6 +4159,14 @@
     const tr2 = document.createElement('tr');
     tr2.className = 'clan-tactic-table__row';
 
+    // 0-1열: 데미지 입력의 보스 영역 (colSpan=2, 빈 셀 - 경계선 유지)
+    const dmgPlaceholder2 = document.createElement('td');
+    dmgPlaceholder2.className = 'clan-tactic-table__main-cell clan-tactic-table__main-cell--placeholder';
+    dmgPlaceholder2.colSpan = 2;
+    dmgPlaceholder2.contentEditable = 'false';
+    tr2.appendChild(dmgPlaceholder2);
+
+    // 2열: 보스명 입력
     const bossNameCell = document.createElement('td');
     bossNameCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__name-cell';
     bossNameCell.contentEditable = 'false';
@@ -4186,6 +4193,14 @@
     const tr3 = document.createElement('tr');
     tr3.className = 'clan-tactic-table__row';
 
+    // 0-1열: 데미지 입력의 보스 영역 (colSpan=2, 빈 셀 - 경계선 유지)
+    const dmgPlaceholder3 = document.createElement('td');
+    dmgPlaceholder3.className = 'clan-tactic-table__main-cell clan-tactic-table__main-cell--placeholder';
+    dmgPlaceholder3.colSpan = 2;
+    dmgPlaceholder3.contentEditable = 'false';
+    tr3.appendChild(dmgPlaceholder3);
+
+    // 2열: 캐릭터 성급 라벨
     const charGradeLabelCell = document.createElement('td');
     charGradeLabelCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__star-cell clan-tactic-table__no-edit';
     charGradeLabelCell.contentEditable = 'false';
@@ -4209,6 +4224,14 @@
     const tr4 = document.createElement('tr');
     tr4.className = 'clan-tactic-table__row';
 
+    // 0-1열: 데미지 입력의 보스 영역 (colSpan=2, 빈 셀 - 경계선 유지)
+    const dmgPlaceholder4 = document.createElement('td');
+    dmgPlaceholder4.className = 'clan-tactic-table__main-cell clan-tactic-table__main-cell--placeholder';
+    dmgPlaceholder4.colSpan = 2;
+    dmgPlaceholder4.contentEditable = 'false';
+    tr4.appendChild(dmgPlaceholder4);
+
+    // 2열: RANK 라벨
     const rankLabelCell = document.createElement('td');
     rankLabelCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__rank-cell clan-tactic-table__no-edit';
     rankLabelCell.contentEditable = 'false';
