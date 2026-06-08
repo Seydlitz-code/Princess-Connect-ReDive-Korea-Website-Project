@@ -3832,8 +3832,11 @@ td.clan-tactic-table__char-name-cell {
   vertical-align: middle;
   font-size: 0.8rem;
   padding: 2px 4px;
-  height: 32px;
+  min-height: 32px;
   box-sizing: border-box;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .clan-tactic-table__char-name-cell:empty::before {

@@ -4145,7 +4145,7 @@
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__char-name-cell';
       cell.dataset.tacticSlot = String(col - 2);
-      cell.contentEditable = 'true';
+      cell.contentEditable = 'false';
       cell.dataset.placeholder = '\uCE90\uB9AD\uD130\uBA85';
       tr2.appendChild(cell);
     }
@@ -4752,6 +4752,15 @@
         ev.stopPropagation();
         wrap.remove();
         hideTacticCharSlotExtras(cell);
+        // Clear character name
+        const slot = cell.dataset.tacticSlot;
+        const table = cell.closest('.clan-tactic-table');
+        if (table && slot) {
+          const nameCell = table.querySelector(`.clan-tactic-table__char-name-cell[data-tactic-slot="${slot}"]`);
+          if (nameCell) {
+            nameCell.textContent = '';
+          }
+        }
         const newBtn = createCharImageButton(cell);
         if (newBtn) cell.appendChild(newBtn);
       });
@@ -4759,6 +4768,16 @@
       wrap.appendChild(img);
       wrap.appendChild(delBtn);
       cell.appendChild(wrap);
+
+      // Auto-fill character name
+      const slot = cell.dataset.tacticSlot;
+      const table = cell.closest('.clan-tactic-table');
+      if (table && slot) {
+        const nameCell = table.querySelector(`.clan-tactic-table__char-name-cell[data-tactic-slot="${slot}"]`);
+        if (nameCell) {
+          nameCell.textContent = c.name || '';
+        }
+      }
 
       showTacticCharSlotExtras(cell);
       closeTacticCharPopup();
