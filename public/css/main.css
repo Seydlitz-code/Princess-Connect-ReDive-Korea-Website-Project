@@ -3782,7 +3782,7 @@ button.future-type-badge {
 }
 
 .clan-tactic-table__col-label {
-  width: 130px;
+  width: auto;
 }
 
 .clan-tactic-table__col-boss {
@@ -3903,9 +3903,9 @@ td.clan-tactic-table__main-cell {
 td.clan-tactic-table__name-cell,
 td.clan-tactic-table__star-cell,
 td.clan-tactic-table__rank-cell {
-  width: 64px;
-  min-width: 64px;
-  max-width: 64px;
+  width: var(--tactic-image-slot-size);
+  min-width: var(--tactic-image-slot-size);
+  max-width: var(--tactic-image-slot-size);
   padding: 2px 4px;
   box-sizing: border-box;
   text-align: center;
@@ -4207,6 +4207,8 @@ td.clan-tactic-table__char-cell {
   vertical-align: middle;
   padding: 0;
   width: var(--tactic-image-slot-size);
+  min-width: var(--tactic-image-slot-size);
+  max-width: var(--tactic-image-slot-size);
   height: var(--tactic-image-slot-size);
   box-sizing: border-box;
 }
@@ -4554,6 +4556,8 @@ td.clan-tactic-table__boss-cell {
   vertical-align: middle;
   padding: 0;
   width: var(--tactic-image-slot-size);
+  min-width: var(--tactic-image-slot-size);
+  max-width: var(--tactic-image-slot-size);
   height: var(--tactic-image-slot-size);
   box-sizing: border-box;
 }
