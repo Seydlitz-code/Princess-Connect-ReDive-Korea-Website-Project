@@ -4050,7 +4050,9 @@
     deleteBtn.type = 'button';
     deleteBtn.className = 'clan-tactic-table__delete-btn';
     deleteBtn.textContent = '\uC0AD\uC81C';
-    deleteBtn.addEventListener('click', () => {
+    deleteBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       wrap.remove();
     });
 
