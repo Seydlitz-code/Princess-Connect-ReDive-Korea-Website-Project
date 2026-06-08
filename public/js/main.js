@@ -4046,7 +4046,16 @@
       applyTheme(themeRow, Number(themeSelect.value));
     });
 
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'clan-tactic-table__delete-btn';
+    deleteBtn.textContent = '\uC0AD\uC81C';
+    deleteBtn.addEventListener('click', () => {
+      wrap.remove();
+    });
+
     themeInner.appendChild(themeSelect);
+    themeInner.appendChild(deleteBtn);
     themeCell.appendChild(themeInner);
     themeRow.appendChild(themeCell);
     applyTheme(themeRow, 1);
@@ -4215,6 +4224,32 @@
     }
     tbody.appendChild(tr5);
 
+    // 6행: 추가 버튼 행
+    const tr6 = document.createElement('tr');
+    tr6.className = 'clan-tactic-table__row';
+
+    const addCell = document.createElement('td');
+    addCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__add-cell';
+    addCell.colSpan = 7;
+    addCell.contentEditable = 'false';
+
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'clan-tactic-table__add-tactic-btn';
+    addBtn.textContent = '+ \uD14D\uD2F1 \uCD94\uAC00';
+    addBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const newTbl = createTacticTableElement();
+      if (wrap && wrap.parentNode) {
+        wrap.parentNode.insertBefore(newTbl, wrap.nextSibling);
+      }
+    });
+
+    addCell.appendChild(addBtn);
+    tr6.appendChild(addCell);
+    tbody.appendChild(tr6);
+
     const colgroup = document.createElement('colgroup');
     const colNarrow = document.createElement('col');
     colNarrow.className = 'clan-tactic-table__col-narrow';
@@ -4243,7 +4278,13 @@
       el.src = reader.result;
       if (type === 'video') el.setAttribute('controls', '');
       el.style.maxWidth = '100%';
-      insertNodeAtCursor(el);
+      const brBefore = document.createElement('br');
+      const brAfter = document.createElement('br');
+      const frag = document.createDocumentFragment();
+      frag.appendChild(brBefore);
+      frag.appendChild(el);
+      frag.appendChild(brAfter);
+      insertNodeAtCursor(frag);
     };
     reader.readAsDataURL(file);
   }
@@ -4329,7 +4370,14 @@
   });
 
   clanWriteBtnTactic?.addEventListener('click', () => {
-    insertNodeAtCursor(createTacticTableElement());
+    const tbl = createTacticTableElement();
+    const brBefore = document.createElement('br');
+    const brAfter = document.createElement('br');
+    const frag = document.createDocumentFragment();
+    frag.appendChild(brBefore);
+    frag.appendChild(tbl);
+    frag.appendChild(brAfter);
+    insertNodeAtCursor(frag);
   });
 
   clanWriteLinkCancel?.addEventListener('click', () => {

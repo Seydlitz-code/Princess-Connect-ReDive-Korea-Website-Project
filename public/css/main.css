@@ -3778,7 +3778,7 @@ button.future-type-badge {
 }
 
 .clan-tactic-table__col-narrow {
-  width: 40px;
+  width: 80px;
 }
 
 .clan-tactic-table__col-label {
@@ -3797,6 +3797,7 @@ td.clan-tactic-table__tactic-text-cell {
   vertical-align: top;
   min-height: 60px;
   padding: 8px;
+  text-align: center;
 }
 
 .clan-tactic-table__tactic-text-cell:empty::before {
@@ -3964,8 +3965,9 @@ td.clan-tactic-table__sep-cell {
   min-height: 22px;
   padding: 2px 2px;
   font: inherit;
-  font-size: 9px;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
   border: none;
   text-align: center;
   background: transparent;
@@ -3980,7 +3982,7 @@ td.clan-tactic-table__sep-cell {
 .clan-tactic-table__rank-input::placeholder {
   font-weight: 400;
   color: #aaa;
-  font-size: 8px;
+  font-size: 0.85rem;
 }
 
 td.clan-tactic-table__grid-cell {
@@ -4200,6 +4202,23 @@ td.clan-tactic-table__rank-input-cell {
 .clan-tactic-table__theme-select option {
   color: #000;
   background: #fff;
+}
+
+.clan-tactic-table__delete-btn {
+  padding: 3px 12px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  background: #dc2626;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.clan-tactic-table__delete-btn:hover {
+  background: #b91c1c;
 }
 
 td.clan-tactic-table__char-cell {
@@ -4651,4 +4670,28 @@ td.clan-tactic-table__boss-cell {
 
 .clan-tactic-table__boss-del:hover {
   background: rgba(185, 28, 28, 0.9);
+}
+
+td.clan-tactic-table__add-cell {
+  text-align: center;
+  vertical-align: middle;
+  padding: 8px;
+  background: #fafafa;
+}
+
+.clan-tactic-table__add-tactic-btn {
+  padding: 6px 16px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--nav-active, #1976d2);
+  background: #fff;
+  border: 1.5px solid var(--nav-active, #1976d2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.clan-tactic-table__add-tactic-btn:hover {
+  background: rgba(25, 118, 210, 0.08);
 }
