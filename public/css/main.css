@@ -3793,43 +3793,6 @@ button.future-type-badge {
   width: var(--tactic-image-slot-size);
 }
 
-td.clan-tactic-table__tactic-text-cell {
-  vertical-align: middle;
-  min-height: 32px;
-  height: 32px;
-  padding: 6px 12px 6px 5px;
-  text-align: left;
-  box-sizing: border-box;
-}
-
-.clan-tactic-table__tactic-text-cell:empty::before {
-  content: attr(data-placeholder);
-  display: block;
-  text-align: left;
-  color: #999;
-  pointer-events: none;
-}
-
-td.clan-tactic-table__auto-cell {
-  text-align: center;
-  vertical-align: middle;
-  font-weight: 700;
-  font-size: 0.85rem;
-  padding: 4px 8px;
-  height: 32px;
-  box-sizing: border-box;
-}
-
-.clan-tactic-table__auto-cell:empty::before {
-  content: attr(data-placeholder);
-  display: block;
-  width: 100%;
-  text-align: center;
-  color: #999;
-  pointer-events: none;
-  font-weight: 400;
-  font-size: 0.8rem;
-}
 
 .clan-tactic-table td.clan-tactic-table__char-name-cell {
   text-align: center;
@@ -4013,6 +3976,48 @@ td.clan-tactic-table__grid-cell {
   box-sizing: border-box;
   vertical-align: middle;
   text-align: center;
+}
+
+td.clan-tactic-table__grid-cell.clan-tactic-table__tactic-text-cell,
+td.clan-tactic-table__grid-cell.clan-tactic-table__tactic-text-cell * {
+  text-align: left;
+}
+
+td.clan-tactic-table__grid-cell.clan-tactic-table__tactic-text-cell {
+  min-height: 32px;
+  height: 32px;
+  padding: 6px 12px 6px 2ch;
+}
+
+td.clan-tactic-table__grid-cell.clan-tactic-table__tactic-text-cell:empty::before {
+  content: attr(data-placeholder);
+  display: block;
+  text-align: left;
+  color: #999;
+  pointer-events: none;
+}
+
+td.clan-tactic-table__grid-cell.clan-tactic-table__auto-cell,
+td.clan-tactic-table__grid-cell.clan-tactic-table__auto-cell * {
+  text-align: center;
+}
+
+td.clan-tactic-table__grid-cell.clan-tactic-table__auto-cell {
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  height: 32px;
+}
+
+td.clan-tactic-table__grid-cell.clan-tactic-table__auto-cell:empty::before {
+  content: attr(data-placeholder);
+  display: block;
+  width: 100%;
+  text-align: center;
+  color: #999;
+  pointer-events: none;
+  font-weight: 400;
+  font-size: 0.8rem;
 }
 
 .clan-tactic-table__grid-cell--head {
