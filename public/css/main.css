@@ -716,8 +716,9 @@ body.is-mypage-route .header-mypage-title {
   padding-inline: clamp(10px, 1.8vw, 22px);
 }
 
-/* 클랜전 게시물 작성: 텍틱 표·슬롯 UI 가로 공간 확보 */
-.site-main:has(#clan-post-write:not([hidden])) {
+/* 클랜전 게시물 작성·상세: 텍틱 표·슬롯 UI 가로 공간 확보 */
+.site-main:has(#clan-post-write:not([hidden])),
+.site-main:has([data-board-panel="clan-post"].is-visible) {
   max-width: min(1360px, 98vw);
   padding-inline: clamp(12px, 2vw, 28px);
 }
@@ -3369,6 +3370,13 @@ button.future-type-badge {
 
 /* 포스트 상세 */
 
+.clan-post-page-shell {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 8px 0 32px;
+}
+
 .clan-post-detail {
   animation: fade-in 0.2s ease;
 }
@@ -3487,16 +3495,16 @@ button.future-type-badge {
 }
 
 .clan-detail-body {
-  padding: 24px;
-  background: #f4f4f6;
-  border-radius: 8px;
+  padding: 8px 0 0;
+  background: transparent;
+  border-radius: 0;
   margin-bottom: 0;
   font-size: 0.88rem;
   line-height: 1.65;
   color: var(--text);
   word-break: keep-all;
   overflow-wrap: break-word;
-  min-height: 360px;
+  min-height: 0;
   box-sizing: border-box;
 }
 

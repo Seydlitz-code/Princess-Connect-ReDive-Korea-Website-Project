@@ -3099,7 +3099,6 @@
   const clanPostList = document.getElementById('clan-post-list');
   const clanBoardEmpty = document.getElementById('clan-board-empty');
   const clanPagination = document.getElementById('clan-pagination');
-  const clanPostDetail = document.getElementById('clan-post-detail');
   const clanDetailContent = document.getElementById('clan-detail-content');
   const clanDetailBoardTitle = document.getElementById('clan-detail-board-title');
   const clanDetailEditBtn = document.getElementById('clan-detail-edit-btn');
@@ -3165,11 +3164,25 @@
   let clanBoardEditingPostId = null;
   let clanWriteCategory = 'none';
 
-  function setClanBoardListChromeVisible(visible) {
-    const clanBoardHeader = document.querySelector('.clan-board-header');
-    const bottomActions = document.getElementById('clan-board-bottom-actions');
-    if (clanBoardHeader) clanBoardHeader.hidden = !visible;
-    if (bottomActions && !visible) bottomActions.hidden = true;
+  function activateClanBoardListPanel() {
+    const writePanel = document.querySelector('[data-board-panel="clan-write"]');
+    panels.forEach((p) => {
+      const match = p.dataset.boardPanel === 'clan';
+      p.hidden = !match;
+      p.classList.toggle('is-visible', match);
+    });
+    if (writePanel) writePanel.hidden = true;
+  }
+
+  function activateClanPostPagePanel() {
+    const writePanel = document.querySelector('[data-board-panel="clan-write"]');
+    panels.forEach((p) => {
+      const match = p.dataset.boardPanel === 'clan-post';
+      p.hidden = !match;
+      p.classList.toggle('is-visible', match);
+    });
+    if (writePanel) writePanel.hidden = true;
+    document.body.classList.remove('is-mypage-route');
   }
 
   function getClanRoute() {
@@ -3178,6 +3191,10 @@
   }
 
   function navigateToClanPost(postId) {
+    const activeNav = links.find((b) => b.classList.contains('is-active'));
+    if (activeNav?.dataset.board && CLAN_SUB_BOARDS.has(activeNav.dataset.board)) {
+      clanBoardPreviousSubBoard = activeNav.dataset.board;
+    }
     const url = `/clan-board/post/${encodeURIComponent(postId)}`;
     history.pushState({ route: 'clan-post', postId }, '', url);
     showClanPostDetailView(postId);
@@ -3185,28 +3202,22 @@
 
   function navigateToClanBoard() {
     history.pushState({ route: 'clan-board' }, '', '/');
-    const panel = document.querySelector('[data-board-panel="clan"]');
-    if (panel && !panel.hidden) {
+    const activeNav = links.find((b) => b.classList.contains('is-active'));
+    const activeBoard = activeNav?.dataset.board;
+    if (activeBoard && CLAN_SUB_BOARDS.has(activeBoard)) {
+      activateClanBoardListPanel();
       loadClanBoardPosts();
     } else {
-      queueMicrotask(() => setActiveBoard('clan'));
+      queueMicrotask(() => setActiveBoard(clanBoardPreviousSubBoard || 'clan-fullauto'));
     }
   }
 
   function showClanPostDetailView(postId) {
-    const panel = document.querySelector('[data-board-panel="clan"]');
-    const writePanel = document.querySelector('[data-board-panel="clan-write"]');
-    if (writePanel) writePanel.hidden = true;
-    if (panel) panel.hidden = false;
-    if (!clanPostDetail || !clanDetailContent) return;
-    setClanBoardListChromeVisible(false);
-    clanPostList.hidden = true;
-    if (clanBoardEmpty) clanBoardEmpty.hidden = true;
-    clanPagination.hidden = true;
+    if (!clanDetailContent) return;
+    activateClanPostPagePanel();
     clanDetailActions.hidden = true;
     clanCommentsSection.hidden = true;
     if (clanCommentPagination) clanCommentPagination.hidden = true;
-    clanPostDetail.hidden = false;
     clanDetailContent.innerHTML = '<p style="text-align:center;color:var(--muted);padding:40px 0;">불러오는 중...</p>';
 
     fetch(`/api/clan-board/posts/${encodeURIComponent(postId)}/view`, { method: 'PATCH' }).catch(() => {});
@@ -3230,7 +3241,7 @@
   window.addEventListener('popstate', (e) => {
     const route = e.state ? e.state.route : getClanRoute().route;
     if (route === 'clan-board') {
-      clanPostDetail.hidden = true;
+      activateClanBoardListPanel();
       loadClanBoardPosts();
     } else if (route === 'clan-post' && e.state && e.state.postId) {
       showClanPostDetailView(e.state.postId);
@@ -3239,7 +3250,7 @@
       if (r.route === 'clan-post') {
         showClanPostDetailView(r.postId);
       } else {
-        clanPostDetail.hidden = true;
+        activateClanBoardListPanel();
         loadClanBoardPosts();
       }
     }
@@ -3250,15 +3261,6 @@
     const route = getClanRoute();
     if (route.route === 'clan-post') {
       history.replaceState({ route: 'clan-post', postId: route.postId }, '', window.location.pathname);
-      const panel = document.querySelector('[data-board-panel="clan"]');
-      const writePanel = document.querySelector('[data-board-panel="clan-write"]');
-      panels.forEach((p) => {
-        const match = p.dataset.boardPanel === 'clan';
-        p.hidden = !match;
-        p.classList.toggle('is-visible', match);
-      });
-      if (writePanel) writePanel.hidden = true;
-      if (panel) panel.hidden = false;
       document.querySelectorAll('.clan-dropdown-item').forEach((item) => {
         item.classList.toggle('is-active', item.dataset.board === 'clan-fullauto');
       });
@@ -3297,8 +3299,6 @@
 
   async function loadClanBoardPosts() {
     if (!clanPostList || !clanBoardEmpty || !clanPagination) return;
-    setClanBoardListChromeVisible(true);
-    clanPostDetail.hidden = true;
     clanBoardCurrentPostData = null;
     clanPostList.hidden = false;
     if (clanBoardEmpty) clanBoardEmpty.hidden = true;
