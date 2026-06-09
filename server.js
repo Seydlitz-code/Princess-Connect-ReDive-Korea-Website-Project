@@ -1860,13 +1860,21 @@ app.get('/api/clan-board/posts/:id', async (req, res) => {
     const row = result.rows[0];
 
     let liked = false;
+    let isAdmin = false;
     if (userId) {
       const likeResult = await pool.query(
         `SELECT 1 FROM clan_board_likes WHERE user_id = $1::uuid AND post_id = $2::uuid LIMIT 1`,
         [userId, id]
       );
       liked = likeResult.rowCount > 0;
+      const roleResult = await pool.query(
+        `SELECT COALESCE(role, 'user') AS role FROM users WHERE id = $1::uuid LIMIT 1`,
+        [userId]
+      );
+      isAdmin = roleResult.rows[0]?.role === 'admin';
     }
+
+    const isAuthor = userId && row.author_id === userId;
 
     res.json({
       ok: true,
@@ -1885,6 +1893,8 @@ app.get('/api/clan-board/posts/:id', async (req, res) => {
           profileImage: row.author_profile_image || null,
         },
         liked,
+        can_edit: Boolean(isAuthor),
+        can_delete: Boolean(isAuthor || isAdmin),
       },
     });
   } catch (err) {
@@ -2049,6 +2059,119 @@ app.post('/api/clan-board/posts', async (req, res) => {
       [userId, trimmedTitle, trimmedContent, trimmedCategory]
     );
     res.status(201).json({ ok: true, id: result.rows[0].id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+app.patch('/api/clan-board/posts/:id', async (req, res) => {
+  if (!clanBoardRequirePool(res)) return;
+  const secret = getSessionSecret();
+  if (!secret) {
+    res.status(503).json({ ok: false, error: '로그인 기능을 사용할 수 없습니다.' });
+    return;
+  }
+  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
+  if (!userId) {
+    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
+    return;
+  }
+
+  const { id } = req.params;
+  const { title, content, category } = req.body || {};
+  const trimmedTitle = String(title || '').trim();
+  const trimmedContent = String(content || '').trim();
+  const trimmedCategory = String(category || 'general').trim();
+
+  if (!trimmedTitle) {
+    res.status(400).json({ ok: false, error: '제목을 입력해 주세요.' });
+    return;
+  }
+  if (trimmedTitle.length > 30) {
+    res.status(400).json({ ok: false, error: '게시물 제목은 30자 이내로만 작성 가능합니다.' });
+    return;
+  }
+  if (!trimmedContent) {
+    res.status(400).json({ ok: false, error: '내용을 입력해 주세요.' });
+    return;
+  }
+  if (!CLAN_BOARD_VALID_CATEGORIES.includes(trimmedCategory)) {
+    res.status(400).json({ ok: false, error: '올바른 카테고리를 선택해 주세요.' });
+    return;
+  }
+
+  try {
+    const postResult = await pool.query(
+      `SELECT author_id FROM clan_board_posts WHERE id = $1::uuid LIMIT 1`,
+      [id]
+    );
+    if (postResult.rowCount === 0) {
+      res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
+      return;
+    }
+    if (postResult.rows[0].author_id !== userId) {
+      res.status(403).json({ ok: false, error: '게시물을 수정할 권한이 없습니다.' });
+      return;
+    }
+
+    const result = await pool.query(
+      `UPDATE clan_board_posts
+       SET title = $2, content = $3, category = $4, updated_at = NOW()
+       WHERE id = $1::uuid
+       RETURNING id, updated_at`,
+      [id, trimmedTitle, trimmedContent, trimmedCategory]
+    );
+    res.json({
+      ok: true,
+      id: result.rows[0].id,
+      updated_at: result.rows[0].updated_at?.toISOString?.() || result.rows[0].updated_at,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+app.delete('/api/clan-board/posts/:id', async (req, res) => {
+  if (!clanBoardRequirePool(res)) return;
+  const secret = getSessionSecret();
+  if (!secret) {
+    res.status(503).json({ ok: false, error: '로그인 기능을 사용할 수 없습니다.' });
+    return;
+  }
+  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
+  if (!userId) {
+    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
+    return;
+  }
+
+  const { id } = req.params;
+
+  try {
+    const postResult = await pool.query(
+      `SELECT author_id FROM clan_board_posts WHERE id = $1::uuid LIMIT 1`,
+      [id]
+    );
+    if (postResult.rowCount === 0) {
+      res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
+      return;
+    }
+
+    const isAuthor = postResult.rows[0].author_id === userId;
+    if (!isAuthor) {
+      const roleResult = await pool.query(
+        `SELECT COALESCE(role, 'user') AS role FROM users WHERE id = $1::uuid LIMIT 1`,
+        [userId]
+      );
+      if (roleResult.rows[0]?.role !== 'admin') {
+        res.status(403).json({ ok: false, error: '게시물을 삭제할 권한이 없습니다.' });
+        return;
+      }
+    }
+
+    await pool.query(`DELETE FROM clan_board_posts WHERE id = $1::uuid`, [id]);
+    res.json({ ok: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });

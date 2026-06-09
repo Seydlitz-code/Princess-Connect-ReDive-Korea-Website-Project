@@ -138,10 +138,16 @@
           </div>
           <div class="clan-post-detail" id="clan-post-detail" hidden>
             <div class="clan-post-detail-inner">
-              <button type="button" class="clan-detail-back" id="clan-detail-back">
-                <span aria-hidden="true">&larr;</span> 게시판으로 이동하기
-              </button>
+              <header class="clan-detail-page-header">
+                <h2 class="clan-detail-board-title" id="clan-detail-board-title">클랜전 게시판</h2>
+              </header>
+              <hr class="clan-detail-rule" aria-hidden="true" />
               <div id="clan-detail-content"></div>
+              <footer class="clan-detail-post-actions" id="clan-detail-post-actions">
+                <button type="button" class="btn btn-outline btn-sm" id="clan-detail-edit-btn" hidden>수정</button>
+                <button type="button" class="btn btn-outline btn-sm" id="clan-detail-delete-btn" hidden>삭제</button>
+                <button type="button" class="btn btn-primary btn-sm" id="clan-detail-write-btn">글쓰기</button>
+              </footer>
               <div class="clan-detail-actions" id="clan-detail-actions" hidden>
                 <button type="button" class="clan-like-btn" id="clan-like-btn" disabled>
                   <svg class="clan-like-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
