@@ -4003,6 +4003,47 @@
     return wrap;
   }
 
+  function isEffectivelyEmptyEditable(el) {
+    return (el.textContent || '').replace(/\u200B/g, '').trim() === '';
+  }
+
+  function bindTacticAutoCell(cell) {
+    function stopEditBubble(e) {
+      e.stopPropagation();
+    }
+
+    cell.addEventListener('mousedown', stopEditBubble);
+    cell.addEventListener('click', stopEditBubble);
+
+    cell.addEventListener('focus', () => {
+      if (!isEffectivelyEmptyEditable(cell)) return;
+
+      let editRoot = cell.querySelector('.clan-tactic-table__auto-cell-edit');
+      const firstChild = cell.firstElementChild;
+      if (!editRoot && firstChild?.tagName === 'DIV' && isEffectivelyEmptyEditable(firstChild)) {
+        firstChild.classList.add('clan-tactic-table__auto-cell-edit');
+        editRoot = firstChild;
+      }
+      if (!editRoot) {
+        cell.textContent = '';
+        editRoot = document.createElement('div');
+        editRoot.className = 'clan-tactic-table__auto-cell-edit';
+        editRoot.appendChild(document.createElement('br'));
+        cell.appendChild(editRoot);
+      }
+
+      requestAnimationFrame(() => {
+        const sel = window.getSelection();
+        if (!sel || !editRoot) return;
+        const range = document.createRange();
+        range.selectNodeContents(editRoot);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      });
+    });
+  }
+
   function createTacticInputRow() {
     const tr = document.createElement('tr');
     tr.className = 'clan-tactic-table__row';
@@ -4028,6 +4069,7 @@
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__auto-cell';
       cell.contentEditable = 'true';
       cell.dataset.placeholder = '\uC624\uD1A0\uC5EC\uBD80';
+      bindTacticAutoCell(cell);
       tr.appendChild(cell);
     }
 

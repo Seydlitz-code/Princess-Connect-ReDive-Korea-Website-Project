@@ -4003,16 +4003,31 @@ td.clan-tactic-table__grid-cell.clan-tactic-table__auto-cell * {
 }
 
 td.clan-tactic-table__grid-cell.clan-tactic-table__auto-cell {
+  position: relative;
   font-weight: 700;
   font-size: 0.85rem;
   padding: 4px 8px;
   height: 32px;
 }
 
-td.clan-tactic-table__grid-cell.clan-tactic-table__auto-cell:empty::before {
+.clan-tactic-table__auto-cell-edit {
+  text-align: center;
+  min-height: 1em;
+}
+
+td.clan-tactic-table__grid-cell.clan-tactic-table__auto-cell:is(
+  :empty,
+  :has(> br:only-child),
+  :has(> div:only-child:empty),
+  :has(> div:only-child > br:only-child),
+  :has(> p:only-child > br:only-child)
+)::before {
   content: attr(data-placeholder);
-  display: block;
-  width: 100%;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   color: #999;
   pointer-events: none;
