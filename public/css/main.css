@@ -3719,7 +3719,7 @@ button.future-type-badge {
 .clan-write-editor {
   font: inherit;
   width: 100%;
-  min-height: 260px;
+  min-height: 520px;
   padding: 14px;
   border: 1px solid var(--border);
   border-radius: 0 0 10px 10px;
@@ -3729,7 +3729,7 @@ button.future-type-badge {
   line-height: 1.65;
   outline: none;
   overflow-x: auto;
-  overflow-y: auto;
+  overflow-y: visible;
   word-break: keep-all;
   overflow-wrap: break-word;
 }
@@ -3797,13 +3797,15 @@ td.clan-tactic-table__tactic-text-cell {
   vertical-align: middle;
   min-height: 32px;
   height: 32px;
-  padding: 6px 12px;
+  padding: 6px 12px 6px 5px;
   text-align: left;
   box-sizing: border-box;
 }
 
 .clan-tactic-table__tactic-text-cell:empty::before {
   content: attr(data-placeholder);
+  display: block;
+  text-align: left;
   color: #999;
   pointer-events: none;
 }
@@ -3820,6 +3822,9 @@ td.clan-tactic-table__auto-cell {
 
 .clan-tactic-table__auto-cell:empty::before {
   content: attr(data-placeholder);
+  display: block;
+  width: 100%;
+  text-align: center;
   color: #999;
   pointer-events: none;
   font-weight: 400;
@@ -3842,20 +3847,6 @@ td.clan-tactic-table__auto-cell {
   white-space: normal;
   word-break: keep-all;
   overflow-wrap: break-word;
-}
-
-.clan-tactic-table__char-name-cell:empty::before {
-  content: attr(data-placeholder);
-  color: #999;
-  pointer-events: none;
-  font-size: 0.75rem;
-}
-
-.clan-tactic-table__char-name-text:empty::before {
-  content: '\uCE90\uB9AD\uD130\uBA85';
-  color: #999;
-  pointer-events: none;
-  font-size: 0.75rem;
 }
 
 .clan-tactic-table td {
