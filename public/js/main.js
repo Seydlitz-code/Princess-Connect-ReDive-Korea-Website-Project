@@ -4785,7 +4785,7 @@
         if (table && slot) {
           const nameCell = table.querySelector(`.clan-tactic-table__char-name-cell[data-tactic-slot="${slot}"]`);
           if (nameCell) {
-            nameCell.textContent = '';
+            while (nameCell.firstChild) nameCell.removeChild(nameCell.firstChild);
           }
         }
         const newBtn = createCharImageButton(cell);
@@ -4802,7 +4802,8 @@
       if (table && slot) {
         const nameCell = table.querySelector(`.clan-tactic-table__char-name-cell[data-tactic-slot="${slot}"]`);
         if (nameCell) {
-          nameCell.textContent = c.name || '';
+          while (nameCell.firstChild) nameCell.removeChild(nameCell.firstChild);
+          if (c.name) nameCell.appendChild(document.createTextNode(c.name));
         }
       }
 

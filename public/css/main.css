@@ -3888,7 +3888,7 @@ td.clan-tactic-table__main-cell--placeholder {
 
 .clan-tactic-table__damage-input::placeholder {
   font-weight: 400;
-  font-size: 0.95rem;
+  font-size: 2rem;
   color: #aaa;
   text-align: center;
 }
