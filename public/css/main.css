@@ -3838,8 +3838,21 @@ td.clan-tactic-table__auto-cell {
   overflow-wrap: break-word;
 }
 
+.clan-tactic-table__char-name-text {
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
 .clan-tactic-table__char-name-cell:empty::before {
   content: attr(data-placeholder);
+  color: #999;
+  pointer-events: none;
+  font-size: 0.75rem;
+}
+
+.clan-tactic-table__char-name-text:empty::before {
+  content: '\uCE90\uB9AD\uD130\uBA85';
   color: #999;
   pointer-events: none;
   font-size: 0.75rem;

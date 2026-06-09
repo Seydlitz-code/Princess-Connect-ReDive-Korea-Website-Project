@@ -4185,6 +4185,9 @@
       cell.dataset.tacticSlot = String(col - 2);
       cell.contentEditable = 'false';
       cell.dataset.placeholder = '\uCE90\uB9AD\uD130\uBA85';
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'clan-tactic-table__char-name-text';
+      cell.appendChild(nameSpan);
       tr2.appendChild(cell);
     }
     tbody.appendChild(tr2);
@@ -4785,7 +4788,8 @@
         if (table && slot) {
           const nameCell = table.querySelector(`.clan-tactic-table__char-name-cell[data-tactic-slot="${slot}"]`);
           if (nameCell) {
-            while (nameCell.firstChild) nameCell.removeChild(nameCell.firstChild);
+            const nameSpan = nameCell.querySelector('.clan-tactic-table__char-name-text');
+            if (nameSpan) nameSpan.textContent = '';
           }
         }
         const newBtn = createCharImageButton(cell);
@@ -4802,8 +4806,8 @@
       if (table && slot) {
         const nameCell = table.querySelector(`.clan-tactic-table__char-name-cell[data-tactic-slot="${slot}"]`);
         if (nameCell) {
-          while (nameCell.firstChild) nameCell.removeChild(nameCell.firstChild);
-          if (c.name) nameCell.appendChild(document.createTextNode(c.name));
+          const nameSpan = nameCell.querySelector('.clan-tactic-table__char-name-text');
+          if (nameSpan) nameSpan.textContent = c.name || '';
         }
       }
 
