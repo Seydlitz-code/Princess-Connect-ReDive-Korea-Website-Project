@@ -287,10 +287,10 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 
 | 파일 | 라인 수 | 역할 |
 |---|---|---|
-| `server.js` | ~2093 | 전체 백엔드 로직: 서버 기동, DB 스키마, 모든 API 라우트, 정적 파일 제공, 세션 관리 |
-| `public/index.html` | ~837 | SPA 셸: 모든 모달과 UI 섹션을 포함하는 단일 HTML |
-| `public/js/main.js` | ~3879 | 모든 프론트엔드 로직: API 호출, DOM 조작, 이벤트 처리, 상태 관리 |
-| `public/css/main.css` | ~3890 | 전체 스타일시트: 레이아웃, 테마, 반응형 디자인, 모달, 애니메이션, 텍틱 표 |
+| `server.js` | ~2302 | 전체 백엔드 로직: 서버 기동, DB 스키마, 모든 API 라우트, 정적 파일 제공, 세션 관리 |
+| `public/index.html` | ~890 | SPA 셸: 모든 모달과 UI 섹션을 포함하는 단일 HTML |
+| `public/js/main.js` | ~5079 | 모든 프론트엔드 로직: API 호출, DOM 조작, 이벤트 처리, 상태 관리 |
+| `public/css/main.css` | ~4877 | 전체 스타일시트: 레이아웃, 테마, 반응형 디자인, 모달, 애니메이션, 텍틱 표 |
 | `lib/sessionAuth.js` | — | HMAC-SHA256 세션 쿠키 생성/검증 유틸리티 |
 | `lib/userPiiCrypto.js` | — | AES-256-GCM 암호화 + Blind HMAC 인덱싱 |
 | `lib/signupCaptcha.js` | — | 커스텀 SVG 캡차 생성 및 검증 |
@@ -302,6 +302,34 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 ## 12. 버전 및 업데이트 내역
 
 Git 커밋 메시지(`프리코네 한섭 게임공략 웹사이트 / Ver X.X.X`) 기준으로 정리합니다. 최신 항목이 위에 옵니다.
+
+### Ver 0.4.8 (2026-06-10)
+
+- 게시물 등록 후 **텍틱 기록기 읽기 전용 처리** 버그 수정
+  - 근본 원인: 등록된 게시물의 텍틱 표 셀에 `contentEditable="true"` 속성이 그대로 남아 있어, 게시물 상세 보기에서도 텍스트 추가 입력이 가능했던 문제
+  - 수정: 게시물 상세 렌더링 시 `clan-detail-body` 내 모든 텍틱 표의 `contentEditable="true"` 요소를 `contentEditable="false"`로 변경, input/textarea/select/button 요소를 `disabled` 처리 (`public/js/main.js`)
+- 게시물 조회 모드에서 텍틱 기록기 **편집 UI 요소 숨김** (`public/css/main.css`)
+  - 테마 행(테마 선택 드롭다운·삭제 버튼) 숨김: `.clan-tactic-table__theme-row { display: none }`
+  - 보스 이미지 삭제 오버레이 버튼 숨김: `.clan-tactic-table__boss-del { display: none }`
+  - "+ 텍틱 추가" 버튼 행 숨김: `.clan-tactic-table__add-cell { display: none }`
+  - 성급 드롭다운 트리거 경계선 제거, 커서 기본값 변경
+  - 빈 텍틱 입력 셀·오토여부 셀 placeholder 텍스트 숨김
+  - 데미지 입력·보스명 입력 필드 placeholder 텍스트 숨김
+  - 비활성화된 입력 필드의 텍스트 색상이 흐려지지 않도록 스타일 보정
+
+### Ver 0.4.6.37 (2026-06-09)
+
+- **캐릭터명 자동 삽입 시 표 경계선 소실 문제 해결**
+  - 근본 원인: `contentEditable="false"`인 `<td>`에 `textContent`를 직접 설정할 때 Chromium contentEditable 엔진이 테이블 DOM 정규화(normalization)를 수행하여 `border-collapse` 환경에서 인접 셀 경계선이 사라지는 현상
+  - 수정: `<td>` 내부에 항상 `<span class="clan-tactic-table__char-name-text">` 자식을 유지하고, `textContent`는 `<span>`에만 적용하도록 변경
+- **데미지 입력 구역 확장으로 인한 이미지 셀 비정상적 세로 확장 문제 해결**
+  - `dmgCell`의 `rowSpan=4` 제거, tr2-tr4에 `colSpan=2` placeholder 셀 추가
+  - `main-cell` height를 `var(--tactic-image-slot-size)` (82.5px)로 축소
+  - `damage-input`의 `min-height: 160px` 제거
+- **bossname-input 오버플로우 수정**: `box-sizing: border-box` 추가
+- **"+ 텍틱 추가" 버튼 동작 변경**: 버튼 행 바로 위에 새 텍틱 입력 행 삽입, `createTacticInputRow()` 함수 분리
+- **텍스트 정렬 및 여백 조정**: tactic-text-cell, auto-cell, rank-input, char-name-cell 패딩 정리
+- **데미지 입력 폰트 크기 2배 증가**: `damage-input` font-size 1rem → 2rem
 
 ### Ver 0.4.7 (2026-05-31)
 

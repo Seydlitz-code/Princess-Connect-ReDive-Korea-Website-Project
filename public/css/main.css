@@ -4297,6 +4297,58 @@ td.clan-tactic-table__rank-input-cell {
   white-space: normal;
 }
 
+.clan-detail-body .clan-tactic-table__theme-row {
+  display: none;
+}
+
+.clan-detail-body .clan-tactic-table__boss-del {
+  display: none;
+}
+
+.clan-detail-body .clan-tactic-table__add-cell {
+  display: none;
+}
+
+.clan-detail-body .clan-tactic-table__star-grade-trigger {
+  border: none;
+  cursor: default;
+  background: transparent;
+}
+
+.clan-detail-body .clan-tactic-table__star-grade-trigger:hover {
+  background: transparent;
+}
+
+.clan-detail-body .clan-tactic-table__tactic-text-cell:empty::before {
+  content: none;
+}
+
+.clan-detail-body .clan-tactic-table__auto-cell:empty::before,
+.clan-detail-body .clan-tactic-table__auto-cell:has(> br:only-child)::before,
+.clan-detail-body .clan-tactic-table__auto-cell:has(> div:only-child:empty)::before,
+.clan-detail-body .clan-tactic-table__auto-cell:has(> div:only-child > br:only-child)::before,
+.clan-detail-body .clan-tactic-table__auto-cell:has(> p:only-child > br:only-child)::before {
+  content: none;
+}
+
+.clan-detail-body .clan-tactic-table__damage-input::placeholder {
+  opacity: 0;
+}
+
+.clan-detail-body .clan-tactic-table__bossname-input::placeholder {
+  opacity: 0;
+}
+
+.clan-detail-body .clan-tactic-table__damage-input:disabled {
+  opacity: 1;
+  -webkit-text-fill-color: #000;
+}
+
+.clan-detail-body .clan-tactic-table__bossname-input:disabled {
+  opacity: 1;
+  -webkit-text-fill-color: #000;
+}
+
 .clan-tactic-table__theme-row td {
   padding: 6px 10px;
   font-size: 0.85rem;

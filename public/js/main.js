@@ -3542,6 +3542,13 @@
     body.className = 'clan-detail-body';
     body.innerHTML = post.content;
 
+    body.querySelectorAll('.clan-tactic-table-wrap [contenteditable="true"]').forEach(function (el) {
+      el.contentEditable = 'false';
+    });
+    body.querySelectorAll('.clan-tactic-table-wrap input, .clan-tactic-table-wrap textarea, .clan-tactic-table-wrap select, .clan-tactic-table-wrap button').forEach(function (el) {
+      el.disabled = true;
+    });
+
     clanDetailContent.innerHTML = '';
     clanDetailContent.appendChild(title);
     clanDetailContent.appendChild(meta);
