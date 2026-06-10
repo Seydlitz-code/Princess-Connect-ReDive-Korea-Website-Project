@@ -719,7 +719,7 @@ body.is-mypage-route .header-mypage-title {
 /* 클랜전 게시물 작성·상세: 텍틱 표·슬롯 UI 가로 공간 확보 */
 .site-main:has(#clan-post-write:not([hidden])),
 .site-main:has([data-board-panel="clan-post"].is-visible) {
-  max-width: min(1360px, 98vw);
+  max-width: min(2040px, 98vw);
   padding-inline: clamp(12px, 2vw, 28px);
 }
 
@@ -3075,7 +3075,7 @@ button.future-type-badge {
 
   .clan-detail-body {
     padding: 16px;
-    margin-top: 12px;
+    margin-top: 0;
   }
 
   .clan-detail-action-btn {
@@ -3400,22 +3400,37 @@ button.future-type-badge {
 /* 포스트 상세 */
 
 .clan-post-page-shell {
+  --clan-detail-rule: 3px solid #000;
   width: 100%;
-  max-width: 960px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 24px 20px 32px;
+  box-sizing: border-box;
 }
 
 .clan-post-detail {
   animation: fade-in 0.2s ease;
+  width: 100%;
 }
 
 .clan-post-detail-inner {
+  width: 100%;
   padding-top: 0;
+  box-sizing: border-box;
+}
+
+#clan-detail-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
 }
 
 .clan-detail-board-title {
   margin: 0 0 14px;
+  width: 100%;
+  box-sizing: border-box;
   font-size: 1.25rem;
   font-weight: 900;
   letter-spacing: -0.02em;
@@ -3426,7 +3441,12 @@ button.future-type-badge {
 }
 
 .clan-detail-header-block {
-  border: 1px solid #000;
+  width: 100%;
+  box-sizing: border-box;
+  border-top: var(--clan-detail-rule);
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
 }
 
 .clan-detail-inner {
@@ -3461,9 +3481,8 @@ button.future-type-badge {
   line-height: 1.4;
   word-break: keep-all;
   overflow-wrap: break-word;
-  background: #ececec;
-  border-top: 3px solid #000;
-  border-bottom: 1px solid #000;
+  background: transparent;
+  border-bottom: var(--clan-detail-rule);
 }
 
 .clan-detail-meta-row {
@@ -3473,7 +3492,7 @@ button.future-type-badge {
   gap: 12px;
   margin: 0;
   padding: 10px 18px;
-  background: #fff;
+  background: transparent;
   font-size: 0.82rem;
 }
 
@@ -3506,10 +3525,11 @@ button.future-type-badge {
 }
 
 .clan-detail-body {
-  margin-top: 16px;
+  width: 100%;
+  margin-top: 0;
   padding: 24px 18px;
-  background: #ececec;
-  border: 1px solid #000;
+  background: transparent;
+  border: var(--clan-detail-rule);
   font-size: 0.9rem;
   line-height: 1.7;
   color: var(--text);
@@ -3530,6 +3550,8 @@ button.future-type-badge {
   justify-content: flex-end;
   align-items: center;
   gap: 0;
+  width: 100%;
+  box-sizing: border-box;
   margin-top: 16px;
   margin-bottom: 24px;
   padding: 0;
@@ -3567,6 +3589,8 @@ button.future-type-badge {
 .clan-detail-actions {
   display: flex;
   justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
   margin-bottom: 24px;
 }
 
@@ -3610,6 +3634,8 @@ button.future-type-badge {
 /* 댓글 섹션 */
 
 .clan-comments {
+  width: 100%;
+  box-sizing: border-box;
   border-top: 1px solid var(--border);
   padding-top: 20px;
 }
