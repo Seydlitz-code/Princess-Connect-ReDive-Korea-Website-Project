@@ -3496,6 +3496,9 @@
       clanDetailBoardTitle.textContent = getClanBoardNameDisplay();
     }
 
+    const headerBlock = document.createElement('div');
+    headerBlock.className = 'clan-detail-header-block';
+
     const title = document.createElement('h3');
     title.className = 'clan-detail-title';
     title.textContent = post.title;
@@ -3503,40 +3506,30 @@
     const meta = document.createElement('div');
     meta.className = 'clan-detail-meta-row';
 
-    const metaLeft = document.createElement('div');
-    metaLeft.className = 'clan-detail-meta-left';
     const author = document.createElement('span');
     author.className = 'clan-detail-author';
     author.textContent = post.author.nickname;
+
+    const views = document.createElement('span');
+    views.className = 'clan-detail-views';
+    views.textContent = `조회 ${post.view_count}`;
+
     const date = document.createElement('span');
     date.className = 'clan-detail-date';
     const edited = isClanPostEdited(post);
     date.textContent = formatClanFullDate(edited ? post.updated_at : post.created_at);
-    metaLeft.appendChild(author);
-    metaLeft.appendChild(date);
     if (edited) {
       const editedLabel = document.createElement('span');
       editedLabel.className = 'clan-detail-edited';
-      editedLabel.textContent = '(수정됨)';
-      metaLeft.appendChild(editedLabel);
+      editedLabel.textContent = ' (수정됨)';
+      date.appendChild(editedLabel);
     }
 
-    const metaRight = document.createElement('div');
-    metaRight.className = 'clan-detail-meta-right';
-    const views = document.createElement('span');
-    views.className = 'clan-detail-views';
-    views.textContent = `조회 ${post.view_count}`;
-    const commentBadge = document.createElement('span');
-    commentBadge.className = 'clan-detail-comment-badge';
-    commentBadge.textContent = `댓글 ${post.comment_count}`;
-    metaRight.appendChild(views);
-    metaRight.appendChild(commentBadge);
-    meta.appendChild(metaLeft);
-    meta.appendChild(metaRight);
-
-    const divider = document.createElement('hr');
-    divider.className = 'clan-detail-rule';
-    divider.setAttribute('aria-hidden', 'true');
+    meta.appendChild(author);
+    meta.appendChild(views);
+    meta.appendChild(date);
+    headerBlock.appendChild(title);
+    headerBlock.appendChild(meta);
 
     const body = document.createElement('div');
     body.className = 'clan-detail-body';
@@ -3550,9 +3543,7 @@
     });
 
     clanDetailContent.innerHTML = '';
-    clanDetailContent.appendChild(title);
-    clanDetailContent.appendChild(meta);
-    clanDetailContent.appendChild(divider);
+    clanDetailContent.appendChild(headerBlock);
     clanDetailContent.appendChild(body);
 
     if (clanDetailEditBtn) clanDetailEditBtn.hidden = !post.can_edit;
