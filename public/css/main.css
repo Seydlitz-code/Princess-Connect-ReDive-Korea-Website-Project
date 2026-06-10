@@ -4303,7 +4303,8 @@ td.clan-tactic-table__rank-input-cell {
 
 .clan-detail-body .clan-tactic-table__theme-select,
 .clan-detail-body .clan-tactic-table__delete-btn {
-  display: none;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .clan-detail-body .clan-tactic-table__boss-del {
