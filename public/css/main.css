@@ -3892,6 +3892,10 @@ button.future-type-badge {
   overflow-wrap: break-word;
 }
 
+.clan-tactic-table__char-name-paren {
+  white-space: nowrap;
+}
+
 .clan-tactic-table td {
   border: 1px solid #000;
   padding: 6px 8px;
@@ -4297,7 +4301,8 @@ td.clan-tactic-table__rank-input-cell {
   white-space: normal;
 }
 
-.clan-detail-body .clan-tactic-table__theme-row {
+.clan-detail-body .clan-tactic-table__theme-select,
+.clan-detail-body .clan-tactic-table__delete-btn {
   display: none;
 }
 

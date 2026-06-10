@@ -309,13 +309,17 @@ Git 커밋 메시지(`프리코네 한섭 게임공략 웹사이트 / Ver X.X.X`
   - 근본 원인: 등록된 게시물의 텍틱 표 셀에 `contentEditable="true"` 속성이 그대로 남아 있어, 게시물 상세 보기에서도 텍스트 추가 입력이 가능했던 문제
   - 수정: 게시물 상세 렌더링 시 `clan-detail-body` 내 모든 텍틱 표의 `contentEditable="true"` 요소를 `contentEditable="false"`로 변경, input/textarea/select/button 요소를 `disabled` 처리 (`public/js/main.js`)
 - 게시물 조회 모드에서 텍틱 기록기 **편집 UI 요소 숨김** (`public/css/main.css`)
-  - 테마 행(테마 선택 드롭다운·삭제 버튼) 숨김: `.clan-tactic-table__theme-row { display: none }`
-  - 보스 이미지 삭제 오버레이 버튼 숨김: `.clan-tactic-table__boss-del { display: none }`
-  - "+ 텍틱 추가" 버튼 행 숨김: `.clan-tactic-table__add-cell { display: none }`
+  - 테마 선택 드롭다운·삭제 버튼 숨김 (테마 행 배경색은 유지)
+  - 보스 이미지 삭제 오버레이 버튼 숨김
+  - "+ 텍틱 추가" 버튼 행 숨김
   - 성급 드롭다운 트리거 경계선 제거, 커서 기본값 변경
   - 빈 텍틱 입력 셀·오토여부 셀 placeholder 텍스트 숨김
   - 데미지 입력·보스명 입력 필드 placeholder 텍스트 숨김
   - 비활성화된 입력 필드의 텍스트 색상이 흐려지지 않도록 스타일 보정
+- **캐릭터명 자동 줄바꿈** 기능 추가 (`public/js/main.js`, `public/css/main.css`)
+  - `formatTacticCharName()` 함수: 한 줄 최대 6자, 공백 기준 줄바꿈 우선
+  - 괄호 `(` 앞에서 강제 줄바꿈 (`<br>` 삽입)
+  - `(`~`)` 구간은 `<span class="clan-tactic-table__char-name-paren">`으로 감싸 `white-space: nowrap` 적용하여 내부 줄바꿈 방지
 
 ### Ver 0.4.6.37 (2026-06-09)
 

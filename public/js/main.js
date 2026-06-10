@@ -4990,6 +4990,36 @@
   });
   tacticCharPopupSearchBtn?.addEventListener('click', filterTacticCharPicker);
 
+  function formatTacticCharName(name) {
+    if (!name) return '';
+    var parenIdx = name.indexOf('(');
+    var beforeParen = parenIdx !== -1 ? name.slice(0, parenIdx) : name;
+    var afterParen = parenIdx !== -1 ? name.slice(parenIdx) : '';
+    var result = '';
+    if (beforeParen) {
+      var lines = [];
+      var remaining = beforeParen;
+      while (remaining.length > 0) {
+        if (remaining.length <= 6) { lines.push(remaining); break; }
+        var chunk = remaining.slice(0, 6);
+        var spaceIdx = chunk.lastIndexOf(' ');
+        if (spaceIdx > 0) {
+          lines.push(remaining.slice(0, spaceIdx));
+          remaining = remaining.slice(spaceIdx + 1);
+        } else {
+          lines.push(chunk);
+          remaining = remaining.slice(6);
+        }
+      }
+      result += lines.join('<br>');
+    }
+    if (afterParen) {
+      if (parenIdx !== 0) result += '<br>';
+      result += '<span class="clan-tactic-table__char-name-paren">' + afterParen + '</span>';
+    }
+    return result;
+  }
+
   tacticCharPopupConfirm?.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -5030,7 +5060,7 @@
           const nameCell = table.querySelector(`.clan-tactic-table__char-name-cell[data-tactic-slot="${slot}"]`);
           if (nameCell) {
             const nameSpan = nameCell.querySelector('.clan-tactic-table__char-name-text');
-            if (nameSpan) nameSpan.textContent = '';
+            if (nameSpan) nameSpan.innerHTML = '';
           }
         }
         const newBtn = createCharImageButton(cell);
@@ -5048,7 +5078,7 @@
         const nameCell = table.querySelector(`.clan-tactic-table__char-name-cell[data-tactic-slot="${slot}"]`);
         if (nameCell) {
           const nameSpan = nameCell.querySelector('.clan-tactic-table__char-name-text');
-          if (nameSpan) nameSpan.textContent = c.name || '';
+          if (nameSpan) nameSpan.innerHTML = formatTacticCharName(c.name || '');
         }
       }
 
