@@ -3372,9 +3372,9 @@ button.future-type-badge {
 
 .clan-post-page-shell {
   width: 100%;
-  max-width: 100%;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 8px 0 32px;
+  padding: 24px 20px 32px;
 }
 
 .clan-post-detail {
@@ -3382,16 +3382,24 @@ button.future-type-badge {
 }
 
 .clan-post-detail-inner {
-  padding-top: 8px;
+  padding-top: 0;
 }
 
 .clan-detail-page-header {
   margin-bottom: 0;
+  border: 1px solid #000;
+  border-bottom: none;
+  background: #f7f7f7;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .clan-detail-board-title {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 900;
   letter-spacing: -0.02em;
   color: var(--text);
@@ -3402,8 +3410,10 @@ button.future-type-badge {
 
 .clan-detail-rule {
   border: none;
-  border-top: 1px solid var(--border);
-  margin: 16px 0;
+  border-top: 1px solid #000;
+  border-bottom: 1px solid #000;
+  margin: 0;
+  height: 0;
 }
 
 .clan-detail-inner {
@@ -3429,14 +3439,7 @@ button.future-type-badge {
 }
 
 .clan-detail-title {
-  margin: 0 0 12px;
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: var(--text);
-  letter-spacing: -0.02em;
-  line-height: 1.35;
-  word-break: keep-all;
-  overflow-wrap: break-word;
+  display: none;
 }
 
 .clan-detail-meta-row {
@@ -3446,12 +3449,17 @@ button.future-type-badge {
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 0;
+  padding: 12px 18px;
+  border: 1px solid #000;
+  border-top: none;
+  border-bottom: none;
+  background: #fff;
 }
 
 .clan-detail-meta-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
   font-size: 0.82rem;
   color: var(--muted);
@@ -3470,6 +3478,11 @@ button.future-type-badge {
 .clan-detail-author {
   font-weight: 700;
   color: var(--text);
+}
+
+.clan-detail-date {
+  color: var(--muted);
+  font-weight: 500;
 }
 
 .clan-detail-edited {
@@ -3495,16 +3508,18 @@ button.future-type-badge {
 }
 
 .clan-detail-body {
-  padding: 8px 0 0;
-  background: transparent;
-  border-radius: 0;
+  padding: 24px 18px;
+  background: #f0f0f0;
+  border: 1px solid #000;
+  border-top: none;
+  border-bottom: none;
   margin-bottom: 0;
-  font-size: 0.88rem;
-  line-height: 1.65;
+  font-size: 0.9rem;
+  line-height: 1.7;
   color: var(--text);
   word-break: keep-all;
   overflow-wrap: break-word;
-  min-height: 0;
+  min-height: 220px;
   box-sizing: border-box;
 }
 
@@ -3519,7 +3534,11 @@ button.future-type-badge {
   justify-content: flex-end;
   align-items: center;
   gap: 8px;
-  margin-top: 20px;
+  padding: 14px 18px;
+  border: 1px solid #000;
+  border-top: none;
+  background: #fff;
+  margin-top: 0;
   margin-bottom: 24px;
 }
 
@@ -4308,6 +4327,10 @@ td.clan-tactic-table__rank-input-cell {
 }
 
 .clan-detail-body .clan-tactic-table__boss-del {
+  display: none;
+}
+
+.clan-detail-body .clan-tactic-table__boss-btn {
   display: none;
 }
 
