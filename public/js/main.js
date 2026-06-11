@@ -3499,9 +3499,20 @@
     const headerBlock = document.createElement('div');
     headerBlock.className = 'clan-detail-header-block';
 
+    const titleBand = document.createElement('div');
+    titleBand.className = 'clan-detail-title-band';
+
+    const categoryBadge = document.createElement('span');
+    categoryBadge.className = 'clan-detail-category-badge';
+    const categoryKey = post.category || 'none';
+    categoryBadge.textContent = CATEGORY_LABELS[categoryKey] || CATEGORY_LABELS.none;
+
     const title = document.createElement('h3');
     title.className = 'clan-detail-title';
     title.textContent = post.title;
+
+    titleBand.appendChild(categoryBadge);
+    titleBand.appendChild(title);
 
     const meta = document.createElement('div');
     meta.className = 'clan-detail-meta-row';
@@ -3512,7 +3523,7 @@
 
     const views = document.createElement('span');
     views.className = 'clan-detail-views';
-    views.textContent = `조회 ${post.view_count}`;
+    views.textContent = `조회 ${post.view_count}  댓글 ${post.comment_count}`;
 
     const date = document.createElement('span');
     date.className = 'clan-detail-date';
@@ -3528,7 +3539,7 @@
     meta.appendChild(author);
     meta.appendChild(views);
     meta.appendChild(date);
-    headerBlock.appendChild(title);
+    headerBlock.appendChild(titleBand);
     headerBlock.appendChild(meta);
 
     const body = document.createElement('div');
