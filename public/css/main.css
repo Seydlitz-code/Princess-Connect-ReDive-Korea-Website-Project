@@ -3486,9 +3486,9 @@ button.future-type-badge {
   gap: 12px;
   width: 100%;
   box-sizing: border-box;
-  padding: 14px 18px;
+  padding: 8px 11px;
   background: #f8b6cc;
-  border-bottom: var(--clan-detail-rule);
+  border-bottom: none;
 }
 
 .clan-detail-category-badge {
@@ -3530,11 +3530,31 @@ button.future-type-badge {
   margin: 0;
   padding: 10px 18px;
   background: transparent;
+  border-bottom: var(--clan-detail-rule);
   font-size: 0.82rem;
 }
 
+.clan-detail-meta-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+  color: var(--muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.clan-detail-meta-info > span + span::before {
+  content: '|';
+  margin-right: 8px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
 .clan-detail-author {
-  flex: 1;
+  flex: 0 0 auto;
   min-width: 0;
   text-align: left;
   font-weight: 700;
@@ -3542,15 +3562,16 @@ button.future-type-badge {
 }
 
 .clan-detail-views {
-  flex: 1;
-  text-align: center;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.clan-detail-comment-count {
   color: var(--muted);
   font-weight: 500;
 }
 
 .clan-detail-date {
-  flex: 1;
-  text-align: right;
   color: var(--muted);
   font-weight: 500;
   white-space: nowrap;

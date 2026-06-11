@@ -3521,9 +3521,16 @@
     author.className = 'clan-detail-author';
     author.textContent = post.author.nickname;
 
+    const metaInfo = document.createElement('div');
+    metaInfo.className = 'clan-detail-meta-info';
+
     const views = document.createElement('span');
     views.className = 'clan-detail-views';
-    views.textContent = `조회 ${post.view_count}  댓글 ${post.comment_count}`;
+    views.textContent = `조회 ${post.view_count}`;
+
+    const commentCount = document.createElement('span');
+    commentCount.className = 'clan-detail-comment-count';
+    commentCount.textContent = `댓글 ${post.comment_count}`;
 
     const date = document.createElement('span');
     date.className = 'clan-detail-date';
@@ -3536,9 +3543,11 @@
       date.appendChild(editedLabel);
     }
 
+    metaInfo.appendChild(views);
+    metaInfo.appendChild(commentCount);
+    metaInfo.appendChild(date);
     meta.appendChild(author);
-    meta.appendChild(views);
-    meta.appendChild(date);
+    meta.appendChild(metaInfo);
     headerBlock.appendChild(titleBand);
     headerBlock.appendChild(meta);
 
