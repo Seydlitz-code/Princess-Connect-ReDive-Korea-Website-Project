@@ -3647,6 +3647,10 @@
     } catch (_) { /* ignore */ }
   }
 
+  clanDetailBoardTitle?.addEventListener('click', () => {
+    navigateToClanBoard();
+  });
+
   clanDetailWriteBtn?.addEventListener('click', () => {
     openClanWriteForm();
   });
