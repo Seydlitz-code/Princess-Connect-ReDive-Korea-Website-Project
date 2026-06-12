@@ -3109,7 +3109,6 @@
   const clanDetailEditBtn = document.getElementById('clan-detail-edit-btn');
   const clanDetailDeleteBtn = document.getElementById('clan-detail-delete-btn');
   const clanDetailWriteBtn = document.getElementById('clan-detail-write-btn');
-  const clanDetailActions = document.getElementById('clan-detail-actions');
   const clanLikeBtn = document.getElementById('clan-like-btn');
   const clanLikeText = document.getElementById('clan-like-text');
   const clanLikeCount = document.getElementById('clan-like-count');
@@ -3220,7 +3219,6 @@
   function showClanPostDetailView(postId) {
     if (!clanDetailContent) return;
     activateClanPostPagePanel();
-    clanDetailActions.hidden = true;
     clanCommentsSection.hidden = true;
     if (clanCommentPagination) clanCommentPagination.hidden = true;
     clanDetailContent.innerHTML = '<p style="text-align:center;color:var(--muted);padding:40px 0;">불러오는 중...</p>';
@@ -3576,7 +3574,6 @@
     if (clanDetailEditBtn) clanDetailEditBtn.hidden = !post.can_edit;
     if (clanDetailDeleteBtn) clanDetailDeleteBtn.hidden = !post.can_delete;
 
-    clanDetailActions.hidden = false;
     clanLikeBtn.classList.toggle('is-liked', !!clanBoardCurrentPostLiked);
     clanLikeCount.textContent = String(post.like_count);
     clanLikeText.textContent = clanBoardCurrentPostLiked ? '추천 취소' : '추천';

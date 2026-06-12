@@ -154,17 +154,18 @@
                 <button type="button" class="clan-detail-action-btn clan-detail-action-btn--danger" id="clan-detail-delete-btn" hidden>삭제</button>
                 <button type="button" class="clan-detail-action-btn clan-detail-action-btn--primary" id="clan-detail-write-btn">글쓰기</button>
               </footer>
-              <div class="clan-detail-actions" id="clan-detail-actions" hidden>
-                <button type="button" class="clan-like-btn" id="clan-like-btn" disabled>
-                  <svg class="clan-like-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                  </svg>
-                  <span id="clan-like-text">추천</span>
-                  <span class="clan-like-count" id="clan-like-count">0</span>
-                </button>
-              </div>
               <section class="clan-comments" id="clan-comments-section" hidden>
-                <h3 class="clan-comments-heading">댓글 <span id="clan-comment-count">0</span></h3>
+                <div class="clan-recommend-bar">
+                  <button type="button" class="clan-like-btn" id="clan-like-btn" disabled>
+                    <svg class="clan-like-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                    </svg>
+                    <span id="clan-like-text">추천</span>
+                    <span class="clan-like-count" id="clan-like-count">0</span>
+                  </button>
+                  <span class="clan-recommend-sep" aria-hidden="true"></span>
+                  <h3 class="clan-comments-heading"><span id="clan-comment-heading-text">댓글</span> <span class="clan-comment-count-bracket">[<span id="clan-comment-count">0</span>]</span></h3>
+                </div>
                 <div class="clan-comments-list" id="clan-comments-list" role="list"></div>
                 <nav class="clan-pagination" id="clan-comment-pagination" aria-label="댓글 페이지" hidden></nav>
                 <form class="clan-comment-write" id="clan-comment-write-form" hidden>

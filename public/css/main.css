@@ -3252,13 +3252,13 @@ button.future-type-badge {
 }
 
 .clan-post-header-cat {
-  justify-self: start;
+  text-align: center;
 }
 
 .clan-post-header-author,
 .clan-post-header-date,
 .clan-post-header-views {
-  text-align: left;
+  text-align: center;
 }
 
 .clan-post-num-cell {
@@ -3698,19 +3698,28 @@ button.future-type-badge {
   color: #fff;
 }
 
-/* 좋아요 버튼 */
+/* 추천 & 댓글 헤더 */
 
-.clan-detail-actions {
+.clan-recommend-bar {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: 0;
   width: 100%;
   box-sizing: border-box;
-  margin-bottom: 24px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.clan-recommend-sep {
+  flex: 1;
+  min-width: 12px;
 }
 
 .clan-like-btn {
   appearance: none;
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
   background: #fff;
   cursor: pointer;
   font: inherit;
@@ -3718,10 +3727,10 @@ button.future-type-badge {
   align-items: center;
   gap: 6px;
   padding: 8px 20px;
-  border-radius: 6px;
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--muted);
+  white-space: nowrap;
   transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 
@@ -3745,20 +3754,19 @@ button.future-type-badge {
   font-weight: 700;
 }
 
-/* 댓글 섹션 */
-
-.clan-comments {
-  width: 100%;
-  box-sizing: border-box;
-  border-top: 1px solid var(--border);
-  padding-top: 20px;
-}
+/* 댓글 헤딩 */
 
 .clan-comments-heading {
-  margin: 0 0 16px;
-  font-size: 1rem;
-  font-weight: 800;
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
   color: var(--text);
+  white-space: nowrap;
+}
+
+.clan-comment-count-bracket {
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .clan-comments-list {
