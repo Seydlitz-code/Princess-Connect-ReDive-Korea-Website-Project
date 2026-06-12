@@ -24,19 +24,23 @@
   let clanBoardCurrentSubBoard = 'clan-fullauto';
 
   function setActiveBoard(boardId) {
-    const mappedBoardId = boardId === 'clan' ? 'clan-fullauto' : boardId;
+    const mappedBoardId = boardId === 'clan' ? 'clan-all' : boardId;
     const isClanSub = CLAN_SUB_BOARDS.has(mappedBoardId);
     const panelBoardId = isClanSub ? 'clan' : mappedBoardId;
 
     const subTitleEl = document.getElementById('clan-board-subtitle');
     if (subTitleEl) {
-      subTitleEl.textContent = isClanSub ? `- ${CLAN_SUB_LABELS[mappedBoardId] || ''}` : '';
+      if (isClanSub && mappedBoardId !== 'clan-all') {
+        subTitleEl.textContent = `- ${CLAN_SUB_LABELS[mappedBoardId] || ''}`;
+      } else {
+        subTitleEl.textContent = '';
+      }
     }
 
     clanBoardCurrentSubBoard = isClanSub ? mappedBoardId : null;
 
     links.forEach((btn) => {
-      const on = btn.dataset.board === mappedBoardId || (isClanSub && btn.dataset.board === 'clan-fullauto');
+      const on = btn.dataset.board === mappedBoardId || (isClanSub && (btn.dataset.board === 'clan-fullauto' || btn.dataset.board === 'clan-all'));
       btn.classList.toggle('is-active', on);
       if (on) btn.setAttribute('aria-current', 'page');
       else btn.removeAttribute('aria-current');
@@ -57,7 +61,7 @@
 
     let activeBtn = links.find((b) => b.dataset.board === mappedBoardId);
     if (!activeBtn && isClanSub) {
-      activeBtn = links.find((b) => b.dataset.board === 'clan-fullauto');
+      activeBtn = links.find((b) => b.dataset.board === 'clan-all');
     }
     requestAnimationFrame(() => moveUnderline(activeBtn));
 
@@ -3212,7 +3216,7 @@
       activateClanBoardListPanel();
       loadClanBoardPosts();
     } else {
-      queueMicrotask(() => setActiveBoard(clanBoardPreviousSubBoard || 'clan-fullauto'));
+      queueMicrotask(() => setActiveBoard(clanBoardPreviousSubBoard || 'clan-all'));
     }
   }
 
@@ -3265,18 +3269,16 @@
     if (route.route === 'clan-post') {
       history.replaceState({ route: 'clan-post', postId: route.postId }, '', window.location.pathname);
       document.querySelectorAll('.clan-dropdown-item').forEach((item) => {
-        item.classList.toggle('is-active', item.dataset.board === 'clan-fullauto');
+        item.classList.toggle('is-active', item.dataset.board === 'clan-all');
       });
-      const clanFullautoLink = links.find((b) => b.dataset.board === 'clan-fullauto');
+      const clanAllLink = links.find((b) => b.dataset.board === 'clan-all');
       links.forEach((l) => {
-        const on = l === clanFullautoLink;
+        const on = l === clanAllLink;
         l.classList.toggle('is-active', on);
         if (on) l.setAttribute('aria-current', 'page');
         else l.removeAttribute('aria-current');
       });
-      if (clanFullautoLink) requestAnimationFrame(() => moveUnderline(clanFullautoLink));
-      const subTitleEl = document.getElementById('clan-board-subtitle');
-      if (subTitleEl) subTitleEl.textContent = '- 플오토';
+      if (clanAllLink) requestAnimationFrame(() => moveUnderline(clanAllLink));
       showClanPostDetailView(route.postId);
     }
   });
@@ -3321,7 +3323,7 @@
         window.alert(data.error || '게시물을 불러오지 못했습니다.');
         return;
       }
-      renderClanPostList(data.posts);
+      renderClanPostList(data.posts, data.pagination);
       renderClanPagination(clanPagination, data.pagination, (page) => {
         clanBoardPage = page;
         loadClanBoardPosts();
@@ -3341,7 +3343,7 @@
     }
   }
 
-  function renderClanPostList(posts) {
+  function renderClanPostList(posts, pagination) {
     if (!clanPostList) return;
     clanPostList.innerHTML = '';
 
@@ -3364,7 +3366,9 @@
     });
     clanPostList.appendChild(headerRow);
 
+    const total = pagination?.total || 0;
     const baseIndex = (clanBoardPage - 1) * 40;
+    let regularIdx = 0;
 
     posts.forEach((post, idx) => {
       const row = document.createElement('div');
@@ -3375,7 +3379,12 @@
 
       const numCell = document.createElement('div');
       numCell.className = 'clan-post-num-cell';
-      numCell.textContent = post.is_pinned ? '공지' : String(baseIndex + idx + 1);
+      if (post.is_pinned) {
+        numCell.textContent = '공지';
+      } else {
+        numCell.textContent = String(total - baseIndex - regularIdx);
+        regularIdx++;
+      }
 
       const catCell = document.createElement('div');
       catCell.className = 'clan-post-category-cell';
@@ -3761,12 +3770,12 @@
 
   /* 글쓰기 */
 
-  let clanBoardPreviousSubBoard = 'clan-fullauto';
+  let clanBoardPreviousSubBoard = 'clan-all';
   const clanWritePanel = document.querySelector('[data-board-panel="clan-write"]');
 
   function getClanBoardNameDisplay() {
     const activeNav = links.find((b) => b.classList.contains('is-active'));
-    const board = activeNav?.dataset.board || clanBoardPreviousSubBoard || 'clan-fullauto';
+    const board = activeNav?.dataset.board || clanBoardPreviousSubBoard || 'clan-all';
     if (board === 'clan-semi') return '클랜전 게시판 — 세미오토';
     if (board === 'clan-fullauto') return '클랜전 게시판 — 플오토';
     if (board === 'clan-all') return '클랜전 게시판 — 전체보기';
@@ -3801,7 +3810,7 @@
       return;
     }
     const activeNav = links.find((b) => b.classList.contains('is-active'));
-    clanBoardPreviousSubBoard = activeNav ? activeNav.dataset.board : 'clan-fullauto';
+    clanBoardPreviousSubBoard = activeNav ? activeNav.dataset.board : 'clan-all';
     if (!clanBoardEditingPostId) resetClanWriteEditingState();
 
     panels.forEach((panel) => {

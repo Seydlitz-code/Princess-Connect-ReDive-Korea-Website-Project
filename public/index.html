@@ -35,11 +35,11 @@
               <span class="nav-ja">メイン</span>
             </button>
             <button type="button" class="nav-link" data-board="free">
-              <span class="nav-ko">자유 게시판</span>
-              <span class="nav-ja">フリー掲示板</span>
+              <span class="nav-ko">자유</span>
+              <span class="nav-ja">フリー</span>
             </button>
             <span class="clan-nav-wrap">
-              <button type="button" class="nav-link" data-board="clan-fullauto">
+              <button type="button" class="nav-link" data-board="clan-all">
                 <span class="nav-ko">클랜전</span>
                 <span class="nav-ja">クランバトル</span>
               </button>
@@ -109,7 +109,29 @@
           <div class="future-main-banner future-main-banner--footer" aria-hidden="true"></div>
         </div>
       </section>
-      <section class="board-panel" data-board-panel="free" hidden aria-label="자유 게시판"></section>
+      <section class="board-panel" data-board-panel="free" hidden aria-label="자유 게시판">
+        <div class="clan-board-shell">
+          <header class="clan-board-header">
+            <h2 class="clan-board-title">자유 게시판</h2>
+            <div class="clan-board-toolbar">
+              <button type="button" class="btn btn-primary btn-sm clan-write-btn" id="free-write-open">글쓰기</button>
+            </div>
+          </header>
+          <div class="clan-post-list" id="free-post-list" role="list" aria-live="polite"></div>
+          <p class="clan-board-empty" id="free-board-empty" role="status" hidden>게시물이 없습니다.</p>
+          <nav class="clan-pagination" id="free-pagination" aria-label="페이지" hidden></nav>
+          <div class="clan-board-bottom-actions" id="free-board-bottom-actions" hidden>
+            <div class="clan-bottom-search-row">
+              <input type="search" class="clan-search-input" id="free-board-bottom-search" placeholder="제목 + 내용 검색" autocomplete="off" enterkeyhint="search" />
+              <button type="button" class="clan-search-btn" id="free-board-bottom-search-btn" aria-label="검색">
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 4 10.99 4 7.5S7.01 1 9.5 1 15 3.01 15 7.5 12.99 14 9.5 14z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
       <section class="board-panel" data-board-panel="clan" hidden aria-label="클랜전 게시판">
         <div class="clan-board-shell">
           <header class="clan-board-header">

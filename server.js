@@ -554,7 +554,13 @@ async function ensureSchema(client) {
     ALTER TABLE clan_board_posts ADD COLUMN IF NOT EXISTS sub_board VARCHAR(32) NOT NULL DEFAULT 'clan-fullauto';
   `);
   await client.query(`
+    ALTER TABLE clan_board_posts ADD COLUMN IF NOT EXISTS board VARCHAR(32) NOT NULL DEFAULT 'clan';
+  `);
+  await client.query(`
     CREATE INDEX IF NOT EXISTS idx_clan_board_posts_sub_board ON clan_board_posts(sub_board);
+  `);
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_clan_board_posts_board ON clan_board_posts(board);
   `);
 }
 
@@ -1755,9 +1761,15 @@ app.get('/api/clan-board/posts', async (req, res) => {
     const category = String(req.query.category || '').trim();
     const search = String(req.query.search || '').trim();
     const subBoard = String(req.query.sub_board || '').trim();
+    const board = String(req.query.board || 'clan').trim();
 
     const params = [];
     const conditions = [];
+
+    if (board && board !== 'all') {
+      params.push(board);
+      conditions.push(`p.board = $${params.length}`);
+    }
 
     if (category && CLAN_BOARD_VALID_CATEGORIES.includes(category)) {
       params.push(category);
@@ -2043,11 +2055,12 @@ app.post('/api/clan-board/posts', async (req, res) => {
     return;
   }
 
-  const { title, content, category, sub_board } = req.body || {};
+  const { title, content, category, sub_board, board } = req.body || {};
   const trimmedTitle = String(title || '').trim();
   const trimmedContent = String(content || '').trim();
   const trimmedCategory = String(category || 'none').trim();
   const trimmedSubBoard = String(sub_board || 'clan-fullauto').trim();
+  const trimmedBoard = String(board || 'clan').trim();
 
   if (!trimmedTitle) {
     res.status(400).json({ ok: false, error: '제목을 입력해 주세요.' });
@@ -2072,10 +2085,10 @@ app.post('/api/clan-board/posts', async (req, res) => {
 
   try {
     const result = await pool.query(
-      `INSERT INTO clan_board_posts (author_id, title, content, category, sub_board)
-       VALUES ($1::uuid, $2, $3, $4, $5)
+      `INSERT INTO clan_board_posts (author_id, title, content, category, sub_board, board)
+       VALUES ($1::uuid, $2, $3, $4, $5, $6)
        RETURNING id`,
-      [userId, trimmedTitle, trimmedContent, trimmedCategory, trimmedSubBoard]
+      [userId, trimmedTitle, trimmedContent, trimmedCategory, trimmedSubBoard, trimmedBoard]
     );
     res.status(201).json({ ok: true, id: result.rows[0].id });
   } catch (err) {
