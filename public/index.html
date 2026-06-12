@@ -100,10 +100,18 @@
       <section class="board-panel is-visible main-future-panel" data-board-panel="main" aria-label="메인 게시판">
         <div class="future-main-frame">
           <header class="future-main-banner future-main-banner--header" aria-label="미래시 제목">
-            <h1 class="future-main-title">
-              <span class="future-main-title-line">프린세스 커넥트! Re:Dive</span>
-              <span class="future-main-title-line">한국 서버 종합 미래시</span>
-            </h1>
+            <div class="future-main-header-inner">
+              <h1 class="future-main-title">
+                <span class="future-main-title-line">프린세스 커넥트! Re:Dive</span>
+                <span class="future-main-title-line">한국 서버 종합 미래시</span>
+              </h1>
+              <button type="button" class="future-toggle-btn" id="future-toggle-btn" aria-pressed="true" aria-label="미래시 접기">
+                <svg class="future-toggle-icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path fill="currentColor" d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/>
+                </svg>
+                <span class="future-toggle-label" id="future-toggle-label">접기</span>
+              </button>
+            </div>
           </header>
           <div id="future-main-sheet" class="future-main-sheet" aria-live="polite"></div>
           <div class="future-main-banner future-main-banner--footer" aria-hidden="true"></div>

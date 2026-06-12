@@ -734,6 +734,39 @@
   let ownedUpdateSelection = new Set();
   let sessionUserRole = 'guest';
   let futureSightState = null;
+
+  const futureToggleBtn = document.getElementById('future-toggle-btn');
+  const futureToggleLabel = document.getElementById('future-toggle-label');
+  const futureMainBannerFooter = document.querySelector('.future-main-banner--footer');
+  const STORAGE_KEY_FUTURE_TOGGLE = 'priconne_future_collapsed';
+
+  let futureCollapsed = false;
+
+  function applyFutureToggleState() {
+    if (!futureMainSheet || !futureToggleBtn) return;
+    futureMainSheet.classList.toggle('is-collapsed', futureCollapsed);
+    if (futureMainBannerFooter) {
+      futureMainBannerFooter.classList.toggle('is-collapsed', futureCollapsed);
+    }
+    futureToggleBtn.setAttribute('aria-pressed', String(!futureCollapsed));
+    if (futureToggleLabel) {
+      futureToggleLabel.textContent = futureCollapsed ? '펼치기' : '접기';
+    }
+    futureToggleBtn.setAttribute('aria-label', futureCollapsed ? '미래시 펼치기' : '미래시 접기');
+  }
+
+  futureToggleBtn?.addEventListener('click', () => {
+    futureCollapsed = !futureCollapsed;
+    applyFutureToggleState();
+    try {
+      localStorage.setItem(STORAGE_KEY_FUTURE_TOGGLE, futureCollapsed ? '1' : '0');
+    } catch (_) {}
+  });
+
+  try {
+    futureCollapsed = localStorage.getItem(STORAGE_KEY_FUTURE_TOGGLE) === '1';
+  } catch (_) {}
+  queueMicrotask(() => applyFutureToggleState());
   /** 메인 미래시 전용: 로그인 시 보유 캐릭터만 흑백 처리(null이면 게스트·전원 컬러) */
   let futureMainOwnedIdSet = /** @type {Set<string>|null} */ (null);
   let futureCharacterTarget = null;
@@ -1204,6 +1237,7 @@
       table.appendChild(row);
     });
     futureMainSheet.appendChild(table);
+    applyFutureToggleState();
   }
 
   function renderFutureAdmin() {

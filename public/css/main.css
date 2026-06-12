@@ -997,6 +997,44 @@ body.is-mypage-route .mypage-shell {
   background-repeat: no-repeat;
 }
 
+.future-main-header-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.future-toggle-btn {
+  appearance: none;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.3;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.future-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.85);
+}
+
+.future-toggle-btn .future-toggle-icon {
+  transition: transform 0.25s ease;
+}
+
+.future-toggle-btn[aria-pressed="false"] .future-toggle-icon {
+  transform: rotate(180deg);
+}
+
 .future-main-banner--footer {
   min-height: clamp(120px, 16vw, 260px);
   background-color: #1a2440;
@@ -1036,6 +1074,17 @@ body.is-mypage-route .mypage-shell {
   width: 100%;
   margin: 0;
   padding: 0;
+  transition: opacity 0.25s ease, max-height 0.35s ease;
+}
+
+.future-main-sheet.is-collapsed {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+}
+
+.future-main-banner--footer.is-collapsed {
+  display: none;
 }
 
 .future-main-table {
