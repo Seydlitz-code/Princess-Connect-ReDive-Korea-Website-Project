@@ -3126,6 +3126,11 @@ button.future-type-badge {
   gap: 8px;
 }
 
+[data-board-panel="free"] .clan-board-toolbar {
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 14px;
+}
+
 .clan-category-tabs {
   display: flex;
   gap: 0;
