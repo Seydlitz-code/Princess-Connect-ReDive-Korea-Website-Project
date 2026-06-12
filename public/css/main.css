@@ -3027,7 +3027,8 @@ button.future-type-badge {
 
   .clan-post-header-row .clan-post-header-author,
   .clan-post-header-row .clan-post-header-date,
-  .clan-post-header-row .clan-post-header-views {
+  .clan-post-header-row .clan-post-header-views,
+  .clan-post-header-row .clan-post-header-likes {
     display: none;
   }
 
@@ -3037,7 +3038,8 @@ button.future-type-badge {
 
   .clan-post-author-cell,
   .clan-post-date-cell,
-  .clan-post-views-cell {
+  .clan-post-views-cell,
+  .clan-post-likes-cell {
     display: none;
   }
 
@@ -3216,7 +3218,7 @@ button.future-type-badge {
 
 .clan-post-header-row {
   display: grid;
-  grid-template-columns: 45px 75px 1fr 90px 100px 55px;
+  grid-template-columns: 45px 75px 1fr 90px 100px 50px 55px;
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
@@ -3229,7 +3231,7 @@ button.future-type-badge {
 
 .clan-post-row {
   display: grid;
-  grid-template-columns: 45px 75px 1fr 90px 100px 55px;
+  grid-template-columns: 45px 75px 1fr 90px 100px 50px 55px;
   align-items: center;
   gap: 6px;
   padding: 10px 14px;
@@ -3257,7 +3259,8 @@ button.future-type-badge {
 
 .clan-post-header-author,
 .clan-post-header-date,
-.clan-post-header-views {
+.clan-post-header-views,
+.clan-post-header-likes {
   text-align: center;
 }
 
@@ -3269,7 +3272,9 @@ button.future-type-badge {
 }
 
 .clan-post-category-cell {
-  justify-self: start;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .clan-post-badge {
@@ -3302,6 +3307,9 @@ button.future-type-badge {
 
 .clan-post-title-cell {
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .clan-post-title {
@@ -3312,6 +3320,41 @@ button.future-type-badge {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.clan-post-comment-badge-inline {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--pink);
+}
+
+.clan-post-author-cell {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clan-post-date-cell {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.clan-post-views-cell {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.clan-post-likes-cell {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 
 .clan-post-author-cell {
@@ -3550,6 +3593,13 @@ button.future-type-badge {
   line-height: 1.4;
   word-break: keep-all;
   overflow-wrap: break-word;
+}
+
+.clan-detail-title-comment {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--pink);
+  white-space: nowrap;
 }
 
 .clan-detail-meta-row {

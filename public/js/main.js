@@ -3354,6 +3354,7 @@
       { cls: 'clan-post-header-author', text: '작성자' },
       { cls: 'clan-post-header-date', text: '날짜' },
       { cls: 'clan-post-header-views', text: '조회' },
+      { cls: 'clan-post-header-likes', text: '추천' },
     ];
     headers.forEach((h) => {
       const cell = document.createElement('div');
@@ -3391,10 +3392,16 @@
 
       const titleCell = document.createElement('div');
       titleCell.className = 'clan-post-title-cell';
-      const title = document.createElement('p');
-      title.className = 'clan-post-title';
-      title.textContent = post.title;
-      titleCell.appendChild(title);
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'clan-post-title';
+      titleSpan.textContent = post.title;
+      titleCell.appendChild(titleSpan);
+      if (post.comment_count > 0) {
+        const commentBadge = document.createElement('span');
+        commentBadge.className = 'clan-post-comment-badge-inline';
+        commentBadge.textContent = `[${post.comment_count}]`;
+        titleCell.appendChild(commentBadge);
+      }
 
       const authorCell = document.createElement('div');
       authorCell.className = 'clan-post-author-cell';
@@ -3408,12 +3415,17 @@
       viewsCell.className = 'clan-post-views-cell';
       viewsCell.textContent = String(post.view_count);
 
+      const likesCell = document.createElement('div');
+      likesCell.className = 'clan-post-likes-cell';
+      likesCell.textContent = String(post.like_count);
+
       row.appendChild(numCell);
       row.appendChild(catCell);
       row.appendChild(titleCell);
       row.appendChild(authorCell);
       row.appendChild(dateCell);
       row.appendChild(viewsCell);
+      row.appendChild(likesCell);
       clanPostList.appendChild(row);
     });
   }
@@ -3515,6 +3527,12 @@
     const title = document.createElement('h3');
     title.className = 'clan-detail-title';
     title.textContent = post.title;
+    if (post.comment_count > 0) {
+      const commentLabel = document.createElement('span');
+      commentLabel.className = 'clan-detail-title-comment';
+      commentLabel.textContent = ` [${post.comment_count}]`;
+      title.appendChild(commentLabel);
+    }
 
     titleBand.appendChild(categoryBadge);
     titleBand.appendChild(title);
