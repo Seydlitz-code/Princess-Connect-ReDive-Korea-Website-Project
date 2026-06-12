@@ -13,11 +13,12 @@
     underline.style.transform = `translateX(${r.left - t.left}px)`;
   }
 
-  const CLAN_SUB_BOARDS = new Set(['clan-semi', 'clan-fullauto']);
+  const CLAN_SUB_BOARDS = new Set(['clan-semi', 'clan-fullauto', 'clan-all']);
 
   const CLAN_SUB_LABELS = {
     'clan-semi': '세미오토',
     'clan-fullauto': '플오토',
+    'clan-all': '전체보기',
   };
 
   function setActiveBoard(boardId) {
@@ -29,6 +30,8 @@
     if (subTitleEl) {
       subTitleEl.textContent = isClanSub ? `- ${CLAN_SUB_LABELS[mappedBoardId] || ''}` : '';
     }
+
+    clanBoardCurrentSubBoard = isClanSub ? mappedBoardId : null;
 
     links.forEach((btn) => {
       const on = btn.dataset.board === mappedBoardId || (isClanSub && btn.dataset.board === 'clan-fullauto');
@@ -3158,6 +3161,7 @@
   let clanBoardPage = 1;
   let clanBoardCategory = 'all';
   let clanBoardSearchText = '';
+  let clanBoardCurrentSubBoard = 'clan-fullauto';
   let clanBoardCurrentPostId = null;
   let clanBoardCurrentPostLiked = false;
   let clanBoardCurrentPostData = null;
@@ -3281,7 +3285,6 @@
   const CATEGORY_LABELS = {
     all: '전체',
     none: '없음',
-    general: '자유',
     phase1: '1넴',
     phase2: '2넴',
     phase3: '3넴',
@@ -3308,6 +3311,9 @@
     params.set('limit', '40');
     if (clanBoardCategory !== 'all') params.set('category', clanBoardCategory);
     if (clanBoardSearchText) params.set('search', clanBoardSearchText);
+    if (clanBoardCurrentSubBoard && clanBoardCurrentSubBoard !== 'clan-all') {
+      params.set('sub_board', clanBoardCurrentSubBoard);
+    }
 
     try {
       const res = await fetch(`/api/clan-board/posts?${params.toString()}`);
@@ -3747,6 +3753,7 @@
     const board = activeNav?.dataset.board || clanBoardPreviousSubBoard || 'clan-fullauto';
     if (board === 'clan-semi') return '클랜전 게시판 — 세미오토';
     if (board === 'clan-fullauto') return '클랜전 게시판 — 플오토';
+    if (board === 'clan-all') return '클랜전 게시판 — 전체보기';
     return '클랜전 게시판';
   }
 
@@ -4740,11 +4747,14 @@
       const endpoint = editingId
         ? `/api/clan-board/posts/${encodeURIComponent(editingId)}`
         : '/api/clan-board/posts';
+      const writeSubBoard = clanBoardCurrentSubBoard && clanBoardCurrentSubBoard !== 'clan-all'
+        ? clanBoardCurrentSubBoard
+        : 'clan-fullauto';
       const res = await fetch(endpoint, {
         method: editingId ? 'PATCH' : 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content: htmlContent, category: clanWriteCategory }),
+        body: JSON.stringify({ title, content: htmlContent, category: clanWriteCategory, sub_board: writeSubBoard }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

@@ -3647,20 +3647,22 @@ button.future-type-badge {
 
 .clan-detail-action-btn {
   appearance: none;
-  border: 1px solid #000;
+  border: 1.5px solid #000;
+  border-radius: 6px;
   background: #fff;
   cursor: pointer;
   font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   color: var(--text);
-  padding: 8px 22px;
-  line-height: 1.35;
-  transition: background-color 0.12s ease;
+  padding: 10px 24px;
+  line-height: 1.3;
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  white-space: nowrap;
 }
 
 .clan-detail-action-btn + .clan-detail-action-btn {
-  margin-left: -1px;
+  margin-left: 10px;
 }
 
 .clan-detail-action-btn:hover:not(:disabled) {
@@ -3670,6 +3672,30 @@ button.future-type-badge {
 .clan-detail-action-btn:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+.clan-detail-action-btn--danger {
+  border-color: #e53935;
+  color: #e53935;
+  background: #fff;
+}
+
+.clan-detail-action-btn--danger:hover:not(:disabled) {
+  background: #fff5f5;
+  border-color: #c62828;
+  color: #c62828;
+}
+
+.clan-detail-action-btn--primary {
+  border-color: var(--pink);
+  background: var(--pink);
+  color: #fff;
+}
+
+.clan-detail-action-btn--primary:hover:not(:disabled) {
+  background: #ff4a93;
+  border-color: #ff4a93;
+  color: #fff;
 }
 
 /* 좋아요 버튼 */

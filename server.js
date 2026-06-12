@@ -514,6 +514,7 @@ async function ensureSchema(client) {
       title VARCHAR(200) NOT NULL,
       content TEXT NOT NULL,
       category VARCHAR(32) NOT NULL DEFAULT 'general',
+      sub_board VARCHAR(32) NOT NULL DEFAULT 'clan-fullauto',
       view_count INTEGER NOT NULL DEFAULT 0,
       is_pinned BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -548,6 +549,12 @@ async function ensureSchema(client) {
   `);
   await client.query(`
     ALTER TABLE clan_board_posts ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN NOT NULL DEFAULT false;
+  `);
+  await client.query(`
+    ALTER TABLE clan_board_posts ADD COLUMN IF NOT EXISTS sub_board VARCHAR(32) NOT NULL DEFAULT 'clan-fullauto';
+  `);
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_clan_board_posts_sub_board ON clan_board_posts(sub_board);
   `);
 }
 
@@ -1728,7 +1735,8 @@ function clanBoardRequirePool(res) {
   return true;
 }
 
-const CLAN_BOARD_VALID_CATEGORIES = ['none', 'general', 'phase1', 'phase2', 'phase3', 'phase4', 'phase5'];
+const CLAN_BOARD_VALID_CATEGORIES = ['none', 'phase1', 'phase2', 'phase3', 'phase4', 'phase5'];
+const CLAN_BOARD_VALID_SUB_BOARDS = ['clan-semi', 'clan-fullauto'];
 const CATEGORY_LABELS = {
   none: '없음',
   general: '자유',
@@ -1746,6 +1754,7 @@ app.get('/api/clan-board/posts', async (req, res) => {
     const limit = Math.min(40, Math.max(1, parseInt(String(req.query.limit || '40'), 10) || 40));
     const category = String(req.query.category || '').trim();
     const search = String(req.query.search || '').trim();
+    const subBoard = String(req.query.sub_board || '').trim();
 
     const params = [];
     const conditions = [];
@@ -1753,6 +1762,11 @@ app.get('/api/clan-board/posts', async (req, res) => {
     if (category && CLAN_BOARD_VALID_CATEGORIES.includes(category)) {
       params.push(category);
       conditions.push(`p.category = $${params.length}`);
+    }
+
+    if (subBoard && CLAN_BOARD_VALID_SUB_BOARDS.includes(subBoard)) {
+      params.push(subBoard);
+      conditions.push(`p.sub_board = $${params.length}`);
     }
 
     if (search) {
@@ -2029,10 +2043,11 @@ app.post('/api/clan-board/posts', async (req, res) => {
     return;
   }
 
-  const { title, content, category } = req.body || {};
+  const { title, content, category, sub_board } = req.body || {};
   const trimmedTitle = String(title || '').trim();
   const trimmedContent = String(content || '').trim();
-  const trimmedCategory = String(category || 'general').trim();
+  const trimmedCategory = String(category || 'none').trim();
+  const trimmedSubBoard = String(sub_board || 'clan-fullauto').trim();
 
   if (!trimmedTitle) {
     res.status(400).json({ ok: false, error: '제목을 입력해 주세요.' });
@@ -2050,13 +2065,17 @@ app.post('/api/clan-board/posts', async (req, res) => {
     res.status(400).json({ ok: false, error: '올바른 카테고리를 선택해 주세요.' });
     return;
   }
+  if (!CLAN_BOARD_VALID_SUB_BOARDS.includes(trimmedSubBoard)) {
+    res.status(400).json({ ok: false, error: '올바른 게시판을 선택해 주세요.' });
+    return;
+  }
 
   try {
     const result = await pool.query(
-      `INSERT INTO clan_board_posts (author_id, title, content, category)
-       VALUES ($1::uuid, $2, $3, $4)
+      `INSERT INTO clan_board_posts (author_id, title, content, category, sub_board)
+       VALUES ($1::uuid, $2, $3, $4, $5)
        RETURNING id`,
-      [userId, trimmedTitle, trimmedContent, trimmedCategory]
+      [userId, trimmedTitle, trimmedContent, trimmedCategory, trimmedSubBoard]
     );
     res.status(201).json({ ok: true, id: result.rows[0].id });
   } catch (err) {
@@ -2082,7 +2101,7 @@ app.patch('/api/clan-board/posts/:id', async (req, res) => {
   const { title, content, category } = req.body || {};
   const trimmedTitle = String(title || '').trim();
   const trimmedContent = String(content || '').trim();
-  const trimmedCategory = String(category || 'general').trim();
+  const trimmedCategory = String(category || 'none').trim();
 
   if (!trimmedTitle) {
     res.status(400).json({ ok: false, error: '제목을 입력해 주세요.' });

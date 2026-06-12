@@ -44,6 +44,10 @@
                 <span class="nav-ja">クランバトル</span>
               </button>
               <div class="clan-dropdown" aria-label="클랜전 하위 메뉴">
+                <button type="button" class="clan-dropdown-item" data-board="clan-all">
+                  <span class="nav-ko">전체보기</span>
+                  <span class="nav-ja">すべて</span>
+                </button>
                 <button type="button" class="clan-dropdown-item" data-board="clan-semi">
                   <span class="nav-ko">세미오토</span>
                   <span class="nav-ja">セミオート</span>
@@ -113,7 +117,6 @@
             <div class="clan-board-toolbar">
               <div class="clan-category-tabs" role="tablist" aria-label="카테고리">
                 <button type="button" class="clan-cat-btn is-active" role="tab" aria-selected="true" data-category="all">전체</button>
-                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="general">자유</button>
                 <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="phase1">1넴</button>
                 <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="phase2">2넴</button>
                 <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="phase3">3넴</button>
@@ -148,8 +151,8 @@
               <div id="clan-detail-content"></div>
               <footer class="clan-detail-post-actions" id="clan-detail-post-actions">
                 <button type="button" class="clan-detail-action-btn" id="clan-detail-edit-btn" hidden>수정</button>
-                <button type="button" class="clan-detail-action-btn" id="clan-detail-delete-btn" hidden>삭제</button>
-                <button type="button" class="clan-detail-action-btn" id="clan-detail-write-btn">글쓰기</button>
+                <button type="button" class="clan-detail-action-btn clan-detail-action-btn--danger" id="clan-detail-delete-btn" hidden>삭제</button>
+                <button type="button" class="clan-detail-action-btn clan-detail-action-btn--primary" id="clan-detail-write-btn">글쓰기</button>
               </footer>
               <div class="clan-detail-actions" id="clan-detail-actions" hidden>
                 <button type="button" class="clan-like-btn" id="clan-like-btn" disabled>
