@@ -3259,6 +3259,11 @@ button.future-type-badge {
 
 .clan-post-header-title--free {
   grid-column: span 1;
+  text-align: center;
+}
+
+.clan-post-header-title {
+  text-align: center;
 }
 
 .clan-post-row:last-child {

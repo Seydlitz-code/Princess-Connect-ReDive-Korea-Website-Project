@@ -3271,7 +3271,7 @@
       titleCell.className = 'clan-post-title-cell clan-post-title-cell--free';
       const titleSpan = document.createElement('span');
       titleSpan.className = 'clan-post-title';
-      titleSpan.textContent = post.title;
+      titleSpan.textContent = truncateTitle(post.title, 20);
       titleCell.appendChild(titleSpan);
       if (post.comment_count > 0) {
         const commentBadge = document.createElement('span');
@@ -3575,7 +3575,7 @@
       titleCell.className = 'clan-post-title-cell';
       const titleSpan = document.createElement('span');
       titleSpan.className = 'clan-post-title';
-      titleSpan.textContent = post.title;
+      titleSpan.textContent = truncateTitle(post.title, 20);
       titleCell.appendChild(titleSpan);
       if (post.comment_count > 0) {
         const commentBadge = document.createElement('span');
@@ -3664,6 +3664,13 @@
     const d = new Date(dateStr);
     const pad = (n) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  function truncateTitle(text, maxLen) {
+    if (!text) return '';
+    const chars = [...text];
+    if (chars.length <= maxLen) return text;
+    return chars.slice(0, maxLen).join('') + '......';
   }
 
   function formatClanFullDate(dateStr) {
@@ -4958,8 +4965,8 @@
     }
 
     const titleLen = [...title].length;
-    if (titleLen > 30) {
-      if (clanWriteError) { clanWriteError.textContent = '게시물 제목은 30자 이내로만 작성 가능합니다.'; clanWriteError.hidden = false; }
+    if (titleLen > 50) {
+      if (clanWriteError) { clanWriteError.textContent = '게시물 제목은 50자 이내로만 작성 가능합니다.'; clanWriteError.hidden = false; }
       if (clanWriteTitleWarning) clanWriteTitleWarning.hidden = false;
       clanWriteSubmit.disabled = false;
       clanWriteTitle?.focus();

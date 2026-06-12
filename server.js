@@ -2066,8 +2066,8 @@ app.post('/api/clan-board/posts', async (req, res) => {
     res.status(400).json({ ok: false, error: '제목을 입력해 주세요.' });
     return;
   }
-  if (trimmedTitle.length > 30) {
-    res.status(400).json({ ok: false, error: '게시물 제목은 30자 이내로만 작성 가능합니다.' });
+  if (trimmedTitle.length > 50) {
+    res.status(400).json({ ok: false, error: '게시물 제목은 50자 이내로만 작성 가능합니다.' });
     return;
   }
   if (!trimmedContent) {
@@ -2120,8 +2120,8 @@ app.patch('/api/clan-board/posts/:id', async (req, res) => {
     res.status(400).json({ ok: false, error: '제목을 입력해 주세요.' });
     return;
   }
-  if (trimmedTitle.length > 30) {
-    res.status(400).json({ ok: false, error: '게시물 제목은 30자 이내로만 작성 가능합니다.' });
+  if (trimmedTitle.length > 50) {
+    res.status(400).json({ ok: false, error: '게시물 제목은 50자 이내로만 작성 가능합니다.' });
     return;
   }
   if (!trimmedContent) {
