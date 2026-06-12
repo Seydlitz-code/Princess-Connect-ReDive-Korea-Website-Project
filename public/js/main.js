@@ -3323,6 +3323,11 @@
     return currentPostBoardContext;
   }
 
+  freeWriteOpenBtn?.addEventListener('click', () => {
+    currentBoardContext = 'free';
+    openClanWriteForm();
+  });
+
   function activateClanPostPagePanel() {
     const writePanel = document.querySelector('[data-board-panel="clan-write"]');
     panels.forEach((p) => {
