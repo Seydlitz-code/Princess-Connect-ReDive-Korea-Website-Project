@@ -2,7 +2,7 @@
 
 > **패키지명**: `priconne-kr-strategy-site`  
 > **진입점**: `server.js`  
-> **현재 버전**: Ver 0.4.7  
+> **현재 버전**: Ver 0.5.0  
 > **언어**: JavaScript (Node.js, TypeScript 미사용)  
 > **배포 대상**: Railway (cloud), Docker / 로컬 실행 가능  
 > **생성일**: 2026-05-20
@@ -119,6 +119,15 @@
 | GET | `/api/characters/:id/image` | 캐릭터 이미지 제공 (정적 파일 또는 DB BLOB) |
 | GET | `/api/future-sight` | Future Sight 로드맵 데이터 조회 |
 | PUT | `/api/admin/future-sight` | 관리자: Future Sight 데이터 수정 |
+| GET | `/api/clan-board/posts` | 게시물 목록 조회 (`?board=`, `?sub_board=`, `?category=`, `?search=`, `?page=`, `?limit=`) |
+| GET | `/api/clan-board/posts/:id` | 게시물 상세 조회 |
+| POST | `/api/clan-board/posts` | 게시물 작성 (`board`, `sub_board`, `title`, `content`, `category`) |
+| PATCH | `/api/clan-board/posts/:id` | 게시물 수정 |
+| DELETE | `/api/clan-board/posts/:id` | 게시물 삭제 |
+| PATCH | `/api/clan-board/posts/:id/view` | 조회수 증가 |
+| POST | `/api/clan-board/posts/:id/likes` | 추천 토글 (계정당 1회) |
+| GET | `/api/clan-board/posts/:id/comments` | 댓글 목록 조회 |
+| POST | `/api/clan-board/posts/:id/comments` | 댓글 작성 |
 | GET | `/api/health` | 헬스 체크 + DB 진단 정보 |
 | GET | `/*` | SPA 폴백 → `index.html` 제공 |
 
@@ -128,6 +137,9 @@
 
 - **`users`** — id (UUID PK), username, nickname, password_hash, profile_image, role ('user'/'admin'), created_at + PII 컬럼
 - **`characters`** — id (UUID PK), name (UNIQUE), image_mime, image_data (BYTEA), updated_at
+- **`clan_board_posts`** — id (UUID PK), author_id (FK), title (VARCHAR 200), content (TEXT), category (VARCHAR 32), sub_board (VARCHAR 32, `clan-semi`/`clan-fullauto`), board (VARCHAR 32, `clan`/`free`), view_count, is_pinned, created_at, updated_at
+- **`clan_board_comments`** — id (UUID PK), post_id (FK), author_id (FK), content (TEXT), created_at
+- **`clan_board_likes`** — user_id (FK), post_id (FK), created_at; composite PK (계정당 게시물별 1회 추천)
 - **`user_owned_characters`** — user_id (FK), character_id (UUID), created_at; composite PK
 - **`site_future_sight`** — 싱글톤 행 (id=1 CHECK 제약), data (JSONB), updated_at
 - **PII 컬럼** (`ensureUserPiiSchema`에 의해 추가): `username_blind`, `nickname_blind`, `username_cipher`, `nickname_cipher` — 부분 unique 인덱스 포함
@@ -183,19 +195,12 @@ Vanilla JS (fetch) → DOM 조작
 
 | UI 섹션 | 설명 |
 |---|---|
-| **네비게이션** | 상단 네비게이션 바, 5개 보드: Main, Clan Battle, Battle Stadium, Deep Quest, Abyss. 마이페이지 접속 시 메인 메뉴 대신 "마이페이지" 텍스트로 교체 |
+| **네비게이션** | 상단 네비게이션 바, 6개 보드: Main, 자유, Clan Battle (전체보기/세미오토/플오토 드롭다운), Battle Stadium, Deep Quest, Abyss. 마이페이지 접속 시 메인 메뉴 대신 "마이페이지" 텍스트로 교체 |
 | **Main Board** | "Future Sight" 테이블 — 행 = 월, 열 = 카테고리 (신규/재실시/6성/고유1/고유2/이벤트) |
-| **Mypage** | 프로필 편집, 소유 캐릭터 표시, 관리자 패널. 프로필 탭 헤더에 "메인으로" 링크, 로고 클릭 시 메인 페이지로 이동 |
-| **Signup Modal** | 2단계: (1) 프로필 사진, 닉네임, 유저명, 비밀번호, 캡차; (2) 캐릭터 선택 + reCAPTCHA |
-| **Login Modal** | 유저명 + 비밀번호 폼 |
-| **Profile Crop Modal** | Canvas 기반 원형 크롭 (줌/회전/이동) |
-| **Owned Characters Modal** | 검색 필터가 포함된 캐릭터 그리드 선택기 |
-| **Future Character Picker** | 관리자: Future Sight에 캐릭터 추가/교체 (검색 + 일괄 모드 지원) |
-| **Future Type Picker** | 관리자: 한정/통상/프린세스 페스 유형 설정 |
-| **Future Info Editor** | 관리자: 월별 정보 텍스트 편집 |
-| **Clan Board Post List** | 클랜전 게시판 게시물 목록: 번호/카테고리/제목/작성자/날짜/조회 컬럼 헤더, 추천/댓글 수, 공지사항 핀, 카테고리 탭 필터(전체/자유/1넴~5넴), 페이지네이션, 검색 |
-| **Clan Write Form** | 독립적 게시물 작성 페이지(`data-board-panel="clan-write"`): SPA 패널 전환으로 클랜 게시판과 분리된 전용 페이지 제공. 현재 게시판명 표시(세미오토/플오토), 게시물 구분 드롭다운(없음/1넴~5넴), 제목 30자 제한(+초과 시 붉은 경고문), 2단 툴바(1행: 이미지/동영상/웹 링크/텍틱 작성하기, 2행: 폰트 크기 8~72 28단계 + 볼드/이탤릭/밑줄/취소선), contentEditable 에디터. **텍틱 작성하기** 클릭 시 에디터에 텍틱 표 UI 삽입(좌측 대형 셀 + 우측 4×6 격자 + 하단 2칸 푸터). 작성 완료 시 이전 게시판으로 복귀 |
-| **Clan Post Detail** | 게시물 상세 보기: 카테고리 뱃지, 제목, 작성자/날짜/조회수 메타, HTML 리치 콘텐츠 본문, 추천 버튼, 댓글 목록/작성 |
+| **Free Board** | 자유 게시판: 번호/제목/작성자/날짜/조회/추천 6열 목록 (카테고리 없음), 글쓰기, 페이지네이션, 검색 |
+| **Clan Board** | 클랜전 게시판: 번호/카테고리/제목/작성자/날짜/조회/추천 7열 목록, 카테고리 탭(전체/1넴~5넴), 전체보기/세미오토/플오토 서브보드 필터링, 페이지네이션, 검색 |
+| **Clan Write Form** | 게시물 작성 페이지: SPA 패널 전환. 현재 게시판명 표시(자유/세미오토/플오토), 게시물 구분 드롭다운(자유 게시판에서는 숨김), 제목 50자 제한(+경고문), 2단 툴바(1행: 이미지/동영상/웹 링크/텍틱 작성하기, 2행: 폰트 크기 8~72 28단계 + 볼드/이탤릭/밑줄/취소선), contentEditable 에디터. 텍틱 표 삽입 기능 포함. 작성 완료 시 이전 게시판으로 복귀 |
+| **Clan Post Detail** | 게시물 상세 보기: 게시판명 클릭 시 해당 게시판 이동, 분홍색 제목 밴드(카테고리 뱃지 + 제목 + `[댓글N]`), 메타행(작성자 좌측 / 조회|댓글|날짜(수정됨) 우측), 본문, 추천 버튼(계정당 1회 토글, 미추천=회색·추천=분홍), 댓글 `[N]` 헤딩과 목록·작성, 수정(검정)/삭제(빨강)/글쓰기(분홍) 버튼 |
 
 ### 6.3 상태 관리
 
@@ -205,10 +210,12 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 - `futureSightState` — Future Sight 데이터
 - `sessionUserRole` — 현재 세션 유저의 역할
 - `ownedUpdateSelection` — 소유 캐릭터 업데이트 선택 상태
+- `currentBoardContext` — 현재 게시판 컨텍스트 (`'clan'` / `'free'`, 글쓰기·뒤로가기 판단에 사용)
+- `clanBoardCurrentSubBoard` — 클랜전 서브보드 상태 (`'clan-all'` / `'clan-semi'` / `'clan-fullauto'`)
 
 ### 6.4 CSS
 
-단일 파일 (3890 라인). CSS 커스텀 프로퍼티를 사용한 테마 설정. 미디어 쿼리를 통한 완전한 반응형 디자인. 프리프로세서나 CSS 프레임워크를 사용하지 않습니다. 클랜전 게시물 텍틱 표(`.clan-tactic-table`) 스타일 포함.
+단일 파일 (5149 라인). CSS 커스텀 프로퍼티를 사용한 테마 설정. 미디어 쿼리를 통한 완전한 반응형 디자인. 프리프로세서나 CSS 프레임워크를 사용하지 않습니다. 클랜전·자유 게시판 게시물 목록 그리드, 게시물 상세 페이지, 텍틱 표(`.clan-tactic-table`), 추천·댓글 통합 레이아웃 스타일 포함.
 
 ---
 
@@ -267,7 +274,11 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 9. **Canvas 기반 이미지 크롭**: 클라이언트 사이드에서 원형 프로필 이미지 크롭, 줌/회전/이동 기능
 10. **Future Sight 자동 유지보수**: 월 인덱스가 매일 자동으로 전진하여 콘텐츠가 오래되지 않도록 관리
 11. **마이페이지 헤더 전환**: 마이페이지 라우트에서 상단 네비게이션을 숨기고 "마이페이지" 타이틀로 대체, 로고/링크 클릭 시 메인 페이지로 SPA 이동
-12. **리치 텍스트 게시물 에디터**: 클랜전 게시판 글쓰기 페이지에 contentEditable 기반 리치 텍스트 에디터 제공. 이미지/동영상 파일 삽입(Data URL), 웹 링크 삽입, **텍틱 표 삽입**(2행×7열 병합 구조, 셀별 직접 편집), 폰트 크기(8~72, 28단계), 볼드/이탤릭/밑줄/취소선 텍스트 서식, 제목 30자 제한 및 경고 표시, 게시물 구분(없음, 1넴~5넴) 드롭다운
+12. **리치 텍스트 게시물 에디터**: contentEditable 기반 리치 텍스트 에디터. 이미지/동영상 파일 삽입(Data URL), 웹 링크 삽입, 텍틱 표 삽입, 폰트 크기(8~72, 28단계), 볼드/이탤릭/밑줄/취소선 서식, 제목 50자 제한
+13. **멀티 보드 아키텍처**: `board` 컬럼으로 게시판 유형 구분(`clan`/`free`), `sub_board`로 클랜전 하위 게시판 구분(`clan-semi`/`clan-fullauto`). 단일 API 엔드포인트에서 쿼리 파라미터로 필터링하여 확장성 확보
+14. **서브보드 라우팅**: 클라이언트에서 `currentBoardContext`로 현재 게시판 컨텍스트 추적. 드롭다운 메뉴로 세미오토·플오토·전체보기 전환. 게시물 작성 시 `board` + `sub_board` 컨텍스트 자동 반영
+15. **과거→최신 번호 체계**: 게시판 목록의 게시물 번호를 `total - offset - index` 공식으로 산출, 오래된 게시물부터 #1로 시작하는 역순 번호 매김
+16. **통합 추천·댓글 레이아웃**: 추천 버튼과 댓글 헤딩을 단일 `.clan-recommend-bar`에 배치, 레이아웃 단순화 및 시각적 응집도 향상
 
 ---
 
@@ -287,10 +298,10 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 
 | 파일 | 라인 수 | 역할 |
 |---|---|---|
-| `server.js` | ~2302 | 전체 백엔드 로직: 서버 기동, DB 스키마, 모든 API 라우트, 정적 파일 제공, 세션 관리 |
-| `public/index.html` | ~890 | SPA 셸: 모든 모달과 UI 섹션을 포함하는 단일 HTML |
-| `public/js/main.js` | ~5079 | 모든 프론트엔드 로직: API 호출, DOM 조작, 이벤트 처리, 상태 관리 |
-| `public/css/main.css` | ~4877 | 전체 스타일시트: 레이아웃, 테마, 반응형 디자인, 모달, 애니메이션, 텍틱 표 |
+| `server.js` | ~2334 | 전체 백엔드 로직: 서버 기동, DB 스키마, 모든 API 라우트, 정적 파일 제공, 세션 관리 |
+| `public/index.html` | ~915 | SPA 셸: 모든 모달과 UI 섹션을 포함하는 단일 HTML |
+| `public/js/main.js` | ~5372 | 모든 프론트엔드 로직: API 호출, DOM 조작, 이벤트 처리, 상태 관리 |
+| `public/css/main.css` | ~5149 | 전체 스타일시트: 레이아웃, 테마, 반응형 디자인, 모달, 애니메이션, 텍틱 표 |
 | `lib/sessionAuth.js` | — | HMAC-SHA256 세션 쿠키 생성/검증 유틸리티 |
 | `lib/userPiiCrypto.js` | — | AES-256-GCM 암호화 + Blind HMAC 인덱싱 |
 | `lib/signupCaptcha.js` | — | 커스텀 SVG 캡차 생성 및 검증 |
@@ -302,6 +313,50 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 ## 12. 버전 및 업데이트 내역
 
 Git 커밋 메시지(`프리코네 한섭 게임공략 웹사이트 / Ver X.X.X`) 기준으로 정리합니다. 최신 항목이 위에 옵니다.
+
+### Ver 0.5.0 (2026-06-13)
+
+**자유 게시판 신설**
+- 네비게이션 바 "자유 게시판" → "자유"로 텍스트 축소
+- 자유 게시판 전용 패널 추가: 제목/게시물 목록/글쓰기/검색
+- 6열 그리드(번호/제목/작성자/날짜/조회/추천, 카테고리 열 없음)
+- 글쓰기 페이지에서 자유 게시판일 경우 카테고리 선택 UI 자동 숨김
+- `board` 컬럼 추가(`clan`/`free`) → API 필터링 및 게시물 구분
+- 헤더 행과 데이터 행 그리드 불일치 수정(`clan-post-header-row--free`)
+
+**클랜전 서브보드 개선**
+- `sub_board` 컬럼 추가(`clan-semi`/`clan-fullauto`) → 게시물을 세미오토·플오토 게시판별로 구분
+- "전체보기"(`clan-all`) 서브보드 추가 (드롭다운 메뉴) — 플오토·세미오토 구분 없이 모든 게시물 표시
+- "자유"(general) 카테고리 삭제 (카테고리 탭 및 서버 유효성 목록에서 제거)
+- 클랜전 메인 메뉴 클릭 시 전체보기 게시판으로 이동, 전체보기일 때 `- 전체보기` 부제목 숨김
+
+**게시물 상세 페이지 UIUX 재디자인**
+- 게시판명 헤더: 클릭 시 해당 게시판으로 이동 (하이퍼링크 스타일)
+- 분홍색 제목 밴드: 카테고리 뱃지(좌측) + 게시물 제목(우측) + 댓글 수 `[N]`
+- 메타행: 작성자(좌측) / 조회수 | 댓글 개수 | 작성일시(우측), `|` 구분자, 우측 정렬
+- 본문 구역과 배경 구분선 제거 (통합형 디자인)
+- 하단 버튼: 수정(검정 테두리), 삭제(빨강 테두리+글자), 글쓰기(분홍 배경+흰 글자), 둥근 모서리
+
+**추천 & 댓글 구역 통합**
+- 추천 버튼을 댓글 섹션 내 `.clan-recommend-bar`로 이동
+- 댓글 헤딩 형식: `댓글 [N]` (괄호 안에 개수 표시)
+- 추천 버튼 시각적 차별화: 미추천=회색 테두리, 추천=분홍 배경+흰 글자
+- 계정당 게시물별 1회 추천 토글 (기존 유지)
+
+**게시판 목록 개선**
+- "추천" 열 추가 → 클랜전 7열, 자유 6열 그리드
+- 게시물 번호 체계 변경: 과거→최신순(#1 = 가장 오래된 글, #N = 최신 글)
+- 게시물 목록 제목 20자 초과 시 `......` 말줄임표 처리 (클랜전/자유 공통)
+- 게시물 목록 제목 뒤 `[댓글N]` 표시 (분홍색 인라인 뱃지)
+- 모든 게시물 셀(카테고리, 작성자, 날짜, 조회수, 추천수) 중앙 정렬
+- CSS 중복 선언 제거로 정렬 버그 수정
+
+**제목 길이 확장**: 30자 → 50자 (HTML `maxlength`, JS 유효성 검사, 서버 API)
+
+**버그 수정**
+- `clanBoardCurrentSubBoard` TDZ(ReferenceError)로 인한 전체 JS 번들 중단 수정 — 변수 선언을 IIFE 상단으로 이동
+- `freeWriteOpenBtn` 이벤트 리스너 누락으로 자유 게시판 글쓰기 버튼 미작동 수정
+- 헤더 행 `--free` 클래스 누락으로 인한 자유 게시판 컬럼 정렬 문제 수정
 
 ### Ver 0.4.8 (2026-06-10)
 

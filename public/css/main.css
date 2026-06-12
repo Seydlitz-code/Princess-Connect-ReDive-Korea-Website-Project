@@ -3382,28 +3382,6 @@ button.future-type-badge {
   color: var(--muted);
 }
 
-.clan-post-author-cell {
-  font-size: 0.78rem;
-  color: var(--text);
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.clan-post-date-cell {
-  font-size: 0.72rem;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.clan-post-views-cell {
-  font-size: 0.72rem;
-  color: var(--muted);
-  white-space: nowrap;
-  text-align: right;
-}
-
 .clan-board-empty {
   text-align: center;
   color: var(--muted);
