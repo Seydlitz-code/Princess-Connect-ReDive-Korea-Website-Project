@@ -21,6 +21,8 @@
     'clan-all': '전체보기',
   };
 
+  let clanBoardCurrentSubBoard = 'clan-fullauto';
+
   function setActiveBoard(boardId) {
     const mappedBoardId = boardId === 'clan' ? 'clan-fullauto' : boardId;
     const isClanSub = CLAN_SUB_BOARDS.has(mappedBoardId);
@@ -3161,7 +3163,6 @@
   let clanBoardPage = 1;
   let clanBoardCategory = 'all';
   let clanBoardSearchText = '';
-  let clanBoardCurrentSubBoard = 'clan-fullauto';
   let clanBoardCurrentPostId = null;
   let clanBoardCurrentPostLiked = false;
   let clanBoardCurrentPostData = null;
