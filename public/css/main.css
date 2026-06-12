@@ -3025,6 +3025,10 @@ button.future-type-badge {
     grid-template-columns: 35px 65px 1fr;
   }
 
+  .clan-post-header-row--free {
+    grid-template-columns: 35px 1fr;
+  }
+
   .clan-post-header-row .clan-post-header-author,
   .clan-post-header-row .clan-post-header-date,
   .clan-post-header-row .clan-post-header-views,
@@ -3231,6 +3235,10 @@ button.future-type-badge {
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--muted);
+}
+
+.clan-post-header-row--free {
+  grid-template-columns: 45px 1fr 90px 100px 50px 55px;
 }
 
 .clan-post-row {

@@ -3230,7 +3230,7 @@
     freePostList.innerHTML = '';
 
     const headerRow = document.createElement('div');
-    headerRow.className = 'clan-post-header-row';
+    headerRow.className = 'clan-post-header-row clan-post-header-row--free';
     const headers = [
       { cls: 'clan-post-header-num', text: '번호' },
       { cls: 'clan-post-header-title clan-post-header-title--free', text: '제목' },
