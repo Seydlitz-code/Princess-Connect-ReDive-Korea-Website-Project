@@ -70,6 +70,15 @@
         loadMypageProfileForm();
       });
     }
+    if (mappedBoardId === 'free') {
+      if (window.location.pathname !== '/') {
+        history.replaceState({ route: 'free-board' }, '', '/');
+      }
+      queueMicrotask(() => {
+        activateFreeBoardListPanel();
+        loadFreeBoardPosts();
+      });
+    }
     if (isClanSub || mappedBoardId === 'clan') {
       if (window.location.pathname !== '/') {
         history.replaceState({ route: 'clan-board' }, '', '/');
@@ -3125,6 +3134,7 @@
   const clanWriteForm = document.getElementById('clan-write-form');
   const clanWriteBoardName = document.getElementById('clan-write-board-name');
   const clanWriteCategorySelect = document.getElementById('clan-write-category');
+  const clanWriteCategoryField = clanWriteCategorySelect ? clanWriteCategorySelect.closest('.clan-write-field') : null;
   const clanWriteTitle = document.getElementById('clan-write-title');
   const clanWriteTitleWarning = document.getElementById('clan-write-title-warning');
   const clanWriteContent = document.getElementById('clan-write-content');
@@ -3163,6 +3173,141 @@
   const clanCommentSubmit = document.getElementById('clan-comment-submit');
   const clanCommentError = document.getElementById('clan-comment-error');
 
+  /* ─── 자유 게시판 ─── */
+
+  const freeWriteOpenBtn = document.getElementById('free-write-open');
+  const freePostList = document.getElementById('free-post-list');
+  const freeBoardEmpty = document.getElementById('free-board-empty');
+  const freePagination = document.getElementById('free-pagination');
+  const freeBoardBottomActions = document.getElementById('free-board-bottom-actions');
+  const freeBoardBottomSearch = document.getElementById('free-board-bottom-search');
+  const freeBoardBottomSearchBtn = document.getElementById('free-board-bottom-search-btn');
+
+  let freeBoardPage = 1;
+  let freeBoardSearchText = '';
+
+  function activateFreeBoardListPanel() {
+    const writePanel = document.querySelector('[data-board-panel="clan-write"]');
+    panels.forEach((p) => {
+      const match = p.dataset.boardPanel === 'free';
+      p.hidden = !match;
+      p.classList.toggle('is-visible', match);
+    });
+    if (writePanel) writePanel.hidden = true;
+  }
+
+  async function loadFreeBoardPosts() {
+    if (!freePostList || !freeBoardEmpty || !freePagination) return;
+    freePostList.hidden = false;
+    if (freeBoardEmpty) freeBoardEmpty.hidden = true;
+
+    const params = new URLSearchParams();
+    params.set('page', String(freeBoardPage));
+    params.set('limit', '40');
+    params.set('board', 'free');
+    if (freeBoardSearchText) params.set('search', freeBoardSearchText);
+
+    try {
+      const res = await fetch(`/api/clan-board/posts?${params.toString()}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        window.alert(data.error || '게시물을 불러오지 못했습니다.');
+        return;
+      }
+      renderFreePostList(data.posts, data.pagination);
+      renderClanPagination(freePagination, data.pagination, (page) => {
+        freeBoardPage = page;
+        loadFreeBoardPosts();
+      });
+      if (freeBoardEmpty) freeBoardEmpty.hidden = data.posts.length > 0;
+      if (freePostList) freePostList.hidden = data.posts.length === 0;
+      if (freeBoardBottomActions) freeBoardBottomActions.hidden = data.posts.length === 0;
+    } catch (_) {}
+  }
+
+  function renderFreePostList(posts, pagination) {
+    if (!freePostList) return;
+    freePostList.innerHTML = '';
+
+    const headerRow = document.createElement('div');
+    headerRow.className = 'clan-post-header-row';
+    const headers = [
+      { cls: 'clan-post-header-num', text: '번호' },
+      { cls: 'clan-post-header-title clan-post-header-title--free', text: '제목' },
+      { cls: 'clan-post-header-author', text: '작성자' },
+      { cls: 'clan-post-header-date', text: '날짜' },
+      { cls: 'clan-post-header-views', text: '조회' },
+      { cls: 'clan-post-header-likes', text: '추천' },
+    ];
+    headers.forEach((h) => {
+      const cell = document.createElement('div');
+      cell.className = h.cls;
+      cell.textContent = h.text;
+      headerRow.appendChild(cell);
+    });
+    freePostList.appendChild(headerRow);
+
+    const total = pagination?.total || 0;
+    const baseIndex = (freeBoardPage - 1) * 40;
+    let regularIdx = 0;
+
+    posts.forEach((post) => {
+      const row = document.createElement('div');
+      row.className = 'clan-post-row clan-post-row--free';
+      if (post.is_pinned) row.classList.add('clan-post-row--pinned');
+      row.setAttribute('role', 'listitem');
+      row.addEventListener('click', () => openClanPostDetail(post.id));
+
+      const numCell = document.createElement('div');
+      numCell.className = 'clan-post-num-cell';
+      if (post.is_pinned) {
+        numCell.textContent = '공지';
+      } else {
+        numCell.textContent = String(total - baseIndex - regularIdx);
+        regularIdx++;
+      }
+
+      const titleCell = document.createElement('div');
+      titleCell.className = 'clan-post-title-cell clan-post-title-cell--free';
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'clan-post-title';
+      titleSpan.textContent = post.title;
+      titleCell.appendChild(titleSpan);
+      if (post.comment_count > 0) {
+        const commentBadge = document.createElement('span');
+        commentBadge.className = 'clan-post-comment-badge-inline';
+        commentBadge.textContent = `[${post.comment_count}]`;
+        titleCell.appendChild(commentBadge);
+      }
+
+      const authorCell = document.createElement('div');
+      authorCell.className = 'clan-post-author-cell';
+      authorCell.textContent = post.author.nickname;
+
+      const dateCell = document.createElement('div');
+      dateCell.className = 'clan-post-date-cell';
+      dateCell.textContent = formatClanDate(post.created_at);
+
+      const viewsCell = document.createElement('div');
+      viewsCell.className = 'clan-post-views-cell';
+      viewsCell.textContent = String(post.view_count);
+
+      const likesCell = document.createElement('div');
+      likesCell.className = 'clan-post-likes-cell';
+      likesCell.textContent = String(post.like_count);
+
+      row.appendChild(numCell);
+      row.appendChild(titleCell);
+      row.appendChild(authorCell);
+      row.appendChild(dateCell);
+      row.appendChild(viewsCell);
+      row.appendChild(likesCell);
+      freePostList.appendChild(row);
+    });
+  }
+
+  /* ────────────────── */
+
   let clanBoardPage = 1;
   let clanBoardCategory = 'all';
   let clanBoardSearchText = '';
@@ -3171,15 +3316,11 @@
   let clanBoardCurrentPostData = null;
   let clanBoardEditingPostId = null;
   let clanWriteCategory = 'none';
+  let currentBoardContext = 'clan';
+  let currentPostBoardContext = 'clan';
 
-  function activateClanBoardListPanel() {
-    const writePanel = document.querySelector('[data-board-panel="clan-write"]');
-    panels.forEach((p) => {
-      const match = p.dataset.boardPanel === 'clan';
-      p.hidden = !match;
-      p.classList.toggle('is-visible', match);
-    });
-    if (writePanel) writePanel.hidden = true;
+  function getCurrentBoardContext() {
+    return currentPostBoardContext;
   }
 
   function activateClanPostPagePanel() {
@@ -3208,11 +3349,34 @@
     showClanPostDetailView(postId);
   }
 
+  function getCurrentBoardContext() {
+    const activeNav = links.find((b) => b.classList.contains('is-active'));
+    return activeNav?.dataset.board === 'free' ? 'free' : 'clan';
+  }
+
+  freeBoardBottomSearchBtn?.addEventListener('click', () => {
+    freeBoardSearchText = (freeBoardBottomSearch?.value || '').trim();
+    freeBoardPage = 1;
+    loadFreeBoardPosts();
+  });
+
+  freeBoardBottomSearch?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      freeBoardSearchText = (freeBoardBottomSearch?.value || '').trim();
+      freeBoardPage = 1;
+      loadFreeBoardPosts();
+    }
+  });
+
   function navigateToClanBoard() {
     history.pushState({ route: 'clan-board' }, '', '/');
     const activeNav = links.find((b) => b.classList.contains('is-active'));
     const activeBoard = activeNav?.dataset.board;
-    if (activeBoard && CLAN_SUB_BOARDS.has(activeBoard)) {
+    if (activeBoard === 'free') {
+      activateFreeBoardListPanel();
+      loadFreeBoardPosts();
+    } else if (activeBoard && CLAN_SUB_BOARDS.has(activeBoard)) {
       activateClanBoardListPanel();
       loadClanBoardPosts();
     } else {
@@ -3247,7 +3411,10 @@
 
   window.addEventListener('popstate', (e) => {
     const route = e.state ? e.state.route : getClanRoute().route;
-    if (route === 'clan-board') {
+    if (route === 'free-board') {
+      activateFreeBoardListPanel();
+      loadFreeBoardPosts();
+    } else if (route === 'clan-board') {
       activateClanBoardListPanel();
       loadClanBoardPosts();
     } else if (route === 'clan-post' && e.state && e.state.postId) {
@@ -3510,7 +3677,16 @@
   }
 
   async function openClanPostDetail(postId) {
+    currentPostBoardContext = getActiveBoardContext();
     navigateToClanPost(postId);
+  }
+
+  function getActiveBoardContext() {
+    const activeNav = links.find((b) => b.classList.contains('is-active'));
+    const board = activeNav?.dataset.board;
+    if (board === 'free') return 'free';
+    if (CLAN_SUB_BOARDS.has(board)) return 'clan';
+    return 'clan';
   }
 
   function renderClanPostDetail(post) {
@@ -3683,6 +3859,7 @@
   });
 
   clanDetailWriteBtn?.addEventListener('click', () => {
+    currentBoardContext = getCurrentBoardContext();
     openClanWriteForm();
   });
 
@@ -3779,6 +3956,7 @@
     if (board === 'clan-semi') return '클랜전 게시판 — 세미오토';
     if (board === 'clan-fullauto') return '클랜전 게시판 — 플오토';
     if (board === 'clan-all') return '클랜전 게시판 — 전체보기';
+    if (board === 'free') return '자유 게시판';
     return '클랜전 게시판';
   }
 
@@ -3835,13 +4013,36 @@
     if (clanWriteError) { clanWriteError.hidden = true; clanWriteError.textContent = ''; }
     if (clanWriteTitleWarning) clanWriteTitleWarning.hidden = true;
     if (clanWriteLinkPopup) clanWriteLinkPopup.hidden = true;
-    if (clanWriteBoardName) clanWriteBoardName.textContent = getClanBoardNameDisplay();
+    if (clanWriteBoardName) {
+      clanWriteBoardName.textContent = currentBoardContext === 'free' ? '자유 게시판' : getClanBoardNameDisplay();
+    }
+    if (clanWriteCategoryField) {
+      clanWriteCategoryField.hidden = currentBoardContext === 'free';
+    }
     if (clanWriteTitle) clanWriteTitle.focus();
   }
 
   function closeClanWriteForm() {
     resetClanWriteEditingState();
-    setActiveBoard(clanBoardPreviousSubBoard);
+    const ctx = currentBoardContext;
+    currentBoardContext = 'clan';
+    if (ctx === 'free') {
+      history.replaceState({ route: 'free-board' }, '', '/');
+      activateFreeBoardListPanel();
+      loadFreeBoardPosts();
+      links.forEach((btn) => {
+        const on = btn.dataset.board === 'free';
+        btn.classList.toggle('is-active', on);
+        if (on) btn.setAttribute('aria-current', 'page');
+        else btn.removeAttribute('aria-current');
+      });
+      requestAnimationFrame(() => {
+        const activeBtn = links.find((b) => b.dataset.board === 'free');
+        moveUnderline(activeBtn);
+      });
+    } else {
+      setActiveBoard(clanBoardPreviousSubBoard);
+    }
   }
 
   function execWriteCommand(command, value) {
@@ -4602,7 +4803,7 @@
     reader.readAsDataURL(file);
   }
 
-  clanWriteOpenBtn?.addEventListener('click', () => { openClanWriteForm(); });
+  clanWriteOpenBtn?.addEventListener('click', () => { currentBoardContext = 'clan'; openClanWriteForm(); });
 
   clanWriteCategorySelect?.addEventListener('change', () => {
     clanWriteCategory = clanWriteCategorySelect.value;
@@ -4779,7 +4980,7 @@
         method: editingId ? 'PATCH' : 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content: htmlContent, category: clanWriteCategory, sub_board: writeSubBoard }),
+        body: JSON.stringify({ title, content: htmlContent, category: clanWriteCategory, sub_board: writeSubBoard, board: currentBoardContext }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

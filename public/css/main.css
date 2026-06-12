@@ -3036,6 +3036,10 @@ button.future-type-badge {
     grid-template-columns: 35px 65px 1fr;
   }
 
+  .clan-post-row--free {
+    grid-template-columns: 35px 1fr;
+  }
+
   .clan-post-author-cell,
   .clan-post-date-cell,
   .clan-post-views-cell,
@@ -3239,6 +3243,14 @@ button.future-type-badge {
   cursor: pointer;
   transition: background-color 0.12s ease;
   border-bottom: 1px solid var(--border);
+}
+
+.clan-post-row--free {
+  grid-template-columns: 45px 1fr 90px 100px 50px 55px;
+}
+
+.clan-post-header-title--free {
+  grid-column: span 1;
 }
 
 .clan-post-row:last-child {
