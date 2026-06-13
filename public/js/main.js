@@ -4556,7 +4556,7 @@
 
   function createTacticInputRow() {
     const tr = document.createElement('tr');
-    tr.className = 'clan-tactic-table__row';
+    tr.className = 'clan-tactic-table__row clan-tactic-table__input-row';
 
     // 0열: 시간 입력 (분:초)
     const timeCell = document.createElement('td');
@@ -4823,7 +4823,7 @@
     const tr5 = createTacticInputRow();
     tbody.appendChild(tr5);
 
-    // 6행: 추가 버튼 행
+    // 6행: 추가/삭제 버튼 행
     const tr6 = document.createElement('tr');
     tr6.className = 'clan-tactic-table__row';
 
@@ -4831,6 +4831,9 @@
     addCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__add-cell';
     addCell.colSpan = 8;
     addCell.contentEditable = 'false';
+
+    const btnWrap = document.createElement('div');
+    btnWrap.className = 'clan-tactic-table__btn-wrap';
 
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
@@ -4849,7 +4852,25 @@
       }
     });
 
-    addCell.appendChild(addBtn);
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'clan-tactic-table__delete-tactic-btn';
+    delBtn.textContent = '\uD14D\uD2F1 \uC0AD\uC81C';
+    delBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const inputRows = table.querySelectorAll('.clan-tactic-table__input-row');
+      if (inputRows.length <= 1) {
+        window.alert('\uC0AD\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.');
+        return;
+      }
+      const lastRow = inputRows[inputRows.length - 1];
+      lastRow.remove();
+    });
+
+    btnWrap.appendChild(addBtn);
+    btnWrap.appendChild(delBtn);
+    addCell.appendChild(btnWrap);
     tr6.appendChild(addCell);
     tbody.appendChild(tr6);
 

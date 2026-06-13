@@ -5230,6 +5230,13 @@ td.clan-tactic-table__add-cell {
   background: #fafafa;
 }
 
+.clan-tactic-table__btn-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
 .clan-tactic-table__add-tactic-btn {
   padding: 2px 12px;
   font: inherit;
@@ -5245,6 +5252,23 @@ td.clan-tactic-table__add-cell {
 
 .clan-tactic-table__add-tactic-btn:hover {
   background: rgba(25, 118, 210, 0.08);
+}
+
+.clan-tactic-table__delete-tactic-btn {
+  padding: 2px 12px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #e53935;
+  background: #fff;
+  border: 1.5px solid #e53935;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.clan-tactic-table__delete-tactic-btn:hover {
+  background: rgba(229, 57, 53, 0.08);
 }
 
 .clan-tactic-table__carryover-btn {
