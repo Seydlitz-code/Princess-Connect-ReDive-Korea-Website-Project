@@ -4262,6 +4262,45 @@ td.clan-tactic-table__sep-cell {
   box-sizing: border-box;
 }
 
+.clan-tactic-table__time-input {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.clan-tactic-table__time-part {
+  width: 22px;
+  padding: 2px 1px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  outline: none;
+  background: #fff;
+  color: #000;
+}
+
+.clan-tactic-table__time-part:focus {
+  border-color: var(--pink);
+}
+
+.clan-tactic-table__time-min {
+  width: 18px;
+}
+
+.clan-tactic-table__time-sec {
+  width: 26px;
+}
+
+.clan-tactic-table__time-sep {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #000;
+}
+
 .clan-tactic-table__rank-text {
   display: flex;
   align-items: center;
@@ -4600,6 +4639,11 @@ td.clan-tactic-table__rank-input-cell {
 }
 
 .clan-detail-body .clan-tactic-table__bossname-input:disabled {
+  opacity: 1;
+  -webkit-text-fill-color: #000;
+}
+
+.clan-detail-body .clan-tactic-table__time-part:disabled {
   opacity: 1;
   -webkit-text-fill-color: #000;
 }

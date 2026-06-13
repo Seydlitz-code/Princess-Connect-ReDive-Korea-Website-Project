@@ -314,6 +314,16 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 
 Git 커밋 메시지(`프리코네 한섭 게임공략 웹사이트 / Ver X.X.X`) 기준으로 정리합니다. 최신 항목이 위에 옵니다.
 
+### Ver 0.5.0.2 (2026-06-14)
+
+- **텍틱 기록기 시간 입력 구역** 미작동 버그 수정
+  - 근본 원인: `createTacticTimeInput()` 함수가 정의되어 있었으나 `createTacticInputRow()`에서 호출되지 않아, 시간 입력 UI가 실제로 생성되지 않았음
+  - 수정: `createTacticInputRow()`의 0열 셀에 `createTacticTimeInput()` 호출로 `분:초` 입력 구역 삽입
+  - 시간 입력 제한: 최대 1분 30초로 하향 조정 (`TACTIC_TIME_MAX_TOTAL_SEC`: 91 → 90)
+  - 분 입력 구역 미입력 시 자동으로 `0` 채움, 초 입력 구역은 패딩 없이 그대로 유지
+  - CSS 추가: `.clan-tactic-table__time-input`, `.clan-tactic-table__time-part`, `.clan-tactic-table__time-min`, `.clan-tactic-table__time-sec`, `.clan-tactic-table__time-sep`
+  - 게시물 상세 읽기 전용 모드에서 시간 입력 필드 비활성화 시 텍스트 색상 유지
+
 ### Ver 0.5.0.1 (2026-06-13)
 
 - 게시물 상세 페이지 **텍틱 기록기 이월타 계산기** 기능 추가

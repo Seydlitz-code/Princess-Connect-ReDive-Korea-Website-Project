@@ -4395,7 +4395,7 @@
     hideTacticRankInput(charCell);
   }
 
-  const TACTIC_TIME_MAX_TOTAL_SEC = 91;
+  const TACTIC_TIME_MAX_TOTAL_SEC = 90;
   const TACTIC_IMAGE_SIZE = 75;
 
   function createTacticTimeInput() {
@@ -4430,7 +4430,7 @@
       e.stopPropagation();
     }
 
-    function clampAndApply(formatSec) {
+    function clampAndApply() {
       const minDigits = minInput.value.replace(/[^0-9]/g, '').slice(0, 1);
       const secDigits = secInput.value.replace(/[^0-9]/g, '').slice(0, 2);
       let min = minDigits === '' ? 0 : parseInt(minDigits, 10);
@@ -4440,7 +4440,7 @@
 
       if (min > 1) min = 1;
       if (min === 1) {
-        sec = Math.min(sec, 31);
+        sec = Math.min(sec, 30);
       } else {
         sec = Math.min(sec, 59);
       }
@@ -4448,28 +4448,28 @@
       const total = min * 60 + sec;
       if (total > TACTIC_TIME_MAX_TOTAL_SEC) {
         min = 1;
-        sec = 31;
+        sec = 30;
       }
 
-      if (minDigits === '' && !formatSec) {
-        minInput.value = '';
-      } else {
+      if (minDigits === '' && secDigits !== '') {
+        minInput.value = '0';
+      } else if (minDigits !== '') {
         minInput.value = String(min);
+      } else {
+        minInput.value = '';
       }
 
-      if (secDigits === '' && !formatSec) {
-        secInput.value = '';
-      } else if (formatSec) {
-        secInput.value = String(sec).padStart(2, '0');
-      } else {
+      if (secDigits !== '') {
         secInput.value = String(sec);
+      } else {
+        secInput.value = '';
       }
     }
 
-    minInput.addEventListener('input', () => clampAndApply(false));
-    secInput.addEventListener('input', () => clampAndApply(false));
-    minInput.addEventListener('blur', () => clampAndApply(true));
-    secInput.addEventListener('blur', () => clampAndApply(true));
+    minInput.addEventListener('input', () => clampAndApply());
+    secInput.addEventListener('input', () => clampAndApply());
+    minInput.addEventListener('blur', () => clampAndApply());
+    secInput.addEventListener('blur', () => clampAndApply());
     [minInput, secInput, wrap].forEach((el) => {
       el.addEventListener('mousedown', stopEditBubble);
       el.addEventListener('click', stopEditBubble);
@@ -4526,12 +4526,13 @@
     const tr = document.createElement('tr');
     tr.className = 'clan-tactic-table__row';
 
-    // 0열: ':'  (좁은 열, 80px)
-    const sepCell = document.createElement('td');
-    sepCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__sep-cell';
-    sepCell.contentEditable = 'false';
-    sepCell.textContent = ':';
-    tr.appendChild(sepCell);
+    // 0열: 시간 입력 (분:초)
+    const timeCell = document.createElement('td');
+    timeCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__sep-cell';
+    timeCell.contentEditable = 'false';
+    const timeInput = createTacticTimeInput();
+    timeCell.appendChild(timeInput);
+    tr.appendChild(timeCell);
 
     // 1-2열: '텍틱을 입력하세요.' (colSpan=2)
     const tacticTextCell = document.createElement('td');
