@@ -325,10 +325,10 @@ Git 커밋 메시지(`프리코네 한섭 게임공략 웹사이트 / Ver X.X.X`
   - CSS 추가: `.clan-tactic-table__extra-cell` 중앙 정렬 스타일
   - 게시물 상세 읽기 전용 모드에서 새 구역 placeholder 숨김 처리
 - **Auto 여부 / SET 여부 드롭다운 UI** 추가
-  - `createTacticDropdown()` 함수: O/X 두 선택지, 기본값 O
-  - Auto 여부 드롭다운: 보스 이미지 추가 시 표시
-  - SET 여부 드롭다운(×5): 해당 슬롯에 캐릭터 추가 시 표시
-  - `updateTacticDropdownVisibility(sourceCell)` 함수로 캐릭터/보스 추가·삭제 시 드롭다운 표시/숨김 처리
+  - `createTacticDropdown(onLabel, offLabel)` 함수: 기본값 O, 라벨 커스텀 가능
+  - Auto 여부 드롭다운: `Auto ON` / `Auto OFF`, **항상 표시** (보스 이미지 추가 여부와 무관)
+  - SET 여부 드롭다운(×5): `SET ON` / `SET OFF`, 해당 슬롯에 캐릭터 추가 시 표시
+  - `updateTacticDropdownVisibility(sourceCell)` 함수로 캐릭터 추가·삭제 시 SET 여부 드롭다운 표시/숨김 처리
   - CSS 추가: `.clan-tactic-table__dropdown` (26px 높이, 중앙 정렬, 포커스 시 분홍 테두리)
   - 읽기 전용 모드: 드롭다운 비활성화 + 회색 배경, placeholder 숨김 처리
 

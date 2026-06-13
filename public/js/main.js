@@ -4485,17 +4485,17 @@
     return (el.textContent || '').replace(/\u200B/g, '').trim() === '';
   }
 
-  function createTacticDropdown() {
+  function createTacticDropdown(onLabel, offLabel) {
     const select = document.createElement('select');
     select.className = 'clan-tactic-table__dropdown';
-    const optO = document.createElement('option');
-    optO.value = 'O';
-    optO.textContent = 'O';
-    const optX = document.createElement('option');
-    optX.value = 'X';
-    optX.textContent = 'X';
-    select.appendChild(optO);
-    select.appendChild(optX);
+    const optOn = document.createElement('option');
+    optOn.value = 'O';
+    optOn.textContent = onLabel;
+    const optOff = document.createElement('option');
+    optOff.value = 'X';
+    optOff.textContent = offLabel;
+    select.appendChild(optOn);
+    select.appendChild(optOff);
     select.value = 'O';
     return select;
   }
@@ -4504,12 +4504,6 @@
     if (!sourceCell) return;
     const table = sourceCell.closest('.clan-tactic-table');
     if (!table) return;
-    if (sourceCell.classList.contains('clan-tactic-table__boss-cell')) {
-      const extraDropdown = table.querySelector('.clan-tactic-table__dropdown--extra');
-      if (extraDropdown) {
-        extraDropdown.hidden = !sourceCell.querySelector('.clan-tactic-table__boss-wrap');
-      }
-    }
     const slot = sourceCell.dataset.tacticSlot;
     if (slot) {
       const autoCell = table.querySelector(`.clan-tactic-table__auto-cell[data-tactic-slot="${slot}"]`);
@@ -4578,13 +4572,12 @@
     tacticTextCell.dataset.placeholder = '\uD14D\uD2F1\uC744 \uC785\uB825\uD558\uC138\uC694.';
     tr.appendChild(tacticTextCell);
 
-    // 2열: Auto 여부 드롭다운 (분할된 새 구역)
+    // 2열: Auto 여부 드롭다운 (분할된 새 구역, 항상 표시)
     const extraCell = document.createElement('td');
     extraCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__extra-cell';
     extraCell.contentEditable = 'false';
-    const extraDropdown = createTacticDropdown();
+    const extraDropdown = createTacticDropdown('Auto ON', 'Auto OFF');
     extraDropdown.classList.add('clan-tactic-table__dropdown--extra');
-    extraDropdown.hidden = true;
     extraCell.appendChild(extraDropdown);
     tr.appendChild(extraCell);
 
@@ -4594,7 +4587,7 @@
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__auto-cell';
       cell.contentEditable = 'false';
       cell.dataset.placeholder = 'SET \uC5EC\uBD80';
-      const dropdown = createTacticDropdown();
+      const dropdown = createTacticDropdown('SET ON', 'SET OFF');
       dropdown.classList.add('clan-tactic-table__dropdown--set');
       dropdown.hidden = true;
       cell.appendChild(dropdown);
