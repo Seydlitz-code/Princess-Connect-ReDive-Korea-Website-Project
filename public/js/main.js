@@ -4534,13 +4534,19 @@
     timeCell.appendChild(timeInput);
     tr.appendChild(timeCell);
 
-    // 1-2열: '텍틱을 입력하세요.' (colSpan=2)
+    // 1열: '텍틱을 입력하세요.' (분할된 텍틱 텍스트 입력 구역)
     const tacticTextCell = document.createElement('td');
     tacticTextCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__tactic-text-cell';
-    tacticTextCell.colSpan = 2;
     tacticTextCell.contentEditable = 'true';
     tacticTextCell.dataset.placeholder = '\uD14D\uD2F1\uC744 \uC785\uB825\uD558\uC138\uC694.';
     tr.appendChild(tacticTextCell);
+
+    // 2열: 추가 구역 (분할된 새 구역)
+    const extraCell = document.createElement('td');
+    extraCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__extra-cell';
+    extraCell.contentEditable = 'true';
+    extraCell.dataset.placeholder = '\uCD94\uAC00 \uC785\uB825';
+    tr.appendChild(extraCell);
 
     // 3-7열: '오토여부' ×5
     for (let col = 3; col <= 7; col += 1) {
@@ -4551,13 +4557,6 @@
       bindTacticAutoCell(cell);
       tr.appendChild(cell);
     }
-
-    // 8열: 추가 구역
-    const extraCell = document.createElement('td');
-    extraCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__extra-cell';
-    extraCell.contentEditable = 'true';
-    extraCell.dataset.placeholder = '\uCD94\uAC00 \uC785\uB825';
-    tr.appendChild(extraCell);
 
     return tr;
   }
@@ -4792,7 +4791,7 @@
 
     const addCell = document.createElement('td');
     addCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__add-cell';
-    addCell.colSpan = 9;
+    addCell.colSpan = 8;
     addCell.contentEditable = 'false';
 
     const addBtn = document.createElement('button');
@@ -4820,13 +4819,10 @@
     const colChars = document.createElement('col');
     colChars.span = 5;
     colChars.className = 'clan-tactic-table__col-slot';
-    const colExtra = document.createElement('col');
-    colExtra.className = 'clan-tactic-table__col-extra';
     colgroup.appendChild(colNarrow);
     colgroup.appendChild(colLabel);
     colgroup.appendChild(colBoss);
     colgroup.appendChild(colChars);
-    colgroup.appendChild(colExtra);
     table.appendChild(colgroup);
     table.appendChild(tbody);
     wrap.appendChild(table);

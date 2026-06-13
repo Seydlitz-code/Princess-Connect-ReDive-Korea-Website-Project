@@ -4118,10 +4118,6 @@ button.future-type-badge {
   width: var(--tactic-image-slot-size);
 }
 
-.clan-tactic-table__col-extra {
-  width: var(--tactic-image-slot-size);
-}
-
 
 .clan-tactic-table td.clan-tactic-table__char-name-cell {
   text-align: center;

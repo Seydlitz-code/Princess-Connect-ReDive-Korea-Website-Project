@@ -316,11 +316,12 @@ Git 커밋 메시지(`프리코네 한섭 게임공략 웹사이트 / Ver X.X.X`
 
 ### Ver 0.5.0.3 (2026-06-14)
 
-- **텍틱 기록기 UI 확장**: 랭크 구역 하단, 텍틱 텍스트 입력 구역 우측에 **추가 구역** 컬럼 신설
-  - 입력 행(5행) 우측에 `clan-tactic-table__extra-cell` 추가 (contentEditable, placeholder `추가 입력`)
-  - colgroup에 `clan-tactic-table__col-extra` 컬럼 추가 (`--tactic-image-slot-size` 너비)
-  - 텍틱 추가 버튼 행(`add-cell`) colSpan 8 → 9로 조정
-  - CSS 추가: `.clan-tactic-table__col-extra`, `.clan-tactic-table__extra-cell` 및 placeholder 스타일
+- **텍틱 기록기 UI 확장**: 텍틱 텍스트 입력 구역(colSpan=2)을 **좌우 반으로 분할**해 추가 구역 신설
+  - 기존: `시간 | 텍틱 텍스트(colSpan=2) | 오토여부 × 5`
+  - 변경: `시간 | 텍틱 텍스트(col 1) | 추가 입력(col 2) | 오토여부 × 5`
+  - `createTacticInputRow()`에서 `tacticTextCell`(colSpan=2) → `tacticTextCell`(col 1) + `extraCell`(col 2)로 분리
+  - `extraCell`은 contentEditable, placeholder `추가 입력`
+  - CSS 추가: `.clan-tactic-table__extra-cell` 및 placeholder 스타일 (왼쪽 정렬)
   - 게시물 상세 읽기 전용 모드에서 추가 구역 placeholder 숨김 처리
 
 ### Ver 0.5.0.2 (2026-06-14)
