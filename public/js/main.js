@@ -4485,6 +4485,43 @@
     return (el.textContent || '').replace(/\u200B/g, '').trim() === '';
   }
 
+  function createTacticDropdown() {
+    const select = document.createElement('select');
+    select.className = 'clan-tactic-table__dropdown';
+    const optO = document.createElement('option');
+    optO.value = 'O';
+    optO.textContent = 'O';
+    const optX = document.createElement('option');
+    optX.value = 'X';
+    optX.textContent = 'X';
+    select.appendChild(optO);
+    select.appendChild(optX);
+    select.value = 'O';
+    return select;
+  }
+
+  function updateTacticDropdownVisibility(sourceCell) {
+    if (!sourceCell) return;
+    const table = sourceCell.closest('.clan-tactic-table');
+    if (!table) return;
+    if (sourceCell.classList.contains('clan-tactic-table__boss-cell')) {
+      const extraDropdown = table.querySelector('.clan-tactic-table__dropdown--extra');
+      if (extraDropdown) {
+        extraDropdown.hidden = !sourceCell.querySelector('.clan-tactic-table__boss-wrap');
+      }
+    }
+    const slot = sourceCell.dataset.tacticSlot;
+    if (slot) {
+      const autoCell = table.querySelector(`.clan-tactic-table__auto-cell[data-tactic-slot="${slot}"]`);
+      if (autoCell) {
+        const dropdown = autoCell.querySelector('.clan-tactic-table__dropdown');
+        if (dropdown) {
+          dropdown.hidden = !sourceCell.querySelector('.clan-tactic-table__boss-wrap');
+        }
+      }
+    }
+  }
+
   function bindTacticAutoCell(cell) {
     function stopEditBubble(e) {
       e.stopPropagation();
@@ -4541,20 +4578,27 @@
     tacticTextCell.dataset.placeholder = '\uD14D\uD2F1\uC744 \uC785\uB825\uD558\uC138\uC694.';
     tr.appendChild(tacticTextCell);
 
-    // 2열: 추가 구역 (분할된 새 구역)
+    // 2열: Auto 여부 드롭다운 (분할된 새 구역)
     const extraCell = document.createElement('td');
     extraCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__extra-cell';
-    extraCell.contentEditable = 'true';
-    extraCell.dataset.placeholder = '\uCD94\uAC00 \uC785\uB825';
+    extraCell.contentEditable = 'false';
+    const extraDropdown = createTacticDropdown();
+    extraDropdown.classList.add('clan-tactic-table__dropdown--extra');
+    extraDropdown.hidden = true;
+    extraCell.appendChild(extraDropdown);
     tr.appendChild(extraCell);
 
-    // 3-7열: '오토여부' ×5
+    // 3-7열: 'SET 여부' 드롭다운 ×5
     for (let col = 3; col <= 7; col += 1) {
       const cell = document.createElement('td');
       cell.className = 'clan-tactic-table__grid-cell clan-tactic-table__auto-cell';
-      cell.contentEditable = 'true';
-      cell.dataset.placeholder = '\uC624\uD1A0\uC5EC\uBD80';
-      bindTacticAutoCell(cell);
+      cell.contentEditable = 'false';
+      cell.dataset.placeholder = 'SET \uC5EC\uBD80';
+      const dropdown = createTacticDropdown();
+      dropdown.classList.add('clan-tactic-table__dropdown--set');
+      dropdown.hidden = true;
+      cell.appendChild(dropdown);
+      cell.dataset.tacticSlot = String(col - 2);
       tr.appendChild(cell);
     }
 
@@ -5170,11 +5214,13 @@
           e.stopPropagation();
           wrap.remove();
           cell.appendChild(createBossImageButton(cell));
+          updateTacticDropdownVisibility(cell);
         });
 
         wrap.appendChild(img);
         wrap.appendChild(delBtn);
         cell.appendChild(wrap);
+        updateTacticDropdownVisibility(cell);
 
         delete input._bossTargetCell;
       } catch (err) {
@@ -5361,11 +5407,13 @@
         }
         const newBtn = createCharImageButton(cell);
         if (newBtn) cell.appendChild(newBtn);
+        updateTacticDropdownVisibility(cell);
       });
 
       wrap.appendChild(img);
       wrap.appendChild(delBtn);
       cell.appendChild(wrap);
+      updateTacticDropdownVisibility(cell);
 
       // Auto-fill character name
       const slot = cell.dataset.tacticSlot;

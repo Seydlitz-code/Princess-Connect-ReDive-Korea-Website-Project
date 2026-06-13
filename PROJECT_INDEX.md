@@ -316,13 +316,21 @@ Git 커밋 메시지(`프리코네 한섭 게임공략 웹사이트 / Ver X.X.X`
 
 ### Ver 0.5.0.3 (2026-06-14)
 
-- **텍틱 기록기 UI 확장**: 텍틱 텍스트 입력 구역(colSpan=2)을 **좌우 반으로 분할**해 추가 구역 신설
+- **텍틱 기록기 UI 확장**: 텍틱 텍스트 입력 구역(colSpan=2)을 **좌우 반으로 분할**해 새 구역 신설
   - 기존: `시간 | 텍틱 텍스트(colSpan=2) | 오토여부 × 5`
-  - 변경: `시간 | 텍틱 텍스트(col 1) | 추가 입력(col 2) | 오토여부 × 5`
+  - 변경: `시간 | 텍틱 텍스트(col 1) | Auto 여부(col 2) | SET 여부 × 5`
   - `createTacticInputRow()`에서 `tacticTextCell`(colSpan=2) → `tacticTextCell`(col 1) + `extraCell`(col 2)로 분리
-  - `extraCell`은 contentEditable, placeholder `추가 입력`
-  - CSS 추가: `.clan-tactic-table__extra-cell` 및 placeholder 스타일 (왼쪽 정렬)
-  - 게시물 상세 읽기 전용 모드에서 추가 구역 placeholder 숨김 처리
+  - `extraCell` placeholder: `Auto 여부` (중앙 정렬, 폰트 굵게)
+  - 기존 `오토여부` placeholder → `SET 여부`로 변경
+  - CSS 추가: `.clan-tactic-table__extra-cell` 중앙 정렬 스타일
+  - 게시물 상세 읽기 전용 모드에서 새 구역 placeholder 숨김 처리
+- **Auto 여부 / SET 여부 드롭다운 UI** 추가
+  - `createTacticDropdown()` 함수: O/X 두 선택지, 기본값 O
+  - Auto 여부 드롭다운: 보스 이미지 추가 시 표시
+  - SET 여부 드롭다운(×5): 해당 슬롯에 캐릭터 추가 시 표시
+  - `updateTacticDropdownVisibility(sourceCell)` 함수로 캐릭터/보스 추가·삭제 시 드롭다운 표시/숨김 처리
+  - CSS 추가: `.clan-tactic-table__dropdown` (26px 높이, 중앙 정렬, 포커스 시 분홍 테두리)
+  - 읽기 전용 모드: 드롭다운 비활성화 + 회색 배경, placeholder 숨김 처리
 
 ### Ver 0.5.0.2 (2026-06-14)
 

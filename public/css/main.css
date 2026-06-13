@@ -4301,6 +4301,26 @@ td.clan-tactic-table__sep-cell {
   color: #000;
 }
 
+.clan-tactic-table__dropdown {
+  width: 100%;
+  height: 26px;
+  padding: 2px 4px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  color: #000;
+  cursor: pointer;
+  outline: none;
+}
+
+.clan-tactic-table__dropdown:focus {
+  border-color: var(--pink);
+}
+
 .clan-tactic-table__rank-text {
   display: flex;
   align-items: center;
@@ -4406,9 +4426,10 @@ td.clan-tactic-table__grid-cell.clan-tactic-table__auto-cell:is(
 td.clan-tactic-table__grid-cell.clan-tactic-table__extra-cell {
   position: relative;
   font-size: 0.85rem;
+  font-weight: 700;
   padding: 4px 8px;
   height: 32px;
-  text-align: left;
+  text-align: center;
 }
 
 td.clan-tactic-table__grid-cell.clan-tactic-table__extra-cell:is(
@@ -4423,9 +4444,8 @@ td.clan-tactic-table__grid-cell.clan-tactic-table__extra-cell:is(
   inset: 0;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding-left: 8px;
-  text-align: left;
+  justify-content: center;
+  text-align: center;
   color: #999;
   pointer-events: none;
   font-weight: 400;
@@ -4654,12 +4674,27 @@ td.clan-tactic-table__rank-input-cell {
   content: none;
 }
 
+.clan-detail-body .clan-tactic-table__auto-cell:has(> .clan-tactic-table__dropdown)::before {
+  content: none;
+}
+
 .clan-detail-body .clan-tactic-table__extra-cell:empty::before,
 .clan-detail-body .clan-tactic-table__extra-cell:has(> br:only-child)::before,
 .clan-detail-body .clan-tactic-table__extra-cell:has(> div:only-child:empty)::before,
 .clan-detail-body .clan-tactic-table__extra-cell:has(> div:only-child > br:only-child)::before,
 .clan-detail-body .clan-tactic-table__extra-cell:has(> p:only-child > br:only-child)::before {
   content: none;
+}
+
+.clan-detail-body .clan-tactic-table__extra-cell:has(> .clan-tactic-table__dropdown)::before {
+  content: none;
+}
+
+.clan-detail-body .clan-tactic-table__dropdown:disabled {
+  opacity: 1;
+  background: #f5f5f5;
+  color: #000;
+  cursor: default;
 }
 
 .clan-detail-body .clan-tactic-table__damage-input::placeholder {
