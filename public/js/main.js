@@ -3168,6 +3168,12 @@
   const tacticCharPopupEmpty = document.getElementById('tactic-character-popup-empty');
   let tacticCharTargetCell = null;
   let tacticCharSelectedId = null;
+  const carryoverTimePopup = document.getElementById('carryover-time-popup');
+  const carryoverTimeInputMin = document.getElementById('carryover-time-input-min');
+  const carryoverTimeInputSec = document.getElementById('carryover-time-input-sec');
+  const carryoverTimePopupCancel = document.getElementById('carryover-time-popup-cancel');
+  const carryoverTimePopupConfirm = document.getElementById('carryover-time-popup-confirm');
+  let carryoverTimeTargetTable = null;
   const clanCommentWriteForm = document.getElementById('clan-comment-write-form');
   const clanCommentInput = document.getElementById('clan-comment-input');
   const clanCommentSubmit = document.getElementById('clan-comment-submit');
@@ -3781,6 +3787,26 @@
     body.querySelectorAll('.clan-tactic-table-wrap input, .clan-tactic-table-wrap textarea, .clan-tactic-table-wrap select, .clan-tactic-table-wrap button').forEach(function (el) {
       el.disabled = true;
     });
+
+    var tacticTableWraps = body.querySelectorAll('.clan-tactic-table-wrap');
+    if (tacticTableWraps.length > 0) {
+      tacticTableWraps.forEach(function (wrap) {
+        var themeInner = wrap.querySelector('.clan-tactic-table__theme-inner');
+        if (!themeInner || themeInner.querySelector('.clan-tactic-table__carryover-btn')) return;
+        var carryoverBtn = document.createElement('button');
+        carryoverBtn.type = 'button';
+        carryoverBtn.className = 'clan-tactic-table__carryover-btn';
+        carryoverBtn.textContent = '이월타 계산기';
+        carryoverBtn.disabled = false;
+        carryoverBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          carryoverTimeTargetTable = wrap.querySelector('.clan-tactic-table');
+          openCarryoverTimePopup();
+        });
+        themeInner.appendChild(carryoverBtn);
+      });
+    }
 
     clanDetailContent.innerHTML = '';
     clanDetailContent.appendChild(headerBlock);
@@ -5368,5 +5394,77 @@
 
   tacticCharPopupCancel?.addEventListener('click', () => { closeTacticCharPopup(); });
   tacticCharPopup?.querySelector('[data-close-tactic-char]')?.addEventListener('click', () => { closeTacticCharPopup(); });
+
+  function openCarryoverTimePopup() {
+    if (!carryoverTimePopup) return;
+    if (carryoverTimeInputMin) carryoverTimeInputMin.value = '';
+    if (carryoverTimeInputSec) carryoverTimeInputSec.value = '';
+    carryoverTimePopup.hidden = false;
+    if (carryoverTimeInputMin) carryoverTimeInputMin.focus();
+  }
+
+  function closeCarryoverTimePopup() {
+    if (carryoverTimePopup) carryoverTimePopup.hidden = true;
+    carryoverTimeTargetTable = null;
+  }
+
+  function validateCarryoverTimeInput(secOnlyFormat) {
+    if (!carryoverTimeInputMin || !carryoverTimeInputSec) return;
+    var minRaw = carryoverTimeInputMin.value.replace(/[^0-9]/g, '').slice(0, 1);
+    var secRaw = carryoverTimeInputSec.value.replace(/[^0-9]/g, '').slice(0, 2);
+    var minNum = minRaw === '' ? 0 : parseInt(minRaw, 10);
+    var secNum = secRaw === '' ? 0 : parseInt(secRaw, 10);
+    if (Number.isNaN(minNum)) minNum = 0;
+    if (Number.isNaN(secNum)) secNum = 0;
+
+    if (minNum > 1) minNum = 1;
+    if (minNum === 1) {
+      secNum = Math.min(secNum, 30);
+    } else {
+      secNum = Math.min(secNum, 59);
+    }
+
+    var total = minNum * 60 + secNum;
+    if (total > 90) {
+      minNum = 1;
+      secNum = 30;
+    }
+
+    if (minRaw === '' && secRaw !== '' && !secOnlyFormat) {
+      carryoverTimeInputMin.value = '0';
+    } else if (minRaw === '' && !secOnlyFormat) {
+      carryoverTimeInputMin.value = '';
+    } else {
+      carryoverTimeInputMin.value = String(minNum);
+    }
+
+    if (secRaw === '' && !secOnlyFormat) {
+      carryoverTimeInputSec.value = '';
+    } else if (secOnlyFormat) {
+      carryoverTimeInputSec.value = String(secNum).padStart(2, '0');
+    } else {
+      carryoverTimeInputSec.value = String(secNum);
+    }
+  }
+
+  carryoverTimeInputMin?.addEventListener('input', function () { validateCarryoverTimeInput(false); });
+  carryoverTimeInputSec?.addEventListener('input', function () { validateCarryoverTimeInput(false); });
+  carryoverTimeInputMin?.addEventListener('blur', function () { validateCarryoverTimeInput(true); });
+  carryoverTimeInputSec?.addEventListener('blur', function () { validateCarryoverTimeInput(true); });
+
+  carryoverTimePopupCancel?.addEventListener('click', function () { closeCarryoverTimePopup(); });
+  carryoverTimePopup?.querySelector('[data-close-carryover-time]')?.addEventListener('click', function () { closeCarryoverTimePopup(); });
+
+  carryoverTimePopupConfirm?.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var minRaw = carryoverTimeInputMin ? carryoverTimeInputMin.value.replace(/[^0-9]/g, '') : '0';
+    var secRaw = carryoverTimeInputSec ? carryoverTimeInputSec.value.replace(/[^0-9]/g, '') : '0';
+    var minNum = minRaw === '' ? 0 : parseInt(minRaw, 10);
+    var secNum = secRaw === '' ? 0 : parseInt(secRaw, 10);
+    if (Number.isNaN(minNum)) minNum = 0;
+    if (Number.isNaN(secNum)) secNum = 0;
+    closeCarryoverTimePopup();
+  });
 
 })();

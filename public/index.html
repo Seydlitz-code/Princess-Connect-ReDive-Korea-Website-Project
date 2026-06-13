@@ -910,6 +910,43 @@
       </div>
     </div>
 
+    <div class="modal-root" id="carryover-time-popup" role="dialog" aria-modal="true" aria-labelledby="carryover-time-popup-heading" hidden>
+      <div class="modal-backdrop" data-close-carryover-time tabindex="-1"></div>
+      <div class="modal-sheet carryover-time-popup-sheet" role="document">
+        <header class="modal-head">
+          <h2 id="carryover-time-popup-heading" class="modal-title">이월타 계산기</h2>
+          <p class="carryover-time-popup-desc">이월 시간을 입력해주세요.</p>
+        </header>
+        <div class="carryover-time-popup-input-wrap">
+          <input
+            type="text"
+            id="carryover-time-input-min"
+            class="carryover-time-popup-time-part"
+            inputmode="numeric"
+            autocomplete="off"
+            spellcheck="false"
+            maxlength="1"
+            aria-label="분"
+          />
+          <span class="carryover-time-popup-time-sep" aria-hidden="true">:</span>
+          <input
+            type="text"
+            id="carryover-time-input-sec"
+            class="carryover-time-popup-time-part"
+            inputmode="numeric"
+            autocomplete="off"
+            spellcheck="false"
+            maxlength="2"
+            aria-label="초"
+          />
+        </div>
+        <footer class="modal-footer carryover-time-popup-footer">
+          <button type="button" class="carryover-time-popup-btn carryover-time-popup-btn--cancel" id="carryover-time-popup-cancel">취소</button>
+          <button type="button" class="carryover-time-popup-btn carryover-time-popup-btn--confirm" id="carryover-time-popup-confirm">확인</button>
+        </footer>
+      </div>
+    </div>
+
     <script src="/js/main.js" defer></script>
   </body>
 </html>
