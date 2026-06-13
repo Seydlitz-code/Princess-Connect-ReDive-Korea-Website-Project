@@ -4118,6 +4118,10 @@ button.future-type-badge {
   width: var(--tactic-image-slot-size);
 }
 
+.clan-tactic-table__col-extra {
+  width: var(--tactic-image-slot-size);
+}
+
 
 .clan-tactic-table td.clan-tactic-table__char-name-cell {
   text-align: center;
@@ -4403,6 +4407,35 @@ td.clan-tactic-table__grid-cell.clan-tactic-table__auto-cell:is(
   font-size: 0.8rem;
 }
 
+td.clan-tactic-table__grid-cell.clan-tactic-table__extra-cell {
+  position: relative;
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  height: 32px;
+  text-align: left;
+}
+
+td.clan-tactic-table__grid-cell.clan-tactic-table__extra-cell:is(
+  :empty,
+  :has(> br:only-child),
+  :has(> div:only-child:empty),
+  :has(> div:only-child > br:only-child),
+  :has(> p:only-child > br:only-child)
+)::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 8px;
+  text-align: left;
+  color: #999;
+  pointer-events: none;
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
 .clan-tactic-table__grid-cell--head {
 }
 
@@ -4622,6 +4655,14 @@ td.clan-tactic-table__rank-input-cell {
 .clan-detail-body .clan-tactic-table__auto-cell:has(> div:only-child:empty)::before,
 .clan-detail-body .clan-tactic-table__auto-cell:has(> div:only-child > br:only-child)::before,
 .clan-detail-body .clan-tactic-table__auto-cell:has(> p:only-child > br:only-child)::before {
+  content: none;
+}
+
+.clan-detail-body .clan-tactic-table__extra-cell:empty::before,
+.clan-detail-body .clan-tactic-table__extra-cell:has(> br:only-child)::before,
+.clan-detail-body .clan-tactic-table__extra-cell:has(> div:only-child:empty)::before,
+.clan-detail-body .clan-tactic-table__extra-cell:has(> div:only-child > br:only-child)::before,
+.clan-detail-body .clan-tactic-table__extra-cell:has(> p:only-child > br:only-child)::before {
   content: none;
 }
 

@@ -4552,6 +4552,13 @@
       tr.appendChild(cell);
     }
 
+    // 8열: 추가 구역
+    const extraCell = document.createElement('td');
+    extraCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__extra-cell';
+    extraCell.contentEditable = 'true';
+    extraCell.dataset.placeholder = '\uCD94\uAC00 \uC785\uB825';
+    tr.appendChild(extraCell);
+
     return tr;
   }
 
@@ -4785,7 +4792,7 @@
 
     const addCell = document.createElement('td');
     addCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__add-cell';
-    addCell.colSpan = 8;
+    addCell.colSpan = 9;
     addCell.contentEditable = 'false';
 
     const addBtn = document.createElement('button');
@@ -4813,10 +4820,13 @@
     const colChars = document.createElement('col');
     colChars.span = 5;
     colChars.className = 'clan-tactic-table__col-slot';
+    const colExtra = document.createElement('col');
+    colExtra.className = 'clan-tactic-table__col-extra';
     colgroup.appendChild(colNarrow);
     colgroup.appendChild(colLabel);
     colgroup.appendChild(colBoss);
     colgroup.appendChild(colChars);
+    colgroup.appendChild(colExtra);
     table.appendChild(colgroup);
     table.appendChild(tbody);
     wrap.appendChild(table);
