@@ -4506,11 +4506,12 @@
     if (!table) return;
     const slot = sourceCell.dataset.tacticSlot;
     if (slot) {
-      const autoCell = table.querySelector(`.clan-tactic-table__auto-cell[data-tactic-slot="${slot}"]`);
-      if (autoCell) {
-        const dropdown = autoCell.querySelector('.clan-tactic-table__dropdown');
+      const shouldShow = !!sourceCell.querySelector('.clan-tactic-table__boss-wrap');
+      const autoCells = table.querySelectorAll(`.clan-tactic-table__auto-cell[data-tactic-slot="${slot}"]`);
+      for (let i = 0; i < autoCells.length; i += 1) {
+        const dropdown = autoCells[i].querySelector('.clan-tactic-table__dropdown');
         if (dropdown) {
-          dropdown.hidden = !sourceCell.querySelector('.clan-tactic-table__boss-wrap');
+          dropdown.hidden = !shouldShow;
         }
       }
     }
@@ -4840,6 +4841,12 @@
       e.stopPropagation();
       const newRow = createTacticInputRow();
       tbody.insertBefore(newRow, tr6);
+      for (let slot = 1; slot <= 5; slot += 1) {
+        const headerCell = table.querySelector(`.clan-tactic-table__char-cell[data-tactic-slot="${slot}"]`);
+        if (headerCell) {
+          updateTacticDropdownVisibility(headerCell);
+        }
+      }
     });
 
     addCell.appendChild(addBtn);
