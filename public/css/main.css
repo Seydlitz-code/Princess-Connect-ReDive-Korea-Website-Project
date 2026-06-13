@@ -2979,7 +2979,7 @@ button.future-type-badge {
   }
 
   .nav-ko {
-    font-size: 0.85rem;
+  font-size: 0.6rem;
   }
 
   .nav-ja {
@@ -4306,7 +4306,7 @@ td.clan-tactic-table__sep-cell {
   height: 26px;
   padding: 2px 4px;
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.6rem;
   font-weight: 700;
   text-align: center;
   border: 1px solid #ccc;

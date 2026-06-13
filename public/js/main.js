@@ -4430,7 +4430,7 @@
       e.stopPropagation();
     }
 
-    function clampAndApply() {
+    function clampAndApply(isBlur) {
       const minDigits = minInput.value.replace(/[^0-9]/g, '').slice(0, 1);
       const secDigits = secInput.value.replace(/[^0-9]/g, '').slice(0, 2);
       let min = minDigits === '' ? 0 : parseInt(minDigits, 10);
@@ -4451,7 +4451,7 @@
         sec = 30;
       }
 
-      if (minDigits === '' && secDigits !== '') {
+      if (isBlur && minDigits === '' && secDigits !== '') {
         minInput.value = '0';
       } else if (minDigits !== '') {
         minInput.value = String(min);
@@ -4466,10 +4466,10 @@
       }
     }
 
-    minInput.addEventListener('input', () => clampAndApply());
-    secInput.addEventListener('input', () => clampAndApply());
-    minInput.addEventListener('blur', () => clampAndApply());
-    secInput.addEventListener('blur', () => clampAndApply());
+    minInput.addEventListener('input', () => clampAndApply(false));
+    secInput.addEventListener('input', () => clampAndApply(false));
+    minInput.addEventListener('blur', () => clampAndApply(true));
+    secInput.addEventListener('blur', () => clampAndApply(true));
     [minInput, secInput, wrap].forEach((el) => {
       el.addEventListener('mousedown', stopEditBubble);
       el.addEventListener('click', stopEditBubble);
