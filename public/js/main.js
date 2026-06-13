@@ -5408,7 +5408,7 @@
     carryoverTimeTargetTable = null;
   }
 
-  function validateCarryoverTimeInput(secOnlyFormat) {
+  function validateCarryoverTimeInput() {
     if (!carryoverTimeInputMin || !carryoverTimeInputSec) return;
     var minRaw = carryoverTimeInputMin.value.replace(/[^0-9]/g, '').slice(0, 1);
     var secRaw = carryoverTimeInputSec.value.replace(/[^0-9]/g, '').slice(0, 2);
@@ -5430,27 +5430,25 @@
       secNum = 30;
     }
 
-    if (minRaw === '' && secRaw !== '' && !secOnlyFormat) {
+    if (minRaw === '' && secRaw !== '') {
       carryoverTimeInputMin.value = '0';
-    } else if (minRaw === '' && !secOnlyFormat) {
-      carryoverTimeInputMin.value = '';
-    } else {
+    } else if (minRaw !== '') {
       carryoverTimeInputMin.value = String(minNum);
+    } else {
+      carryoverTimeInputMin.value = '';
     }
 
-    if (secRaw === '' && !secOnlyFormat) {
-      carryoverTimeInputSec.value = '';
-    } else if (secOnlyFormat) {
-      carryoverTimeInputSec.value = String(secNum).padStart(2, '0');
-    } else {
+    if (secRaw !== '') {
       carryoverTimeInputSec.value = String(secNum);
+    } else {
+      carryoverTimeInputSec.value = '';
     }
   }
 
-  carryoverTimeInputMin?.addEventListener('input', function () { validateCarryoverTimeInput(false); });
-  carryoverTimeInputSec?.addEventListener('input', function () { validateCarryoverTimeInput(false); });
-  carryoverTimeInputMin?.addEventListener('blur', function () { validateCarryoverTimeInput(true); });
-  carryoverTimeInputSec?.addEventListener('blur', function () { validateCarryoverTimeInput(true); });
+  carryoverTimeInputMin?.addEventListener('input', function () { validateCarryoverTimeInput(); });
+  carryoverTimeInputSec?.addEventListener('input', function () { validateCarryoverTimeInput(); });
+  carryoverTimeInputMin?.addEventListener('blur', function () { validateCarryoverTimeInput(); });
+  carryoverTimeInputSec?.addEventListener('blur', function () { validateCarryoverTimeInput(); });
 
   carryoverTimePopupCancel?.addEventListener('click', function () { closeCarryoverTimePopup(); });
   carryoverTimePopup?.querySelector('[data-close-carryover-time]')?.addEventListener('click', function () { closeCarryoverTimePopup(); });
