@@ -5379,3 +5379,56 @@ td.clan-tactic-table__add-cell {
   outline: 2px solid var(--nav-active);
   outline-offset: 2px;
 }
+
+.carryover-tactic-result {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 12px 0;
+}
+
+.carryover-tactic-result .clan-tactic-table {
+  border: 2px solid var(--pink);
+}
+
+.carryover-tactic-result .clan-tactic-table__theme-row td {
+  background: var(--pink) !important;
+  color: #fff;
+  font-size: 0.95rem;
+  text-align: center;
+  padding: 8px 10px;
+}
+
+.carryover-tactic-result .clan-tactic-table__theme-inner {
+  justify-content: center;
+}
+
+.carryover-tactic-result input:disabled,
+.carryover-tactic-result select:disabled {
+  opacity: 1;
+  color: #000;
+  background: #fafafa;
+  cursor: default;
+  -webkit-text-fill-color: #000;
+}
+
+.carryover-tactic-result .clan-tactic-table__dropdown:disabled {
+  opacity: 1;
+  background: #f5f5f5;
+  color: #000;
+  cursor: default;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.carryover-tactic-result .clan-tactic-table__tactic-text-cell {
+  cursor: default;
+  user-select: text;
+}
+
+.carryover-tactic-result .clan-tactic-table__boss-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  aspect-ratio: 1 / 1;
+}

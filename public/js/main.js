@@ -5487,6 +5487,273 @@
   tacticCharPopupCancel?.addEventListener('click', () => { closeTacticCharPopup(); });
   tacticCharPopup?.querySelector('[data-close-tactic-char]')?.addEventListener('click', () => { closeTacticCharPopup(); });
 
+  function formatSecondsToMMSS(totalSec) {
+    var m = Math.floor(totalSec / 60);
+    var s = totalSec % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function parseTimeToTotalSec(timeStr) {
+    var parts = timeStr.split(':');
+    var min = parseInt(parts[0], 10) || 0;
+    var sec = parseInt(parts[1], 10) || 0;
+    return min * 60 + sec;
+  }
+
+  function parseTacticTableRows(table) {
+    var rows = [];
+    var inputRows = table.querySelectorAll('.clan-tactic-table__input-row');
+    inputRows.forEach(function (tr) {
+      var minInput = tr.querySelector('.clan-tactic-table__time-min');
+      var secInput = tr.querySelector('.clan-tactic-table__time-sec');
+      var tacticCell = tr.querySelector('.clan-tactic-table__tactic-text-cell');
+      var extraSelect = tr.querySelector('.clan-tactic-table__extra-cell .clan-tactic-table__dropdown');
+
+      var minVal = (minInput && minInput.value) ? minInput.value.replace(/[^0-9]/g, '') : '';
+      var secVal = (secInput && secInput.value) ? secInput.value.replace(/[^0-9]/g, '') : '';
+      var minNum = minVal === '' ? 0 : parseInt(minVal, 10);
+      var secNum = secVal === '' ? 0 : parseInt(secVal, 10);
+      if (Number.isNaN(minNum)) minNum = 0;
+      if (Number.isNaN(secNum)) secNum = 0;
+      var totalSec = minNum * 60 + secNum;
+
+      var description = tacticCell ? tacticCell.innerHTML : '';
+
+      var autoVal = extraSelect ? extraSelect.value : 'O';
+
+      var setVals = [];
+      for (var slot = 1; slot <= 5; slot += 1) {
+        var autoCell = tr.querySelector('.clan-tactic-table__auto-cell[data-tactic-slot="' + slot + '"]');
+        var setSelect = autoCell ? autoCell.querySelector('.clan-tactic-table__dropdown') : null;
+        setVals.push(setSelect ? setSelect.value : 'O');
+      }
+
+      rows.push({
+        totalSec: totalSec,
+        timeDisplay: minNum + ':' + (secNum < 10 ? '0' : '') + secNum,
+        description: description,
+        autoVal: autoVal,
+        setVals: setVals
+      });
+    });
+    return rows;
+  }
+
+  function parseTacticTableHeader(table) {
+    var header = {};
+
+    var themeRow = table.querySelector('.clan-tactic-table__theme-row');
+    header.themeBg = themeRow ? themeRow.style.background || '' : '';
+
+    var dmgInput = table.querySelector('.clan-tactic-table__damage-input');
+    header.damage = dmgInput ? dmgInput.value : '';
+
+    var bossImg = table.querySelector('.clan-tactic-table__boss-cell .clan-tactic-table__boss-wrap img');
+    header.bossImgSrc = bossImg ? bossImg.src || '' : '';
+    header.bossImgWidth = bossImg ? bossImg.width || TACTIC_IMAGE_SIZE : TACTIC_IMAGE_SIZE;
+    header.bossImgHeight = bossImg ? bossImg.height || TACTIC_IMAGE_SIZE : TACTIC_IMAGE_SIZE;
+
+    var bossNameInput = table.querySelector('.clan-tactic-table__bossname-input');
+    header.bossName = bossNameInput ? bossNameInput.value : '';
+
+    header.slots = [];
+    for (var slot = 1; slot <= 5; slot += 1) {
+      var charSlot = {};
+
+      var charImg = table.querySelector('.clan-tactic-table__char-cell[data-tactic-slot="' + slot + '"] .clan-tactic-table__boss-wrap img');
+      charSlot.charImgSrc = charImg ? charImg.src || '' : '';
+
+      var nameSpan = table.querySelector('.clan-tactic-table__char-name-cell[data-tactic-slot="' + slot + '"] .clan-tactic-table__char-name-text');
+      charSlot.charName = nameSpan ? nameSpan.innerHTML : '';
+
+      var starInput = table.querySelector('.clan-tactic-table__star-grade-cell[data-tactic-slot="' + slot + '"] .clan-tactic-table__star-grade-value');
+      charSlot.starGrade = starInput ? starInput.value : '';
+
+      var rankInput = table.querySelector('.clan-tactic-table__rank-input-cell[data-tactic-slot="' + slot + '"] .clan-tactic-table__rank-input');
+      charSlot.rank = rankInput ? rankInput.value : '';
+
+      header.slots.push(charSlot);
+    }
+
+    return header;
+  }
+
+  function buildCarryoverTacticTableHTML(header, rows, carryoverTotalSec) {
+    var parts = [];
+
+    parts.push('<table class="clan-tactic-table">');
+
+    parts.push('<colgroup>');
+    parts.push('<col class="clan-tactic-table__col-narrow">');
+    parts.push('<col class="clan-tactic-table__col-label">');
+    parts.push('<col class="clan-tactic-table__col-boss">');
+    parts.push('<col class="clan-tactic-table__col-slot" span="5">');
+    parts.push('</colgroup>');
+
+    parts.push('<tbody>');
+
+    var themeColor = header.themeBg || '#F06292';
+    parts.push('<tr class="clan-tactic-table__theme-row" style="background:' + themeColor + '">');
+    parts.push('<td colspan="8">');
+    parts.push('<div class="clan-tactic-table__theme-inner" style="justify-content:center">');
+    parts.push('<span style="font-weight:700;font-size:0.85rem">이월타 택틱 (' + formatSecondsToMMSS(carryoverTotalSec) + ')</span>');
+    parts.push('</div>');
+    parts.push('</td>');
+    parts.push('</tr>');
+
+    parts.push('<tr class="clan-tactic-table__row clan-tactic-table__row--head">');
+    parts.push('<td class="clan-tactic-table__main-cell" colspan="2">');
+    parts.push('<input type="text" class="clan-tactic-table__damage-input" value="' + escapeAttr(header.damage) + '" disabled readonly>');
+    parts.push('</td>');
+    parts.push('<td class="clan-tactic-table__grid-cell clan-tactic-table__grid-cell--head clan-tactic-table__boss-cell">');
+    if (header.bossImgSrc) {
+      parts.push('<div class="clan-tactic-table__boss-wrap">');
+      parts.push('<img class="clan-tactic-table__boss-img" src="' + escapeAttr(header.bossImgSrc) + '" width="' + header.bossImgWidth + '" height="' + header.bossImgHeight + '" style="object-fit:contain;aspect-ratio:1/1">');
+      parts.push('</div>');
+    }
+    parts.push('</td>');
+    for (var si = 0; si < 5; si += 1) {
+      parts.push('<td class="clan-tactic-table__grid-cell clan-tactic-table__grid-cell--head clan-tactic-table__char-cell" data-tactic-slot="' + (si + 1) + '">');
+      if (header.slots[si] && header.slots[si].charImgSrc) {
+        parts.push('<div class="clan-tactic-table__boss-wrap">');
+        parts.push('<img class="clan-tactic-table__boss-img" src="' + escapeAttr(header.slots[si].charImgSrc) + '" width="' + TACTIC_IMAGE_SIZE + '" height="' + TACTIC_IMAGE_SIZE + '" style="object-fit:contain;aspect-ratio:1/1">');
+        parts.push('</div>');
+      }
+      parts.push('</td>');
+    }
+    parts.push('</tr>');
+
+    parts.push('<tr class="clan-tactic-table__row">');
+    parts.push('<td class="clan-tactic-table__main-cell clan-tactic-table__main-cell--placeholder" colspan="2"></td>');
+    parts.push('<td class="clan-tactic-table__grid-cell clan-tactic-table__name-cell">');
+    parts.push('<input type="text" class="clan-tactic-table__bossname-input" value="' + escapeAttr(header.bossName) + '" disabled readonly>');
+    parts.push('</td>');
+    for (var sj = 0; sj < 5; sj += 1) {
+      parts.push('<td class="clan-tactic-table__grid-cell clan-tactic-table__char-name-cell" data-tactic-slot="' + (sj + 1) + '">');
+      parts.push('<span class="clan-tactic-table__char-name-text">' + (header.slots[sj] ? header.slots[sj].charName : '') + '</span>');
+      parts.push('</td>');
+    }
+    parts.push('</tr>');
+
+    parts.push('<tr class="clan-tactic-table__row">');
+    parts.push('<td class="clan-tactic-table__main-cell clan-tactic-table__main-cell--placeholder" colspan="2"></td>');
+    parts.push('<td class="clan-tactic-table__grid-cell clan-tactic-table__star-cell clan-tactic-table__no-edit">');
+    parts.push('<span class="clan-tactic-table__star-label">캐릭터 성급</span>');
+    parts.push('</td>');
+    for (var sk = 0; sk < 5; sk += 1) {
+      parts.push('<td class="clan-tactic-table__grid-cell clan-tactic-table__star-grade-cell" data-tactic-slot="' + (sk + 1) + '">');
+      var starVal = (header.slots[sk] && header.slots[sk].starGrade) ? header.slots[sk].starGrade : '';
+      if (starVal) {
+        parts.push('<span class="clan-tactic-table__star-label" style="display:inline">' + escapeHtml(starVal) + '</span>');
+      }
+      parts.push('</td>');
+    }
+    parts.push('</tr>');
+
+    parts.push('<tr class="clan-tactic-table__row">');
+    parts.push('<td class="clan-tactic-table__main-cell clan-tactic-table__main-cell--placeholder" colspan="2"></td>');
+    parts.push('<td class="clan-tactic-table__grid-cell clan-tactic-table__rank-cell clan-tactic-table__no-edit">');
+    parts.push('<span class="clan-tactic-table__rank-text">RANK</span>');
+    parts.push('</td>');
+    for (var sl = 0; sl < 5; sl += 1) {
+      parts.push('<td class="clan-tactic-table__grid-cell clan-tactic-table__rank-input-cell" data-tactic-slot="' + (sl + 1) + '">');
+      var rankVal = (header.slots[sl] && header.slots[sl].rank) ? header.slots[sl].rank : '';
+      if (rankVal) {
+        parts.push('<span class="clan-tactic-table__rank-text" style="display:inline">' + escapeHtml(rankVal) + '</span>');
+      }
+      parts.push('</td>');
+    }
+    parts.push('</tr>');
+
+    for (var ri = 0; ri < rows.length; ri += 1) {
+      var row = rows[ri];
+
+      parts.push('<tr class="clan-tactic-table__row clan-tactic-table__input-row">');
+
+      parts.push('<td class="clan-tactic-table__grid-cell clan-tactic-table__sep-cell">');
+      var mmss = formatSecondsToMMSS(row.carryoverSec);
+      var mmssParts = mmss.split(':');
+      parts.push('<div class="clan-tactic-table__time-input">');
+      parts.push('<input type="text" class="clan-tactic-table__time-part clan-tactic-table__time-min" value="' + escapeAttr(mmssParts[0]) + '" disabled readonly>');
+      parts.push('<span class="clan-tactic-table__time-sep">:</span>');
+      parts.push('<input type="text" class="clan-tactic-table__time-part clan-tactic-table__time-sec" value="' + escapeAttr(mmssParts[1]) + '" disabled readonly>');
+      parts.push('</div>');
+      parts.push('</td>');
+
+      parts.push('<td class="clan-tactic-table__grid-cell clan-tactic-table__tactic-text-cell">');
+      parts.push(row.description);
+      parts.push('</td>');
+
+      parts.push('<td class="clan-tactic-table__grid-cell clan-tactic-table__extra-cell">');
+      parts.push('<select class="clan-tactic-table__dropdown clan-tactic-table__dropdown--extra" disabled>');
+      parts.push('<option value="O"' + (row.autoVal === 'O' ? ' selected' : '') + '>Auto ON</option>');
+      parts.push('<option value="X"' + (row.autoVal === 'X' ? ' selected' : '') + '>Auto OFF</option>');
+      parts.push('</select>');
+      parts.push('</td>');
+
+      for (var di = 0; di < 5; di += 1) {
+        var setVal = row.setVals[di] || 'O';
+        parts.push('<td class="clan-tactic-table__grid-cell clan-tactic-table__auto-cell" data-tactic-slot="' + (di + 1) + '">');
+        parts.push('<select class="clan-tactic-table__dropdown clan-tactic-table__dropdown--set" disabled>');
+        parts.push('<option value="O"' + (setVal === 'O' ? ' selected' : '') + '>SET ON</option>');
+        parts.push('<option value="X"' + (setVal === 'X' ? ' selected' : '') + '>SET OFF</option>');
+        parts.push('</select>');
+        parts.push('</td>');
+      }
+
+      parts.push('</tr>');
+    }
+
+    parts.push('</tbody>');
+    parts.push('</table>');
+
+    return parts.join('');
+  }
+
+  function escapeAttr(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function generateCarryoverTable(wrap, carryoverTotalSec) {
+    if (!wrap || !carryoverTotalSec) return;
+    var table = wrap.querySelector('.clan-tactic-table');
+    if (!table) return;
+
+    var allRows = parseTacticTableRows(table);
+    var header = parseTacticTableHeader(table);
+
+    var convertedRows = [];
+    for (var i = 0; i < allRows.length; i += 1) {
+      var originalSec = allRows[i].totalSec;
+      var carryoverSec = carryoverTotalSec - (TACTIC_TIME_MAX_TOTAL_SEC - originalSec);
+      if (carryoverSec <= 0) continue;
+      var row = {
+        carryoverSec: carryoverSec,
+        description: allRows[i].description,
+        autoVal: allRows[i].autoVal,
+        setVals: allRows[i].setVals
+      };
+      convertedRows.push(row);
+    }
+
+    if (convertedRows.length === 0) return null;
+
+    var existing = wrap.parentNode.querySelector('.carryover-tactic-result');
+    if (existing) existing.remove();
+
+    var resultWrap = document.createElement('div');
+    resultWrap.className = 'carryover-tactic-result';
+
+    var html = buildCarryoverTacticTableHTML(header, convertedRows, carryoverTotalSec);
+    resultWrap.innerHTML = html;
+
+    return resultWrap;
+  }
+
   function openCarryoverTimePopup() {
     if (!carryoverTimePopup) return;
     if (carryoverTimeInputMin) carryoverTimeInputMin.value = '';
@@ -5554,6 +5821,20 @@
     var secNum = secRaw === '' ? 0 : parseInt(secRaw, 10);
     if (Number.isNaN(minNum)) minNum = 0;
     if (Number.isNaN(secNum)) secNum = 0;
+    var carryoverTotalSec = minNum * 60 + secNum;
+
+    if (carryoverTimeTargetTable) {
+      var wrap = carryoverTimeTargetTable.closest('.clan-tactic-table-wrap');
+      if (wrap) {
+        var resultWrap = generateCarryoverTable(wrap, carryoverTotalSec);
+        if (resultWrap) {
+          wrap.insertAdjacentElement('afterend', resultWrap);
+        } else {
+          var existing = wrap.parentNode.querySelector('.carryover-tactic-result');
+          if (existing) existing.remove();
+        }
+      }
+    }
     closeCarryoverTimePopup();
   });
 
