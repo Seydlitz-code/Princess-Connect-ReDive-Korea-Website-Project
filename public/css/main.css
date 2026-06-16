@@ -5380,18 +5380,31 @@ td.clan-tactic-table__add-cell {
   outline-offset: 2px;
 }
 
-.carryover-tactic-result {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  margin: 12px 0;
+.carryover-tactic-result-sheet {
+  width: min(96vw, 880px);
+  max-height: min(90vh, 880px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.carryover-tactic-result .clan-tactic-table {
+.carryover-tactic-result-body {
+  flex: 1 1 auto;
+  overflow-x: auto;
+  overflow-y: auto;
+  padding: 0 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.carryover-tactic-result-body .clan-tactic-table-wrap {
+  margin: 0;
+}
+
+.carryover-tactic-result-body .clan-tactic-table {
   border: 2px solid var(--pink);
 }
 
-.carryover-tactic-result .clan-tactic-table__theme-row td {
+.carryover-tactic-result-body .clan-tactic-table__theme-row td {
   background: var(--pink) !important;
   color: #fff;
   font-size: 0.95rem;
@@ -5399,12 +5412,12 @@ td.clan-tactic-table__add-cell {
   padding: 8px 10px;
 }
 
-.carryover-tactic-result .clan-tactic-table__theme-inner {
+.carryover-tactic-result-body .clan-tactic-table__theme-inner {
   justify-content: center;
 }
 
-.carryover-tactic-result input:disabled,
-.carryover-tactic-result select:disabled {
+.carryover-tactic-result-body input:disabled,
+.carryover-tactic-result-body select:disabled {
   opacity: 1;
   color: #000;
   background: #fafafa;
@@ -5412,7 +5425,7 @@ td.clan-tactic-table__add-cell {
   -webkit-text-fill-color: #000;
 }
 
-.carryover-tactic-result .clan-tactic-table__dropdown:disabled {
+.carryover-tactic-result-body .clan-tactic-table__dropdown:disabled {
   opacity: 1;
   background: #f5f5f5;
   color: #000;
@@ -5421,14 +5434,21 @@ td.clan-tactic-table__add-cell {
   -webkit-appearance: none;
 }
 
-.carryover-tactic-result .clan-tactic-table__tactic-text-cell {
+.carryover-tactic-result-body .clan-tactic-table__tactic-text-cell {
   cursor: default;
   user-select: text;
 }
 
-.carryover-tactic-result .clan-tactic-table__boss-img {
+.carryover-tactic-result-body .clan-tactic-table__boss-img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
   aspect-ratio: 1 / 1;
+}
+
+.carryover-tactic-result-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
 }

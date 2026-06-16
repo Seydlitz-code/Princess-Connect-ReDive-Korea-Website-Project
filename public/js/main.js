@@ -3177,6 +3177,9 @@
   const carryoverTimePopupCancel = document.getElementById('carryover-time-popup-cancel');
   const carryoverTimePopupConfirm = document.getElementById('carryover-time-popup-confirm');
   let carryoverTimeTargetTable = null;
+  const carryoverTacticResultPopup = document.getElementById('carryover-tactic-result-popup');
+  const carryoverTacticResultBody = document.getElementById('carryover-tactic-result-body');
+  const carryoverTacticResultClose = document.getElementById('carryover-tactic-result-close');
   const clanCommentWriteForm = document.getElementById('clan-comment-write-form');
   const clanCommentInput = document.getElementById('clan-comment-input');
   const clanCommentSubmit = document.getElementById('clan-comment-submit');
@@ -5718,10 +5721,10 @@
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  function generateCarryoverTable(wrap, carryoverTotalSec) {
-    if (!wrap || !carryoverTotalSec) return;
+  function generateCarryoverTableHTML(wrap, carryoverTotalSec) {
+    if (!wrap || !carryoverTotalSec) return null;
     var table = wrap.querySelector('.clan-tactic-table');
-    if (!table) return;
+    if (!table) return null;
 
     var allRows = parseTacticTableRows(table);
     var header = parseTacticTableHeader(table);
@@ -5742,16 +5745,17 @@
 
     if (convertedRows.length === 0) return null;
 
-    var existing = wrap.parentNode.querySelector('.carryover-tactic-result');
-    if (existing) existing.remove();
+    return buildCarryoverTacticTableHTML(header, convertedRows, carryoverTotalSec);
+  }
 
-    var resultWrap = document.createElement('div');
-    resultWrap.className = 'carryover-tactic-result';
+  function openCarryoverTacticResultPopup(html) {
+    if (!carryoverTacticResultPopup || !carryoverTacticResultBody) return;
+    carryoverTacticResultBody.innerHTML = '<div class="clan-tactic-table-wrap">' + html + '</div>';
+    carryoverTacticResultPopup.hidden = false;
+  }
 
-    var html = buildCarryoverTacticTableHTML(header, convertedRows, carryoverTotalSec);
-    resultWrap.innerHTML = html;
-
-    return resultWrap;
+  function closeCarryoverTacticResultPopup() {
+    if (carryoverTacticResultPopup) carryoverTacticResultPopup.hidden = true;
   }
 
   function openCarryoverTimePopup() {
@@ -5823,19 +5827,21 @@
     if (Number.isNaN(secNum)) secNum = 0;
     var carryoverTotalSec = minNum * 60 + secNum;
 
+    var resultHTML = null;
     if (carryoverTimeTargetTable) {
       var wrap = carryoverTimeTargetTable.closest('.clan-tactic-table-wrap');
       if (wrap) {
-        var resultWrap = generateCarryoverTable(wrap, carryoverTotalSec);
-        if (resultWrap) {
-          wrap.insertAdjacentElement('afterend', resultWrap);
-        } else {
-          var existing = wrap.parentNode.querySelector('.carryover-tactic-result');
-          if (existing) existing.remove();
-        }
+        resultHTML = generateCarryoverTableHTML(wrap, carryoverTotalSec);
       }
     }
     closeCarryoverTimePopup();
+
+    if (resultHTML) {
+      openCarryoverTacticResultPopup(resultHTML);
+    }
   });
+
+  carryoverTacticResultClose?.addEventListener('click', function () { closeCarryoverTacticResultPopup(); });
+  carryoverTacticResultPopup?.querySelector('[data-close-carryover-tactic-result]')?.addEventListener('click', function () { closeCarryoverTacticResultPopup(); });
 
 })();
