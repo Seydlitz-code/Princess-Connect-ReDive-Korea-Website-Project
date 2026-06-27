@@ -4682,14 +4682,8 @@
     dmgInput.inputMode = 'numeric';
     dmgInput.autocomplete = 'off';
     dmgInput.addEventListener('input', () => {
-      let raw = dmgInput.value.replace(/[^0-9]/g, '');
-      if (raw.length > 10) raw = raw.slice(0, 10);
-      if (raw === '') {
-        dmgInput.value = '';
-      } else {
-        const num = parseInt(raw, 10);
-        dmgInput.value = num.toLocaleString('ko-KR');
-      }
+      const sanitized = dmgInput.value.replace(/[^0-9+\-~]/g, '');
+      if (dmgInput.value !== sanitized) dmgInput.value = sanitized;
     });
     dmgCell.appendChild(dmgInput);
     tr1.appendChild(dmgCell);
@@ -4747,6 +4741,18 @@
     nameInput.placeholder = '\uBCF4\uC2A4\uBA85 \uC785\uB825';
     nameInput.maxLength = 8;
     nameInput.autocomplete = 'off';
+    nameInput.addEventListener('mousedown', (e) => {
+      const tbl = nameInput.closest('.clan-tactic-table');
+      if (!tbl?.querySelector('.clan-tactic-table__boss-cell .clan-tactic-table__boss-wrap')) {
+        e.preventDefault();
+      }
+    });
+    nameInput.addEventListener('focus', (e) => {
+      const tbl = nameInput.closest('.clan-tactic-table');
+      if (!tbl?.querySelector('.clan-tactic-table__boss-cell .clan-tactic-table__boss-wrap')) {
+        nameInput.blur();
+      }
+    });
     bossNameCell.appendChild(nameInput);
     tr2.appendChild(bossNameCell);
 
@@ -4990,6 +4996,51 @@
     e.preventDefault();
   }
 
+  function isTacticColumnSlotEmpty(table, slotEl) {
+    if (!table || !slotEl) return false;
+    if (slotEl.classList.contains('clan-tactic-table__boss-cell') ||
+        slotEl.closest('.clan-tactic-table__boss-cell')) {
+      return !table.querySelector('.clan-tactic-table__boss-cell .clan-tactic-table__boss-wrap');
+    }
+    const slot = slotEl.dataset?.tacticSlot;
+    if (!slot) {
+      const nameCell = slotEl.closest?.('.clan-tactic-table__name-cell');
+      if (nameCell) {
+        return !table.querySelector('.clan-tactic-table__boss-cell .clan-tactic-table__boss-wrap');
+      }
+      return false;
+    }
+    const charCell = table.querySelector(`.clan-tactic-table__char-cell[data-tactic-slot="${slot}"]`);
+    return !charCell?.querySelector('.clan-tactic-table__boss-wrap');
+  }
+
+  clanWriteContent?.addEventListener('mousedown', (e) => {
+    const table = e.target.closest?.('.clan-tactic-table');
+    if (!table) return;
+    const els = document.elementsFromPoint(e.clientX, e.clientY);
+    for (let i = 0; i < els.length; i += 1) {
+      const el = els[i];
+      if (el === table || el.tagName === 'TABLE') break;
+      const isStarGrade = el.classList?.contains('clan-tactic-table__star-grade-cell');
+      const isRankInput = el.classList?.contains('clan-tactic-table__rank-input-cell');
+      const isCharName = el.classList?.contains('clan-tactic-table__char-name-cell');
+      const isBossName = el.classList?.contains('clan-tactic-table__name-cell');
+      const isBossCell = el.classList?.contains('clan-tactic-table__boss-cell');
+      if (isStarGrade && !el.classList.contains('clan-tactic-table__star-grade-cell--active')) {
+        if (isTacticColumnSlotEmpty(table, el)) { e.preventDefault(); return; }
+      }
+      if (isRankInput && !el.classList.contains('clan-tactic-table__rank-input-cell--active')) {
+        if (isTacticColumnSlotEmpty(table, el)) { e.preventDefault(); return; }
+      }
+      if (isCharName) {
+        if (isTacticColumnSlotEmpty(table, el)) { e.preventDefault(); return; }
+      }
+      if (isBossName || isBossCell) {
+        if (isTacticColumnSlotEmpty(table, el)) { e.preventDefault(); return; }
+      }
+    }
+  });
+
   clanWriteContent?.addEventListener('beforeinput', blockTacticNoEditInput);
   clanWriteContent?.addEventListener('paste', blockTacticNoEditInput);
   clanWriteContent?.addEventListener('keydown', (e) => {
@@ -4997,6 +5048,118 @@
     if (!isInsideTacticNoEditCell(sel?.anchorNode)) return;
     const blocked = e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter';
     if (blocked && !e.ctrlKey && !e.metaKey) e.preventDefault();
+  });
+
+  // Delegated input validation for edit mode (handlers lost after innerHTML)
+  clanWriteContent?.addEventListener('input', (e) => {
+    if (e.target.classList.contains('clan-tactic-table__rank-input')) {
+      const sanitized = e.target.value.replace(/[^0-9+\-]/g, '');
+      if (e.target.value !== sanitized) e.target.value = sanitized;
+      return;
+    }
+    if (e.target.classList.contains('clan-tactic-table__damage-input')) {
+      var sanitized = e.target.value.replace(/[^0-9+\-~]/g, '');
+      if (e.target.value !== sanitized) e.target.value = sanitized;
+      return;
+    }
+  });
+
+  // Delegated click handlers for edit mode (handlers lost after innerHTML)
+  clanWriteContent?.addEventListener('click', (e) => {
+    var delBtn = e.target.closest('.clan-tactic-table__boss-del');
+    if (delBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      var wrap = delBtn.closest('.clan-tactic-table__boss-wrap');
+      var cell = delBtn.closest('.clan-tactic-table__char-cell, .clan-tactic-table__boss-cell');
+      if (!wrap || !cell) return;
+      wrap.remove();
+      var table = cell.closest('.clan-tactic-table');
+      if (cell.classList.contains('clan-tactic-table__boss-cell')) {
+        cell.appendChild(createBossImageButton(cell));
+        updateTacticDropdownVisibility(cell);
+      } else {
+        hideTacticCharSlotExtras(cell);
+        var slot = cell.dataset.tacticSlot;
+        if (table && slot) {
+          var nameCell = table.querySelector('.clan-tactic-table__char-name-cell[data-tactic-slot="' + slot + '"]');
+          if (nameCell) {
+            var nameSpan = nameCell.querySelector('.clan-tactic-table__char-name-text');
+            if (nameSpan) nameSpan.innerHTML = '';
+          }
+        }
+        var newBtn = createCharImageButton(cell);
+        if (newBtn) cell.appendChild(newBtn);
+        updateTacticDropdownVisibility(cell);
+      }
+      return;
+    }
+
+    var addBtn = e.target.closest('.clan-tactic-table__add-tactic-btn');
+    if (addBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      var tbl = addBtn.closest('.clan-tactic-table');
+      var tbody = tbl && tbl.querySelector('tbody');
+      var addRow = addBtn.closest('tr');
+      if (!tbl || !tbody || !addRow) return;
+      var newRow = createTacticInputRow();
+      tbody.insertBefore(newRow, addRow);
+      for (var s = 1; s <= 5; s += 1) {
+        var hc = tbl.querySelector('.clan-tactic-table__char-cell[data-tactic-slot="' + s + '"]');
+        if (hc) updateTacticDropdownVisibility(hc);
+      }
+      return;
+    }
+
+    var delTacticBtn = e.target.closest('.clan-tactic-table__delete-tactic-btn');
+    if (delTacticBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      var tbl2 = delTacticBtn.closest('.clan-tactic-table');
+      if (!tbl2) return;
+      var inputRows = tbl2.querySelectorAll('.clan-tactic-table__input-row');
+      if (inputRows.length <= 1) {
+        window.alert('\uC0AD\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.');
+        return;
+      }
+      inputRows[inputRows.length - 1].remove();
+      return;
+    }
+
+    var bossBtn = e.target.closest('.clan-tactic-table__boss-btn');
+    if (bossBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      var bossCell = bossBtn.closest('.clan-tactic-table__boss-cell');
+      var fileInput = document.getElementById('clan-write-boss-image-input');
+      if (fileInput && bossCell) {
+        fileInput._bossTargetCell = bossCell;
+        fileInput.click();
+      }
+      return;
+    }
+
+    var charBtn = e.target.closest('.clan-tactic-table__char-btn');
+    if (charBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      var charCell = charBtn.closest('.clan-tactic-table__char-cell');
+      if (charCell) openTacticCharPopup(charCell);
+      return;
+    }
+  });
+
+  // Delegated change handler for theme select in edit mode
+  clanWriteContent?.addEventListener('change', (e) => {
+    if (e.target.classList.contains('clan-tactic-table__theme-select')) {
+      var THEME_COLORS = ['#F06292', '#8BC34A', '#FFEB3B', '#7B1FA2', '#03A9F4'];
+      var themeRow = e.target.closest('.clan-tactic-table')?.querySelector('.clan-tactic-table__theme-row');
+      if (themeRow) {
+        themeRow.style.background = THEME_COLORS[Number(e.target.value) - 1];
+      }
+      return;
+    }
   });
 
   clanWriteBtnTactic?.addEventListener('click', () => {
