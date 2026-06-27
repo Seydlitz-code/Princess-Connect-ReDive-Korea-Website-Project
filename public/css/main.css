@@ -3004,13 +3004,15 @@ button.future-type-badge {
     gap: 12px;
   }
 
-  .clan-category-tabs {
-    gap: 4px;
+  .clan-filter-bar {
+    gap: 6px;
+    padding-bottom: 8px;
   }
 
-  .clan-cat-btn {
+  .clan-filter-select {
     font-size: 0.75rem;
-    padding: 4px 8px;
+    padding: 5px 22px 5px 8px;
+    min-width: 70px;
   }
 
   .clan-search-row {
@@ -3131,43 +3133,34 @@ button.future-type-badge {
   padding-bottom: 14px;
 }
 
-.clan-category-tabs {
+.clan-filter-bar {
   display: flex;
-  gap: 0;
+  gap: 8px;
   flex: 1;
   flex-wrap: wrap;
+  align-items: center;
   border-bottom: 2px solid var(--border);
+  padding-bottom: 10px;
 }
 
-.clan-write-btn {
-  flex-shrink: 0;
-  margin-bottom: 2px;
-}
-
-.clan-cat-btn {
-  appearance: none;
-  border: none;
-  background: transparent;
-  cursor: pointer;
+.clan-filter-select {
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: var(--muted);
-  padding: 10px 18px;
-  border-bottom: 3px solid transparent;
-  transition: color 0.15s ease, border-color 0.15s ease;
-  white-space: nowrap;
-  flex: 0 0 auto;
-}
-
-.clan-cat-btn:hover {
+  padding: 6px 28px 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
   color: var(--text);
-  border-bottom-color: var(--border);
+  cursor: pointer;
+  appearance: auto;
+  min-width: 90px;
+  transition: border-color 0.12s ease;
 }
 
-.clan-cat-btn.is-active {
-  color: var(--pink);
-  border-bottom-color: var(--pink);
+.clan-filter-select:focus {
+  outline: none;
+  border-color: var(--pink);
 }
 
 .clan-search-row {
@@ -3924,8 +3917,15 @@ button.future-type-badge {
   gap: 10px;
 }
 
-.clan-write-field .clan-category-tabs {
+.clan-write-category-row {
+  display: flex;
   flex-wrap: wrap;
+  gap: 8px;
+}
+
+.clan-write-category-row .clan-write-select {
+  min-width: 100px;
+  flex: 1 1 auto;
 }
 
 .clan-write-board-name {
@@ -5118,7 +5118,6 @@ td.clan-tactic-table__char-cell {
 
 .clan-board-toolbar .btn-primary.btn-sm {
   flex-shrink: 0;
-  margin-left: auto;
 }
 
 td.clan-tactic-table__boss-cell {

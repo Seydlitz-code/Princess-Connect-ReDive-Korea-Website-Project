@@ -137,13 +137,43 @@
           <header class="clan-board-header">
             <h2 class="clan-board-title">클랜전 게시판 <span class="clan-board-subtitle" id="clan-board-subtitle"></span></h2>
             <div class="clan-board-toolbar">
-              <div class="clan-category-tabs" role="tablist" aria-label="카테고리">
-                <button type="button" class="clan-cat-btn is-active" role="tab" aria-selected="true" data-category="all">전체</button>
-                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="phase1">1넴</button>
-                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="phase2">2넴</button>
-                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="phase3">3넴</button>
-                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="phase4">4넴</button>
-                <button type="button" class="clan-cat-btn" role="tab" aria-selected="false" data-category="phase5">5넴</button>
+              <div class="clan-filter-bar">
+                <select class="clan-filter-select" id="clan-filter-year" aria-label="연도 필터">
+                  <option value="all">전체연도</option>
+                  <option value="before2026">2026년 이전</option>
+                  <option value="2026">2026년</option>
+                  <option value="2027">2027년</option>
+                </select>
+                <select class="clan-filter-select" id="clan-filter-month" aria-label="월 필터">
+                  <option value="all">전체월</option>
+                  <option value="1">1월</option>
+                  <option value="2">2월</option>
+                  <option value="3">3월</option>
+                  <option value="4">4월</option>
+                  <option value="5">5월</option>
+                  <option value="6">6월</option>
+                  <option value="7">7월</option>
+                  <option value="8">8월</option>
+                  <option value="9">9월</option>
+                  <option value="10">10월</option>
+                  <option value="11">11월</option>
+                  <option value="12">12월</option>
+                </select>
+                <select class="clan-filter-select" id="clan-filter-stage" aria-label="단계 필터">
+                  <option value="all">전체단계</option>
+                  <option value="1">1단계</option>
+                  <option value="2">2단계</option>
+                  <option value="3">3단계</option>
+                  <option value="4">4단계</option>
+                </select>
+                <select class="clan-filter-select" id="clan-filter-named" aria-label="네임드 필터">
+                  <option value="all">전체네임드</option>
+                  <option value="1">1네임드</option>
+                  <option value="2">2네임드</option>
+                  <option value="3">3네임드</option>
+                  <option value="4">4네임드</option>
+                  <option value="5">5네임드</option>
+                </select>
               </div>
               <button type="button" class="btn btn-primary btn-sm clan-write-btn" id="clan-write-open">글쓰기</button>
             </div>
@@ -211,16 +241,46 @@
             <div class="clan-write-board-name" id="clan-write-board-name">클랜전 게시판</div>
             <form id="clan-write-form" class="clan-write-form">
               <p id="clan-write-error" class="clan-write-error" role="alert" aria-live="assertive" hidden></p>
-              <div class="field-group clan-write-field">
-                <label class="field-label" for="clan-write-category">게시물 구분</label>
-                <select id="clan-write-category" class="clan-write-select">
-                  <option value="none">없음</option>
-                  <option value="phase1">1넴</option>
-                  <option value="phase2">2넴</option>
-                  <option value="phase3">3넴</option>
-                  <option value="phase4">4넴</option>
-                  <option value="phase5">5넴</option>
-                </select>
+              <div class="field-group clan-write-field" id="clan-write-category-field">
+                <label class="field-label">게시물 구분</label>
+                <div class="clan-write-category-row">
+                  <select id="clan-write-year" class="clan-write-select">
+                    <option value="">선택</option>
+                    <option value="before2026">2026년 이전</option>
+                    <option value="2026">2026년</option>
+                    <option value="2027">2027년</option>
+                  </select>
+                  <select id="clan-write-month" class="clan-write-select">
+                    <option value="">선택</option>
+                    <option value="1">1월</option>
+                    <option value="2">2월</option>
+                    <option value="3">3월</option>
+                    <option value="4">4월</option>
+                    <option value="5">5월</option>
+                    <option value="6">6월</option>
+                    <option value="7">7월</option>
+                    <option value="8">8월</option>
+                    <option value="9">9월</option>
+                    <option value="10">10월</option>
+                    <option value="11">11월</option>
+                    <option value="12">12월</option>
+                  </select>
+                  <select id="clan-write-stage" class="clan-write-select">
+                    <option value="">선택</option>
+                    <option value="1">1단계</option>
+                    <option value="2">2단계</option>
+                    <option value="3">3단계</option>
+                    <option value="4">4단계</option>
+                  </select>
+                  <select id="clan-write-named" class="clan-write-select">
+                    <option value="">선택</option>
+                    <option value="1">1네임드</option>
+                    <option value="2">2네임드</option>
+                    <option value="3">3네임드</option>
+                    <option value="4">4네임드</option>
+                    <option value="5">5네임드</option>
+                  </select>
+                </div>
               </div>
               <div class="field-group clan-write-field">
                 <label class="field-label" for="clan-write-title">제목</label>
