@@ -2,7 +2,7 @@
  * 폴더 내 이미지 파일을 파일명(확장자 제외)=캐릭터명 과 함께 DB에 저장합니다.
  *
  * DATABASE_URL 또는 DATABASE_PRIVATE_URL 필요 (Railway/PostgreSQL).
- * 선택: CHARACTERS_IMAGE_DIR — 원본 폴더 (기본: 사용자 공유 문서 폴더 기준 예시 경로)
+ * 선택: CHARACTERS_IMAGE_DIR — 원본 폴더 (기본: <홈>/Documents/프리코네 캐릭터 데이터베이스)
  *
  * 실행: DATABASE_URL="..." npm run import:characters
  */
@@ -11,26 +11,9 @@ const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
 const { createPoolConfig } = require('../lib/dbConfig');
+const { resolveCharacterSourceDir, mimeFromExt, listCharacterImageFilesOrExit } = require('./lib/characterSource');
 
-const DEFAULT_CHAR_DIR =
-  process.platform === 'win32'
-    ? 'C:\\Users\\dongh\\Documents\\프리코네 캐릭터 데이터베이스'
-    : path.join(process.env.HOME || '', 'Documents', '프리코네 캐릭터 데이터베이스');
-
-const CHAR_DIR = process.env.CHARACTERS_IMAGE_DIR
-  ? path.resolve(process.env.CHARACTERS_IMAGE_DIR)
-  : DEFAULT_CHAR_DIR;
-
-const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
-
-function mimeFromExt(ext) {
-  const e = ext.toLowerCase();
-  if (e === '.png') return 'image/png';
-  if (e === '.jpg' || e === '.jpeg') return 'image/jpeg';
-  if (e === '.webp') return 'image/webp';
-  if (e === '.gif') return 'image/gif';
-  return 'application/octet-stream';
-}
+const CHAR_DIR = resolveCharacterSourceDir();
 
 async function ensureCharactersTable(client) {
   await client.query(`
@@ -50,23 +33,7 @@ async function main() {
     console.error('DATABASE_URL 또는 DATABASE_PRIVATE_URL 등 PostgreSQL 연결 환경 변수를 설정해 주세요.');
     process.exit(1);
   }
-  if (!fs.existsSync(CHAR_DIR) || !fs.statSync(CHAR_DIR).isDirectory()) {
-    console.error('폴더가 없습니다:', CHAR_DIR);
-    console.error('CHARACTERS_IMAGE_DIR 로 올바른 경로를 지정할 수 있습니다.');
-    process.exit(1);
-  }
-
-  const entries = fs.readdirSync(CHAR_DIR, { withFileTypes: true });
-  const files = entries
-    .filter((e) => e.isFile())
-    .map((e) => e.name)
-    .filter((name) => IMAGE_EXTENSIONS.has(path.extname(name).toLowerCase()))
-    .sort((a, b) => a.localeCompare(b, 'ko'));
-
-  if (files.length === 0) {
-    console.error('이미지 파일이 없습니다:', CHAR_DIR);
-    process.exit(1);
-  }
+  const files = listCharacterImageFilesOrExit(CHAR_DIR);
 
   const pool = new Pool(cfg);
   const client = await pool.connect();
@@ -81,16 +48,16 @@ async function main() {
       for (const file of files) {
         const ext = path.extname(file);
         const name = path.basename(file, ext);
-        const abs = path.join(CHAR_DIR, file);
         let buf;
         try {
-          buf = fs.readFileSync(abs);
+          buf = fs.readFileSync(path.join(CHAR_DIR, file));
         } catch (readErr) {
           console.warn('SKIP read:', file, readErr.message);
           failed += 1;
           continue;
         }
-        const mime = mimeFromExt(ext);
+        // 한 행이 실패하면 트랜잭션 전체가 aborted 상태가 되므로 행마다 savepoint 로 되돌린다.
+        await client.query('SAVEPOINT import_row');
         try {
           await client.query(
             `INSERT INTO characters (name, image_mime, image_data)
@@ -99,13 +66,15 @@ async function main() {
                image_mime = EXCLUDED.image_mime,
                image_data = EXCLUDED.image_data,
                updated_at = NOW()`,
-            [name, mime, buf]
+            [name, mimeFromExt(ext), buf]
           );
+          await client.query('RELEASE SAVEPOINT import_row');
           imported += 1;
           if (imported % 50 === 0) {
             console.log('...', imported, '건 반영');
           }
         } catch (err) {
+          await client.query('ROLLBACK TO SAVEPOINT import_row');
           console.warn('SKIP db:', file, err.message);
           failed += 1;
         }

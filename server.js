@@ -7,9 +7,11 @@ const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const { createPoolConfig, getDbEnvDiagnostics } = require('./lib/dbConfig');
 const {
+  MAX_AGE_SEC: SESSION_MAX_AGE_SEC,
+  isProductionLike,
   getSessionSecret,
   signSession,
-  getUserIdFromRequest,
+  getSessionFromRequest,
   appendSessionCookie,
   appendClearSessionCookie,
 } = require('./lib/sessionAuth');
@@ -23,17 +25,33 @@ const {
   displayUsernameFromRow,
   displayNicknameFromRow,
   isPiiEncryptionReady,
+  isPiiKeyDerivedFromSessionSecret,
 } = require('./lib/userPiiCrypto');
 const { ensureUserPiiSchema } = require('./lib/userPiiSchema');
 const {
   createSignupCaptchaChallenge,
   verifySignupCaptchaAndIssueStepPass,
+  isStepPassTokenValid,
   consumeStepPassToken,
 } = require('./lib/signupCaptcha');
+const {
+  MAX_POST_HTML_LENGTH,
+  sanitizePostHtml,
+  extractPostText,
+  hasMeaningfulContent,
+} = require('./lib/postSanitizer');
+const {
+  defaultFutureSightState,
+  normalizeFutureSightState,
+  applyFutureSightMonthMaintenance,
+  msUntilNextKstClock,
+} = require('./lib/futureSight');
 
 const app = express();
+const PUBLIC_DIR = path.join(__dirname, 'public');
 
 app.set('trust proxy', 1);
+app.disable('x-powered-by');
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -43,6 +61,8 @@ app.use(
         'style-src': ["'self'", 'https:', "'unsafe-inline'"],
         'font-src': ["'self'", 'https:', 'data:'],
         'img-src': ["'self'", 'data:'],
+        // 게시물 동영상은 data: URL 로 본문에 포함된다.
+        'media-src': ["'self'", 'data:'],
       },
     },
   })
@@ -56,6 +76,7 @@ const NICKNAME_MAX = 10;
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 72;
 const MAX_PROFILE_DATA_URL_LENGTH = 600_000;
+const PROFILE_DATA_URL_RE = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/;
 
 /** 회원가입 시 업로드가 없으면 DB에 저장할 데이터 URL (`scripts/default-profile.png`) */
 let defaultSignupProfileDataUrlCache = null;
@@ -101,39 +122,19 @@ let lastDbInitError = null;
 
 /** null 이면 캐릭터 메타만 DB 사용 */
 let characterLibrary = null;
+/** 정적 라이브러리 사용 시 미래시 hydrate 용 메타 캐시 */
+let characterLibraryMetaCache = null;
 
 const MAX_OWNED_CHARACTERS_PER_REGISTER = 500;
-const FUTURE_SIGHT_MONTH_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const FUTURE_SIGHT_MAINTENANCE_KST_HOUR = 0;
 const FUTURE_SIGHT_MAINTENANCE_KST_MINUTE = 5;
-const KST_TIMEZONE = 'Asia/Seoul';
 
-function getKstDateParts(now = new Date()) {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat('en-US', {
-      timeZone: KST_TIMEZONE,
-      year: 'numeric',
-      month: 'numeric',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
-      hour12: false,
-    })
-      .formatToParts(now)
-      .filter((part) => part.type !== 'literal')
-      .map((part) => [part.type, Number(part.value)])
-  );
-  if (parts.hour === 24) parts.hour = 0;
-  return parts;
-}
+/** Express 4 는 async 핸들러의 reject 를 잡지 못하므로 오류 미들웨어로 넘긴다. */
+const asyncRoute = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
 
-function currentKoreanYearMonthKey(now = new Date()) {
-  const parts = getKstDateParts(now);
-  return `${parts.year}-${parts.month}`;
-}
-
-function nicknameCodepointLen(s) {
+function codepointLength(s) {
   return [...String(s || '')].length;
 }
 
@@ -141,32 +142,9 @@ function nicknameCodepointLen(s) {
 function isValidNicknameChars(s) {
   const t = String(s || '').trim();
   if (!t) return false;
-  return /^[\uAC00-\uD7A3\u3131-\u318Ea-zA-Z\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\uFF66-\uFF9F]+$/.test(
+  return /^[가-힣ㄱ-ㆎa-zA-Z぀-ゟ゠-ヿ一-鿿ｦ-ﾟ]+$/.test(
     t
   );
-}
-
-function currentKoreanMonthNumber(now = new Date()) {
-  return getKstDateParts(now).month;
-}
-
-function normalizeMonthNumber(value) {
-  const n = Number(value);
-  if (!Number.isInteger(n) || n < 1 || n > 12) return null;
-  return n;
-}
-
-function parseMonthNumber(label) {
-  const m = String(label || '').match(/(\d{1,2})\s*월/);
-  return m ? normalizeMonthNumber(m[1]) : null;
-}
-
-function addMonthsNumber(baseMonth, offset) {
-  return ((baseMonth - 1 + offset) % 12) + 1;
-}
-
-function monthLabel(monthNumber) {
-  return `${monthNumber}월`;
 }
 
 async function loadAdminUserRows(pgPool) {
@@ -210,6 +188,47 @@ function nicknameCollidesWithAdminAccount(nickname, adminRows, excludeUserId) {
   return false;
 }
 
+/** blind index(또는 미이전 평문) 기준으로 아이디가 이미 쓰이는지 */
+async function isUsernameTaken(username, excludeUserId = null) {
+  const params = [usernameBlindIndex(username), username];
+  if (excludeUserId) params.push(excludeUserId);
+  const r = await pool.query(
+    `SELECT 1 FROM users
+     WHERE (
+       username_blind = $1
+        OR (
+          (username_blind IS NULL OR username_blind = '')
+          AND username IS NOT NULL
+          AND LOWER(username) = LOWER($2)
+        )
+     )
+     ${excludeUserId ? 'AND id <> $3::uuid' : ''}
+     LIMIT 1`,
+    params
+  );
+  return r.rowCount > 0;
+}
+
+async function isNicknameTaken(nickname, excludeUserId = null) {
+  const params = [nicknameBlindIndex(nickname), nickname];
+  if (excludeUserId) params.push(excludeUserId);
+  const r = await pool.query(
+    `SELECT 1 FROM users
+     WHERE (
+       nickname_blind = $1
+        OR (
+          (nickname_blind IS NULL OR nickname_blind = '')
+          AND nickname IS NOT NULL
+          AND nickname = $2
+        )
+     )
+     ${excludeUserId ? 'AND id <> $3::uuid' : ''}
+     LIMIT 1`,
+    params
+  );
+  return r.rowCount > 0;
+}
+
 function normalizeCharacterIds(value) {
   if (!Array.isArray(value)) return [];
   const out = [];
@@ -232,16 +251,19 @@ async function loadValidCharacterIdSet(pgPool) {
 
 async function loadCharacterMetaMap(pgPool) {
   if (characterLibrary) {
-    return new Map(
-      characterLibrary.list.map((c) => [
-        c.id,
-        {
-          id: c.id,
-          name: c.name,
-          imageUrl: c.imageUrl || `/api/characters/${encodeURIComponent(c.id)}/image`,
-        },
-      ])
-    );
+    if (!characterLibraryMetaCache) {
+      characterLibraryMetaCache = new Map(
+        characterLibrary.list.map((c) => [
+          c.id,
+          {
+            id: c.id,
+            name: c.name,
+            imageUrl: c.imageUrl || `/api/characters/${encodeURIComponent(c.id)}/image`,
+          },
+        ])
+      );
+    }
+    return characterLibraryMetaCache;
   }
   const r = await pgPool.query('SELECT id, name FROM characters');
   return new Map(
@@ -252,168 +274,154 @@ async function loadCharacterMetaMap(pgPool) {
   );
 }
 
-async function requireAdminUser(req, res) {
-  if (!requirePool(res)) return null;
+/** 보유 캐릭터 일괄 저장(한 번의 INSERT) */
+async function insertOwnedCharacters(client, userId, characterIds) {
+  if (characterIds.length === 0) return;
+  await client.query(
+    `INSERT INTO user_owned_characters (user_id, character_id)
+     SELECT $1::uuid, unnest($2::uuid[])
+     ON CONFLICT DO NOTHING`,
+    [userId, characterIds]
+  );
+}
+
+/* ───────────── 세션 ───────────── */
+
+/**
+ * 쿠키 서명 + user_sessions 행이 모두 유효할 때만 로그인 사용자로 본다.
+ * 요청마다 한 번만 조회하도록 req 에 결과를 기억한다.
+ * @returns {Promise<{ id: string, role: string } | null>}
+ */
+async function getSessionUser(req) {
+  if (req._sessionUser !== undefined) return req._sessionUser;
+  req._sessionUser = null;
   const secret = getSessionSecret();
-  if (!secret) {
-    res.status(503).json({ ok: false, error: '관리자 기능을 사용할 수 없습니다. SESSION_SECRET 설정이 필요합니다.' });
+  if (!secret || !pool) return null;
+  const tok = getSessionFromRequest(secret, req.headers.cookie || '');
+  if (!tok || !UUID_RE.test(tok.sub) || !UUID_RE.test(tok.sid)) return null;
+  const r = await pool.query(
+    `SELECT u.id, COALESCE(u.role, 'user') AS role
+     FROM user_sessions s
+     JOIN users u ON u.id = s.user_id
+     WHERE s.id = $1::uuid AND s.user_id = $2::uuid AND s.expires_at > NOW()
+     LIMIT 1`,
+    [tok.sid, tok.sub]
+  );
+  if (r.rowCount > 0) {
+    req._sessionUser = { id: String(r.rows[0].id), role: r.rows[0].role };
+  }
+  return req._sessionUser;
+}
+
+function hasSessionCookie(req) {
+  return /(?:^|;\s*)priconne_sid=/.test(req.headers.cookie || '');
+}
+
+/** 로그인이 필요한 API 공통 검사. 실패 시 응답을 보내고 null 반환. */
+async function requireSessionUser(req, res) {
+  if (!requirePool(res)) return null;
+  if (!getSessionSecret()) {
+    res.status(503).json({
+      ok: false,
+      error: '로그인 기능을 사용할 수 없습니다. SESSION_SECRET 환경 변수를 설정하고 서비스를 재시작하세요.',
+    });
     return null;
   }
-  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
-  if (!userId) {
+  const user = await getSessionUser(req);
+  if (!user) {
+    if (hasSessionCookie(req)) appendClearSessionCookie(res);
     res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
     return null;
   }
-  const r = await pool.query(
-    `SELECT id, COALESCE(role, 'user') AS role FROM users WHERE id = $1::uuid LIMIT 1`,
-    [userId]
-  );
-  if (r.rowCount === 0 || r.rows[0].role !== 'admin') {
+  return user;
+}
+
+async function requireAdminUser(req, res) {
+  const user = await requireSessionUser(req, res);
+  if (!user) return null;
+  if (user.role !== 'admin') {
     res.status(403).json({ ok: false, error: '관리자 권한이 필요합니다.' });
     return null;
   }
-  return r.rows[0];
+  return user;
 }
 
-function defaultFutureSightState() {
-  const monthNumber = currentKoreanMonthNumber();
-  return {
-    version: 1,
-    lastMonthCheckedAt: null,
-    months: [
-      {
-        id: 'month-1',
-        monthNumber,
-        label: monthLabel(monthNumber),
-        categories: {
-          new: [],
-          rerun: [],
-          sixStar: [],
-          unique1: [],
-          unique2: [],
-          event: [],
-        },
-        info: '',
-      },
-    ],
-  };
+async function createUserSession(userId) {
+  const r = await pool.query(
+    `INSERT INTO user_sessions (user_id, expires_at)
+     VALUES ($1::uuid, NOW() + make_interval(secs => $2))
+     RETURNING id`,
+    [userId, SESSION_MAX_AGE_SEC]
+  );
+  return String(r.rows[0].id);
 }
 
-function normalizeFutureSightState(value) {
-  const rawMonths = value && typeof value === 'object' && Array.isArray(value.months) ? value.months : [];
-  const months = rawMonths.slice(0, 36).map((month, index) => {
-    const src = month && typeof month === 'object' ? month : {};
-    const categories = src.categories && typeof src.categories === 'object' ? src.categories : {};
-    const monthNumber =
-      normalizeMonthNumber(src.monthNumber) ||
-      parseMonthNumber(src.label) ||
-      addMonthsNumber(currentKoreanMonthNumber(), index);
-    const normalizeEntries = (items) =>
-      (Array.isArray(items) ? items : []).slice(0, 24).map((item) => {
-        const obj = item && typeof item === 'object' ? item : {};
-        let type = obj.type === 'pass' ? 'pass' : obj.type === 'limited' ? 'limited' : 'permanent';
-        if (obj.princessPass === true) type = 'pass';
-        const base = {
-          characterId: String(obj.characterId || '').trim(),
-          type,
-        };
-        if (obj.prizeGacha === true) base.prizeGacha = true;
-        if (obj.simultaneousRerun === true) base.simultaneousRerun = true;
-        const sg = String(obj.specialGroupId || '').trim().slice(0, 80);
-        if (sg) base.specialGroupId = sg;
-        return base;
-      });
-    const legacySpecial = normalizeEntries(categories.special);
-    const eventCombined = [...normalizeEntries(categories.event), ...legacySpecial].slice(0, 24);
-    return {
-      id: String(src.id || `month-${index + 1}`).trim() || `month-${index + 1}`,
-      monthNumber,
-      label: String(src.label || monthLabel(monthNumber)).trim() || monthLabel(monthNumber),
-      categories: {
-        new: normalizeEntries(categories.new),
-        rerun: normalizeEntries(categories.rerun),
-        sixStar: normalizeEntries(categories.sixStar),
-        unique1: normalizeEntries(categories.unique1),
-        unique2: normalizeEntries(categories.unique2),
-        event: eventCombined,
-      },
-      info: String(src.info || '').slice(0, 2000),
-    };
-  });
-  const lastMonthCheckedAt =
-    value && typeof value === 'object' && typeof value.lastMonthCheckedAt === 'string'
-      ? value.lastMonthCheckedAt
-      : null;
-  return { version: 1, lastMonthCheckedAt, months: months.length > 0 ? months : defaultFutureSightState().months };
+function scheduleExpiredSessionCleanup() {
+  const timer = setInterval(() => {
+    if (!pool) return;
+    pool.query('DELETE FROM user_sessions WHERE expires_at < NOW()').catch((err) => {
+      console.error('[session] 만료 세션 정리 실패:', err && err.message ? err.message : err);
+    });
+  }, 60 * 60 * 1000);
+  timer.unref();
 }
 
-function applyFutureSightMonthMaintenance(value, now = new Date()) {
-  const state = normalizeFutureSightState(value);
-  const lastCheckedMs = state.lastMonthCheckedAt ? Date.parse(state.lastMonthCheckedAt) : NaN;
-  const lastCheckedKey = Number.isFinite(lastCheckedMs)
-    ? currentKoreanYearMonthKey(new Date(lastCheckedMs))
-    : null;
-  const monthChanged = !lastCheckedKey || currentKoreanYearMonthKey(now) !== lastCheckedKey;
-  if (
-    !monthChanged &&
-    Number.isFinite(lastCheckedMs) &&
-    now.getTime() - lastCheckedMs < FUTURE_SIGHT_MONTH_CHECK_INTERVAL_MS
-  ) {
-    return { state, changed: false };
-  }
-
-  const currentMonth = currentKoreanMonthNumber(now);
-  let months = state.months;
-  const currentIndex = months.findIndex((month) => month.monthNumber === currentMonth || parseMonthNumber(month.label) === currentMonth);
-
-  if (currentIndex > 0) {
-    months = months.slice(currentIndex);
-  } else if (currentIndex === -1) {
-    months = months.map((month, index) => ({
-      ...month,
-      monthNumber: addMonthsNumber(currentMonth, index),
-      label: monthLabel(addMonthsNumber(currentMonth, index)),
-    }));
-  }
-
-  if (months.length === 0) months = defaultFutureSightState().months;
-  months = months.map((month, index) => {
-    const monthNumber = addMonthsNumber(currentMonth, index);
-    return {
-      ...month,
-      monthNumber,
-      label: monthLabel(monthNumber),
-    };
-  });
-
-  return {
-    state: { version: 1, lastMonthCheckedAt: now.toISOString(), months },
-    changed: true,
-  };
+/** 존재하지 않는 아이디로 로그인할 때도 bcrypt 비교 시간을 들여 아이디 존재 여부가 응답 시간으로 드러나지 않게 한다. */
+let dummyPasswordHash = null;
+function getDummyPasswordHash() {
+  if (!dummyPasswordHash) dummyPasswordHash = bcrypt.hashSync('timing-equalizer-password', BCRYPT_ROUNDS);
+  return dummyPasswordHash;
 }
 
-async function runFutureSightMaintenanceJob(now = new Date()) {
-  if (!pool) return { changed: false };
-  const r = await pool.query('SELECT data FROM site_future_sight WHERE id = 1 LIMIT 1');
-  const raw = r.rowCount > 0 ? r.rows[0].data : defaultFutureSightState();
-  const maintained = applyFutureSightMonthMaintenance(raw, now);
-  if (maintained.changed || r.rowCount === 0) {
-    await pool.query(
-      `INSERT INTO site_future_sight (id, data, updated_at)
-       VALUES (1, $1::jsonb, NOW())
-       ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-      [JSON.stringify(maintained.state)]
+/* ───────────── 미래시 ───────────── */
+
+/**
+ * 싱글톤 행을 FOR UPDATE 로 잠근 채 갱신한다(관리자 저장과 자동 정리가 서로 덮어쓰지 않도록).
+ * @param {(currentData: unknown) => unknown | null} computeNext null 을 반환하면 쓰지 않는다.
+ */
+async function updateFutureSightLocked(computeNext) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      `INSERT INTO site_future_sight (id, data) VALUES (1, $1::jsonb) ON CONFLICT (id) DO NOTHING`,
+      [JSON.stringify(defaultFutureSightState())]
     );
+    const cur = await client.query('SELECT data, updated_at FROM site_future_sight WHERE id = 1 FOR UPDATE');
+    const next = computeNext(cur.rows[0].data);
+    let updatedAt = cur.rows[0].updated_at;
+    if (next) {
+      const w = await client.query(
+        `UPDATE site_future_sight SET data = $1::jsonb, updated_at = NOW() WHERE id = 1 RETURNING updated_at`,
+        [JSON.stringify(next)]
+      );
+      updatedAt = w.rows[0].updated_at;
+    }
+    await client.query('COMMIT');
+    return { data: next || cur.rows[0].data, updatedAt };
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
   }
-  return maintained;
 }
 
-function msUntilNextKstClock(hour, minute, now = Date.now()) {
-  for (let offsetMs = 60_000; offsetMs <= 86_400_000; offsetMs += 60_000) {
-    const parts = getKstDateParts(new Date(now + offsetMs));
-    if (parts.hour === hour && parts.minute === minute) return offsetMs;
+/** 월이 바뀌었으면 정리 결과를 저장하고 현재 상태를 돌려준다. 바뀐 게 없으면 쓰기 없이 읽기만 한다. */
+async function runFutureSightMaintenanceJob(now = new Date()) {
+  if (!pool) return { state: defaultFutureSightState(), changed: false, updatedAt: null };
+  const r = await pool.query('SELECT data, updated_at FROM site_future_sight WHERE id = 1 LIMIT 1');
+  if (r.rowCount > 0) {
+    const maintained = applyFutureSightMonthMaintenance(r.rows[0].data, now);
+    if (!maintained.changed) return { ...maintained, updatedAt: r.rows[0].updated_at };
   }
-  return 86_400_000;
+  let changed = false;
+  const saved = await updateFutureSightLocked((data) => {
+    const maintained = applyFutureSightMonthMaintenance(data, now);
+    changed = maintained.changed;
+    return maintained.changed ? maintained.state : null;
+  });
+  return { state: normalizeFutureSightState(saved.data), changed, updatedAt: saved.updatedAt };
 }
 
 function scheduleFutureSightMaintenanceDaily() {
@@ -467,6 +475,8 @@ async function hydrateFutureSightState(pgPool, state) {
   };
 }
 
+/* ───────────── 스키마 ───────────── */
+
 async function ensureSchema(client) {
   await client.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -482,6 +492,16 @@ async function ensureSchema(client) {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) NOT NULL DEFAULT 'user';
   `);
   await ensureUserPiiSchema(client);
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS user_sessions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      expires_at TIMESTAMPTZ NOT NULL
+    );
+  `);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions(expires_at);`);
   await client.query(`
     CREATE TABLE IF NOT EXISTS characters (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -539,29 +559,47 @@ async function ensureSchema(client) {
     );
   `);
   await client.query(`
-    CREATE INDEX IF NOT EXISTS idx_clan_board_posts_category ON clan_board_posts(category);
+    ALTER TABLE clan_board_posts
+      ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN NOT NULL DEFAULT false,
+      ADD COLUMN IF NOT EXISTS sub_board VARCHAR(32) NOT NULL DEFAULT 'clan-fullauto',
+      ADD COLUMN IF NOT EXISTS board VARCHAR(32) NOT NULL DEFAULT 'clan',
+      ADD COLUMN IF NOT EXISTS year VARCHAR(16),
+      ADD COLUMN IF NOT EXISTS month VARCHAR(8),
+      ADD COLUMN IF NOT EXISTS stage VARCHAR(8),
+      ADD COLUMN IF NOT EXISTS named VARCHAR(8),
+      ADD COLUMN IF NOT EXISTS content_text TEXT;
   `);
-  await client.query(`
-    CREATE INDEX IF NOT EXISTS idx_clan_board_posts_created_at ON clan_board_posts(created_at DESC);
-  `);
-  await client.query(`
-    CREATE INDEX IF NOT EXISTS idx_clan_board_comments_post_id ON clan_board_comments(post_id);
-  `);
-  await client.query(`
-    ALTER TABLE clan_board_posts ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN NOT NULL DEFAULT false;
-  `);
-  await client.query(`
-    ALTER TABLE clan_board_posts ADD COLUMN IF NOT EXISTS sub_board VARCHAR(32) NOT NULL DEFAULT 'clan-fullauto';
-  `);
-  await client.query(`
-    ALTER TABLE clan_board_posts ADD COLUMN IF NOT EXISTS board VARCHAR(32) NOT NULL DEFAULT 'clan';
-  `);
-  await client.query(`
-    CREATE INDEX IF NOT EXISTS idx_clan_board_posts_sub_board ON clan_board_posts(sub_board);
-  `);
-  await client.query(`
-    CREATE INDEX IF NOT EXISTS idx_clan_board_posts_board ON clan_board_posts(board);
-  `);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_clan_board_posts_category ON clan_board_posts(category);`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_clan_board_posts_created_at ON clan_board_posts(created_at DESC);`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_clan_board_posts_sub_board ON clan_board_posts(sub_board);`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_clan_board_posts_board ON clan_board_posts(board);`);
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_clan_board_comments_post_id ON clan_board_comments(post_id);`);
+  // 추천 PK 는 (user_id, post_id) 라 게시물별 추천 수 집계에는 post_id 단독 인덱스가 필요하다.
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_clan_board_likes_post_id ON clan_board_likes(post_id);`);
+  await migrateLegacyPostContent(client);
+}
+
+/**
+ * 정제 도입 이전에 저장된 게시물 본문을 한 번 정제하고 검색용 평문(content_text)을 채운다.
+ * content_text 가 NULL 인 행만 대상이라 재기동 시 반복되지 않는다.
+ */
+async function migrateLegacyPostContent(client) {
+  let migrated = 0;
+  for (;;) {
+    const r = await client.query(
+      `SELECT id, content FROM clan_board_posts WHERE content_text IS NULL LIMIT 50`
+    );
+    if (r.rowCount === 0) break;
+    for (const row of r.rows) {
+      const html = sanitizePostHtml(row.content);
+      await client.query(
+        `UPDATE clan_board_posts SET content = $2, content_text = $3 WHERE id = $1`,
+        [row.id, html, extractPostText(html)]
+      );
+      migrated += 1;
+    }
+  }
+  if (migrated > 0) console.log(`[clan-board] 기존 게시물 ${migrated}건의 본문을 정제했습니다.`);
 }
 
 /**
@@ -610,7 +648,7 @@ async function bootstrapAdminFromEnvIfNeeded(pgPool) {
       );
       return;
     }
-    const nLen = nicknameCodepointLen(nickname);
+    const nLen = codepointLength(nickname);
     if (nLen < NICKNAME_MIN || nLen > NICKNAME_MAX) {
       await client.query('ROLLBACK');
       console.error(
@@ -689,7 +727,7 @@ async function initDb() {
       const client = await tmpPool.connect();
       try {
         await ensureSchema(client);
-        console.log('PostgreSQL 연결 및 users·characters·user_owned_characters 테이블 준비 완료');
+        console.log('PostgreSQL 연결 및 테이블 준비 완료');
       } finally {
         client.release();
       }
@@ -716,8 +754,17 @@ async function initDb() {
   pool = null;
 }
 
-function getDbDiagnostics() {
-  return getDbEnvDiagnostics();
+/** 운영에서는 환경 변수 이름·오류 원문을 외부에 노출하지 않는다. */
+function getPublicDbDiagnostics() {
+  const diag = getDbEnvDiagnostics();
+  if (!isProductionLike()) return { ...diag, lastDbInitError };
+  return {
+    dbEnvHints: diag.dbEnvHints,
+    postgresUriKeyCount: diag.postgresUriKeyCount,
+    lastDbInitError: lastDbInitError
+      ? { kind: lastDbInitError.kind, code: lastDbInitError.code }
+      : null,
+  };
 }
 
 function getRecaptchaSiteKeyTrimmed() {
@@ -728,14 +775,29 @@ function getRecaptchaSecretTrimmed() {
   return String(process.env.RECAPTCHA_SECRET_KEY || '').trim();
 }
 
+/**
+ * 운영에서는 reCAPTCHA(사이트 키 + 시크릿)가 모두 설정돼야 회원가입을 연다.
+ * 개발에서는 보안 문자만으로도 가입할 수 있다.
+ */
+function getSignupProtection() {
+  const site = getRecaptchaSiteKeyTrimmed();
+  const secret = getRecaptchaSecretTrimmed();
+  const recaptchaConfigured = Boolean(site && secret);
+  const partial = Boolean(site || secret) && !recaptchaConfigured;
+  const available = recaptchaConfigured || (!partial && !isProductionLike());
+  return { site, secret, recaptchaConfigured, partial, available };
+}
+
+const SIGNUP_UNAVAILABLE_ERROR =
+  '회원가입이 일시 중단되었습니다. 관리자에게 문의해 주세요. (보안 확인 reCAPTCHA 설정 필요)';
+
 function requirePool(res) {
   if (!pool) {
-    const diag = getDbDiagnostics();
     res.status(503).json({
       ok: false,
       error:
         '웹 서비스 프로세스에 PostgreSQL 접속 정보가 없거나 첫 접속에 실패했습니다. 같은 프로젝트의 Postgres와 웹(앱) 서비스를 연결해 Variables에 DATABASE_PRIVATE_URL(또는 DATABASE_URL) 참조를 추가한 뒤 재배포하세요. 브라우저에서 /api/health 를 열어 poolReady·dbEnvHints·lastDbInitError 를 확인할 수 있습니다.',
-      diagnostics: { ...diag, lastDbInitError },
+      diagnostics: getPublicDbDiagnostics(),
       helpUrlPath: '/api/health',
     });
     return false;
@@ -743,47 +805,119 @@ function requirePool(res) {
   return true;
 }
 
-app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ limit: '1mb', extended: false }));
-app.use(express.raw({ limit: '1mb', type: 'application/octet-stream' }));
-app.use(express.text({ limit: '1mb', type: 'text/plain' }));
+function publicUserFromRow(row) {
+  return {
+    id: row.id,
+    username: displayUsernameFromRow(row),
+    nickname: displayNicknameFromRow(row),
+    profileImage: row.profileImage,
+    role: row.role,
+  };
+}
 
-const globalLimiter = rateLimit({
+async function loadPublicUser(userId) {
+  const r = await pool.query(
+    `SELECT id, username, nickname, profile_image AS "profileImage",
+            username_cipher, nickname_cipher,
+            COALESCE(role, 'user') AS role
+     FROM users WHERE id = $1::uuid LIMIT 1`,
+    [userId]
+  );
+  return r.rowCount > 0 ? publicUserFromRow(r.rows[0]) : null;
+}
+
+/* ───────────── 미들웨어 ───────────── */
+
+/**
+ * 정적 파일은 rate limit 앞에 둔다. 캐릭터 이미지가 332장이라 목록 한 번 스크롤로도
+ * 전역 한도를 넘겨 API 까지 429 가 나던 문제를 막고, 이미지·폰트는 브라우저 캐시를 쓰게 한다.
+ */
+app.use(
+  express.static(PUBLIC_DIR, {
+    setHeaders(res, filePath) {
+      const rel = path.relative(PUBLIC_DIR, filePath).replace(/\\/g, '/');
+      if (rel.startsWith('fonts/')) {
+        res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+      } else if (rel.startsWith('characters/') || rel.startsWith('images/')) {
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+      } else {
+        // index.html·main.js·main.css·characters.json 은 배포 즉시 반영되도록 매번 재검증(ETag)
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+    },
+  })
+);
+
+const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 200,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
   message: { ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
 });
-app.use(globalLimiter);
+app.use('/api', apiLimiter);
 
-const authLimiter = rateLimit({
+/*
+ * 로그인(무차별 대입 방지)과 가입 흐름(캡차·중복 확인·가입)은 한도를 따로 센다.
+ * 예전에는 한 limiter 를 다섯 경로가 공유해 가입 한 번(캡차·중복확인 2회·1단계·가입·로그인)만으로
+ * 분당 10회에 걸려 정상 사용자가 막혔다.
+ */
+const loginLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  message: { ok: false, error: '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
+});
+const signupLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { ok: false, error: '너무 많은 시도입니다. 잠시 후 다시 시도해 주세요.' },
 });
-app.use('/api/login', authLimiter);
-app.use('/api/register', authLimiter);
-app.use('/api/signup/captcha', authLimiter);
-app.use('/api/signup/verify-step1', authLimiter);
-app.use('/api/users/check', authLimiter);
+app.use('/api/login', loginLimiter);
+app.use(['/api/register', '/api/signup', '/api/users/check'], signupLimiter);
+
+/** 게시판 쓰기(작성·수정·삭제·댓글·추천)만 따로 제한. 조회·조회수 증가는 전역 한도만 적용. */
+const clanBoardWriteLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method === 'GET' || req.path.endsWith('/view'),
+  message: { ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
+});
+app.use('/api/clan-board', clanBoardWriteLimiter);
+
+app.use('/api', express.json({ limit: '2mb' }));
+
+/* ───────────── 공개 설정 · 회원가입 ───────────── */
 
 app.get('/api/config', (req, res) => {
-  const siteKey = getRecaptchaSiteKeyTrimmed();
+  const protection = getSignupProtection();
   res.json({
     ok: true,
-    recaptchaSiteKey: siteKey ? siteKey : null,
+    recaptchaSiteKey: protection.recaptchaConfigured ? protection.site : null,
+    signupAvailable: protection.available,
   });
 });
 
 app.get('/api/signup/captcha', (req, res) => {
+  if (!getSignupProtection().available) {
+    res.status(503).json({ ok: false, error: SIGNUP_UNAVAILABLE_ERROR });
+    return;
+  }
   const { id, svg } = createSignupCaptchaChallenge();
+  res.setHeader('Cache-Control', 'no-store');
   res.json({ ok: true, id, svg });
 });
 
 app.post('/api/signup/verify-step1', (req, res) => {
+  if (!getSignupProtection().available) {
+    res.status(503).json({ ok: false, error: SIGNUP_UNAVAILABLE_ERROR });
+    return;
+  }
   const body = req.body || {};
   const captchaId = String(body.captchaId || '').trim();
   const captchaAnswer = body.captchaAnswer;
@@ -795,171 +929,105 @@ app.post('/api/signup/verify-step1', (req, res) => {
   res.json({ ok: true, stepPassToken: v.stepPassToken });
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+/* ───────────── 내 정보 ───────────── */
 
-app.get('/api/me', async (req, res) => {
-  const secret = getSessionSecret();
-  if (!secret || !pool) {
+app.get('/api/me', asyncRoute(async (req, res) => {
+  res.setHeader('Cache-Control', 'private, no-store');
+  if (!getSessionSecret() || !pool) {
     res.json({ ok: true, user: null });
     return;
   }
-  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
-  if (!userId) {
-    res.json({ ok: true, user: null });
-    return;
-  }
-  try {
+  const sessionUser = await getSessionUser(req);
+  const user = sessionUser ? await loadPublicUser(sessionUser.id) : null;
+  if (!user && hasSessionCookie(req)) appendClearSessionCookie(res);
+  res.json({ ok: true, user });
+}));
+
+app.get('/api/me/owned-characters', asyncRoute(async (req, res) => {
+  const sessionUser = await requireSessionUser(req, res);
+  if (!sessionUser) return;
+  let characters;
+  if (characterLibrary) {
     const r = await pool.query(
-      `SELECT id, username, nickname, profile_image AS "profileImage",
-              username_cipher, nickname_cipher,
-              COALESCE(role, 'user') AS role
-       FROM users WHERE id = $1::uuid LIMIT 1`,
-      [userId]
+      `SELECT character_id AS id FROM user_owned_characters WHERE user_id = $1::uuid`,
+      [sessionUser.id]
     );
-    if (r.rowCount === 0) {
-      appendClearSessionCookie(res);
-      res.json({ ok: true, user: null });
-      return;
-    }
-    const row = r.rows[0];
-    res.json({
-      ok: true,
-      user: {
-        id: row.id,
-        username: displayUsernameFromRow(row),
-        nickname: displayNicknameFromRow(row),
-        profileImage: row.profileImage,
-        role: row.role,
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
-  }
-});
-
-app.get('/api/me/owned-characters', async (req, res) => {
-  const secret = getSessionSecret();
-  if (!secret || !pool) {
-    res.status(503).json({ ok: false, error: '서버 설정이 완료되지 않았습니다.' });
-    return;
-  }
-  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
-  if (!userId) {
-    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
-    return;
-  }
-  if (!requirePool(res)) return;
-  try {
-    let characters;
-    if (characterLibrary) {
-      const r = await pool.query(
-        `SELECT character_id AS id FROM user_owned_characters WHERE user_id = $1::uuid`,
-        [userId]
-      );
-      characters = [];
-      for (const row of r.rows) {
-        const id = String(row.id);
-        const entry = characterLibrary.byId.get(id);
-        if (!entry) continue;
-        characters.push({
-          id,
-          name: entry.name,
-          imageUrl: entry.imageUrl || `/api/characters/${id}/image`,
-        });
-      }
-      characters.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-    } else {
-      const r = await pool.query(
-        `SELECT c.id, c.name
-         FROM user_owned_characters uoc
-         INNER JOIN characters c ON c.id = uoc.character_id
-         WHERE uoc.user_id = $1::uuid
-         ORDER BY c.name ASC`,
-        [userId]
-      );
-      characters = r.rows.map((row) => {
-        const id = String(row.id);
-        return {
-          id,
-          name: row.name,
-          imageUrl: `/api/characters/${id}/image`,
-        };
+    characters = [];
+    for (const row of r.rows) {
+      const id = String(row.id);
+      const entry = characterLibrary.byId.get(id);
+      if (!entry) continue;
+      characters.push({
+        id,
+        name: entry.name,
+        imageUrl: entry.imageUrl || `/api/characters/${id}/image`,
       });
     }
-    res.setHeader('Cache-Control', 'private, no-store');
-    res.json({ ok: true, characters });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
-  }
-});
-
-app.patch('/api/me/owned-characters', async (req, res) => {
-  if (!requirePool(res)) return;
-  const secret = getSessionSecret();
-  if (!secret) {
-    res.status(503).json({
-      ok: false,
-      error:
-        '요청을 처리할 수 없습니다. SESSION_SECRET 환경 변수를 설정하고 서비스를 재시작하세요.',
+    characters.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  } else {
+    const r = await pool.query(
+      `SELECT c.id, c.name
+       FROM user_owned_characters uoc
+       INNER JOIN characters c ON c.id = uoc.character_id
+       WHERE uoc.user_id = $1::uuid
+       ORDER BY c.name ASC`,
+      [sessionUser.id]
+    );
+    characters = r.rows.map((row) => {
+      const id = String(row.id);
+      return {
+        id,
+        name: row.name,
+        imageUrl: `/api/characters/${id}/image`,
+      };
     });
-    return;
   }
-  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
-  if (!userId) {
-    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
-    return;
-  }
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.json({ ok: true, characters });
+}));
+
+app.patch('/api/me/owned-characters', asyncRoute(async (req, res) => {
+  const sessionUser = await requireSessionUser(req, res);
+  if (!sessionUser) return;
   const body = req.body || {};
   if (!Array.isArray(body.characterIds)) {
     res.status(400).json({ ok: false, error: 'characterIds 배열이 필요합니다.' });
     return;
   }
   const requestedCharacterIds = normalizeCharacterIds(body.characterIds);
-  try {
-    const validIds = await loadValidCharacterIdSet(pool);
-    if (requestedCharacterIds.length > 0 && validIds.size === 0) {
-      res.status(503).json({
-        ok: false,
-        error: '캐릭터 데이터가 준비되지 않았습니다. 관리자에게 문의해 주세요.',
-      });
-      return;
-    }
-    for (const id of requestedCharacterIds) {
-      if (!validIds.has(id)) {
-        res.status(400).json({
-          ok: false,
-          error: '목록에 없는 캐릭터가 포함되어 있습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.',
-        });
-        return;
-      }
-    }
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      await client.query('DELETE FROM user_owned_characters WHERE user_id = $1::uuid', [userId]);
-      for (const cid of requestedCharacterIds) {
-        await client.query(
-          `INSERT INTO user_owned_characters (user_id, character_id) VALUES ($1, $2::uuid)`,
-          [userId, cid]
-        );
-      }
-      await client.query('COMMIT');
-    } catch (txErr) {
-      await client.query('ROLLBACK').catch(() => {});
-      throw txErr;
-    } finally {
-      client.release();
-    }
-    res.json({ ok: true, ownedCharacterCount: requestedCharacterIds.length });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  const validIds = await loadValidCharacterIdSet(pool);
+  if (requestedCharacterIds.length > 0 && validIds.size === 0) {
+    res.status(503).json({
+      ok: false,
+      error: '캐릭터 데이터가 준비되지 않았습니다. 관리자에게 문의해 주세요.',
+    });
+    return;
   }
-});
+  if (requestedCharacterIds.some((id) => !validIds.has(id))) {
+    res.status(400).json({
+      ok: false,
+      error: '목록에 없는 캐릭터가 포함되어 있습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.',
+    });
+    return;
+  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM user_owned_characters WHERE user_id = $1::uuid', [sessionUser.id]);
+    await insertOwnedCharacters(client, sessionUser.id, requestedCharacterIds);
+    await client.query('COMMIT');
+  } catch (txErr) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw txErr;
+  } finally {
+    client.release();
+  }
+  res.json({ ok: true, ownedCharacterCount: requestedCharacterIds.length });
+}));
 
-app.post('/api/login', async (req, res) => {
+/* ───────────── 로그인 ───────────── */
+
+app.post('/api/login', asyncRoute(async (req, res) => {
   if (!requirePool(res)) return;
   const secret = getSessionSecret();
   if (!secret) {
@@ -977,87 +1045,67 @@ app.post('/api/login', async (req, res) => {
     res.status(400).json({ ok: false, error: '아이디와 비밀번호를 입력해 주세요.' });
     return;
   }
-  try {
-    let r;
-    if (isPiiEncryptionReady()) {
-      const blind = usernameBlindIndex(username);
-      r = await pool.query(
-        `SELECT id, password_hash FROM users
-         WHERE username_blind = $1
-            OR (
-              (username_blind IS NULL OR username_blind = '')
-              AND username IS NOT NULL
-              AND LOWER(username) = LOWER($2)
-            )
-         LIMIT 1`,
-        [blind, username]
-      );
-    } else {
-      r = await pool.query('SELECT id, password_hash FROM users WHERE username = $1 LIMIT 1', [username]);
-    }
-    if (r.rowCount === 0) {
-      res.status(401).json({ ok: false, error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
-      return;
-    }
-    const row = r.rows[0];
-    const match = await bcrypt.compare(password, row.password_hash);
-    if (!match) {
-      res.status(401).json({ ok: false, error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
-      return;
-    }
-    const token = signSession(secret, row.id);
-    appendSessionCookie(res, token);
-    const u = await pool.query(
-      `SELECT id, username, nickname, profile_image AS "profileImage",
-              username_cipher, nickname_cipher,
-              COALESCE(role, 'user') AS role
-       FROM users WHERE id = $1`,
-      [row.id]
-    );
-    const usr = u.rows[0];
-    res.json({
-      ok: true,
-      user: {
-        id: usr.id,
-        username: displayUsernameFromRow(usr),
-        nickname: displayNicknameFromRow(usr),
-        profileImage: usr.profileImage,
-        role: usr.role,
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  if (username.length > 64 || password.length > PASSWORD_MAX) {
+    res.status(401).json({ ok: false, error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
+    return;
   }
-});
+  let r;
+  if (isPiiEncryptionReady()) {
+    r = await pool.query(
+      `SELECT id, password_hash FROM users
+       WHERE username_blind = $1
+          OR (
+            (username_blind IS NULL OR username_blind = '')
+            AND username IS NOT NULL
+            AND LOWER(username) = LOWER($2)
+          )
+       LIMIT 1`,
+      [usernameBlindIndex(username), username]
+    );
+  } else {
+    r = await pool.query('SELECT id, password_hash FROM users WHERE username = $1 LIMIT 1', [username]);
+  }
+  const row = r.rows[0];
+  const match = await bcrypt.compare(password, row ? row.password_hash : getDummyPasswordHash());
+  if (!row || !match) {
+    res.status(401).json({ ok: false, error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
+    return;
+  }
+  const sid = await createUserSession(row.id);
+  appendSessionCookie(res, signSession(secret, row.id, sid));
+  res.json({ ok: true, user: await loadPublicUser(row.id) });
+}));
 
-app.post('/api/logout', (req, res) => {
+app.post('/api/logout', asyncRoute(async (req, res) => {
+  const secret = getSessionSecret();
+  const tok = secret ? getSessionFromRequest(secret, req.headers.cookie || '') : null;
+  if (pool && tok && UUID_RE.test(tok.sid)) {
+    await pool.query('DELETE FROM user_sessions WHERE id = $1::uuid', [tok.sid]);
+  }
   appendClearSessionCookie(res);
   res.json({ ok: true });
-});
+}));
 
 app.get('/api/health', (req, res) => {
-  const diag = getDbDiagnostics();
-  const rkSite = Boolean(getRecaptchaSiteKeyTrimmed());
-  const rkSecret = Boolean(getRecaptchaSecretTrimmed());
+  const protection = getSignupProtection();
   res.json({
     ok: true,
     database: {
       poolReady: Boolean(pool),
-      lastDbInitError,
-      ...diag,
+      ...getPublicDbDiagnostics(),
     },
     recaptcha: {
-      siteKeyConfigured: rkSite,
-      secretConfigured: rkSecret,
-      signupProtected: rkSite && rkSecret,
+      siteKeyConfigured: Boolean(protection.site),
+      secretConfigured: Boolean(protection.secret),
+      signupProtected: protection.recaptchaConfigured,
+      signupAvailable: protection.available,
     },
     hint:
       'poolReady가 false이면 Railway 웹 서비스에 Postgres의 DATABASE_PRIVATE_URL(또는 DATABASE_URL) 변수 **참조**를 추가하고 재배포하세요. Postgres 서비스 이름이 "Postgres"가 아니면 참조 문법의 서비스명도 맞춥니다.',
   });
 });
 
-app.get('/api/users/check', async (req, res) => {
+app.get('/api/users/check', asyncRoute(async (req, res) => {
   if (!requirePool(res)) return;
   const username = String(req.query.username || '').trim();
   const nickname = String(req.query.nickname || '').trim();
@@ -1066,131 +1114,70 @@ app.get('/api/users/check', async (req, res) => {
     return;
   }
 
+  // 본인 닉네임 재확인(마이페이지)일 때만 자기 자신을 제외한다.
   let excludeUserId = null;
   const excludeRaw = String(req.query.excludeUserId || '').trim();
   if (excludeRaw && UUID_RE.test(excludeRaw)) {
-    const secret = getSessionSecret();
-    const sessionUserId = secret ? getUserIdFromRequest(secret, req.headers.cookie || '') : null;
-    if (sessionUserId && sessionUserId === excludeRaw) {
-      excludeUserId = excludeRaw;
-    }
+    const sessionUser = await getSessionUser(req);
+    if (sessionUser && sessionUser.id === excludeRaw) excludeUserId = excludeRaw;
   }
 
-  try {
-    const out = { ok: true, usernameAvailable: true, nicknameAvailable: true };
-    if (username) {
-      if (!USERNAME_RE.test(username)) {
-        out.usernameAvailable = false;
-      } else if (isPiiEncryptionReady()) {
-        const blind = usernameBlindIndex(username);
-        const params = excludeUserId ? [blind, username, excludeUserId] : [blind, username];
-        const r = await pool.query(
-          `SELECT 1 FROM users
-           WHERE (
-             username_blind = $1
-              OR (
-                (username_blind IS NULL OR username_blind = '')
-                AND username IS NOT NULL
-                AND LOWER(username) = LOWER($2)
-              )
-           )
-           ${excludeUserId ? 'AND id <> $3::uuid' : ''}
-           LIMIT 1`,
-          params
-        );
-        out.usernameAvailable = r.rowCount === 0;
-      } else {
-        const r = excludeUserId
-          ? await pool.query(
-              `SELECT 1 FROM users
-               WHERE username IS NOT NULL AND LOWER(username) = LOWER($1)
-                 AND id <> $2::uuid
-               LIMIT 1`,
-              [username, excludeUserId]
-            )
-          : await pool.query(
-              'SELECT 1 FROM users WHERE username IS NOT NULL AND LOWER(username) = LOWER($1) LIMIT 1',
-              [username]
-            );
-        out.usernameAvailable = r.rowCount === 0;
-      }
-    }
-    if (nickname) {
-      const nlen = nicknameCodepointLen(nickname);
-      if (nlen < NICKNAME_MIN || nlen > NICKNAME_MAX) {
-        out.nicknameAvailable = false;
-      } else if (!isValidNicknameChars(nickname)) {
-        res.status(400).json({
-          ok: false,
-          error: '닉네임은 한국어, 영어, 일본어 문자만 사용할 수 있습니다.',
-        });
-        return;
-      } else if (isPiiEncryptionReady()) {
-        const nb = nicknameBlindIndex(nickname);
-        const params = excludeUserId ? [nb, nickname, excludeUserId] : [nb, nickname];
-        const r = await pool.query(
-          `SELECT 1 FROM users
-           WHERE (
-             nickname_blind = $1
-              OR (
-                (nickname_blind IS NULL OR nickname_blind = '')
-                AND nickname IS NOT NULL
-                AND nickname = $2
-              )
-           )
-           ${excludeUserId ? 'AND id <> $3::uuid' : ''}
-           LIMIT 1`,
-          params
-        );
-        out.nicknameAvailable = r.rowCount === 0;
-      } else {
-        const r = excludeUserId
-          ? await pool.query(
-              `SELECT 1 FROM users
-               WHERE nickname IS NOT NULL AND nickname = $1
-                 AND id <> $2::uuid
-               LIMIT 1`,
-              [nickname, excludeUserId]
-            )
-          : await pool.query(
-              'SELECT 1 FROM users WHERE nickname IS NOT NULL AND nickname = $1 LIMIT 1',
-              [nickname]
-            );
-        out.nicknameAvailable = r.rowCount === 0;
-      }
-    }
-
-    const adminRows = await loadAdminUserRows(pool);
-    if (username && out.usernameAvailable && usernameCollidesWithAdminAccount(username, adminRows, excludeUserId)) {
+  const out = { ok: true, usernameAvailable: true, nicknameAvailable: true };
+  if (username) {
+    if (!USERNAME_RE.test(username)) {
       out.usernameAvailable = false;
+    } else if (isPiiEncryptionReady()) {
+      out.usernameAvailable = !(await isUsernameTaken(username, excludeUserId));
+    } else {
+      const r = await pool.query(
+        `SELECT 1 FROM users
+         WHERE username IS NOT NULL AND LOWER(username) = LOWER($1)
+           ${excludeUserId ? 'AND id <> $2::uuid' : ''}
+         LIMIT 1`,
+        excludeUserId ? [username, excludeUserId] : [username]
+      );
+      out.usernameAvailable = r.rowCount === 0;
     }
-    if (nickname && out.nicknameAvailable && nicknameCollidesWithAdminAccount(nickname, adminRows, excludeUserId)) {
+  }
+  if (nickname) {
+    const nlen = codepointLength(nickname);
+    if (nlen < NICKNAME_MIN || nlen > NICKNAME_MAX) {
       out.nicknameAvailable = false;
+    } else if (!isValidNicknameChars(nickname)) {
+      res.status(400).json({
+        ok: false,
+        error: '닉네임은 한국어, 영어, 일본어 문자만 사용할 수 있습니다.',
+      });
+      return;
+    } else if (isPiiEncryptionReady()) {
+      out.nicknameAvailable = !(await isNicknameTaken(nickname, excludeUserId));
+    } else {
+      const r = await pool.query(
+        `SELECT 1 FROM users
+         WHERE nickname IS NOT NULL AND nickname = $1
+           ${excludeUserId ? 'AND id <> $2::uuid' : ''}
+         LIMIT 1`,
+        excludeUserId ? [nickname, excludeUserId] : [nickname]
+      );
+      out.nicknameAvailable = r.rowCount === 0;
     }
+  }
 
-    res.json(out);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  const adminRows = await loadAdminUserRows(pool);
+  if (username && out.usernameAvailable && usernameCollidesWithAdminAccount(username, adminRows, excludeUserId)) {
+    out.usernameAvailable = false;
   }
-});
+  if (nickname && out.nicknameAvailable && nicknameCollidesWithAdminAccount(nickname, adminRows, excludeUserId)) {
+    out.nicknameAvailable = false;
+  }
 
-app.patch('/api/me', async (req, res) => {
-  if (!requirePool(res)) return;
-  const secret = getSessionSecret();
-  if (!secret) {
-    res.status(503).json({
-      ok: false,
-      error:
-        '프로필 수정이 비활성화되었습니다. SESSION_SECRET 환경 변수를 설정하고 서비스를 재시작하세요.',
-    });
-    return;
-  }
-  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
-  if (!userId) {
-    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
-    return;
-  }
+  res.json(out);
+}));
+
+app.patch('/api/me', asyncRoute(async (req, res) => {
+  const sessionUser = await requireSessionUser(req, res);
+  if (!sessionUser) return;
+  const userId = sessionUser.id;
 
   const body = req.body || {};
   const hasNickname = Object.prototype.hasOwnProperty.call(body, 'nickname');
@@ -1206,7 +1193,7 @@ app.patch('/api/me', async (req, res) => {
   let nicknameNext = null;
   if (hasNickname) {
     nicknameNext = String(body.nickname || '').trim();
-    const nLen = nicknameCodepointLen(nicknameNext);
+    const nLen = codepointLength(nicknameNext);
     if (nLen < NICKNAME_MIN || nLen > NICKNAME_MAX) {
       res.status(400).json({
         ok: false,
@@ -1236,128 +1223,91 @@ app.patch('/api/me', async (req, res) => {
         });
         return;
       }
-      if (!/^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(profileNext)) {
+      if (!PROFILE_DATA_URL_RE.test(profileNext)) {
         res.status(400).json({
           ok: false,
-          error: '프로필 이미지는 base64 데이터 URL(image/*) 형식이어야 합니다.',
+          error: '프로필 이미지는 PNG·JPEG·WebP·GIF base64 데이터 URL 형식이어야 합니다.',
         });
         return;
       }
     }
   }
 
-  try {
-    const sel = await pool.query(
-      `SELECT id, username, nickname, profile_image AS "profileImage",
-              username_cipher, nickname_cipher
-       FROM users WHERE id = $1::uuid LIMIT 1`,
-      [userId]
-    );
-    if (sel.rowCount === 0) {
-      appendClearSessionCookie(res);
-      res.status(401).json({ ok: false, error: '세션이 만료되었거나 계정을 찾을 수 없습니다.' });
-      return;
-    }
-    const row = sel.rows[0];
-    const currentNick = displayNicknameFromRow(row);
-    const currentProfile = row.profileImage == null ? '' : String(row.profileImage);
-
-    const nickWillChange = hasNickname && nicknameNext !== currentNick;
-    const profileWillChange =
-      hasProfile && (profileNext == null ? '' : profileNext) !== currentProfile;
-
-    if (!nickWillChange && !profileWillChange) {
-      res.status(400).json({ ok: false, error: '변경된 내용이 없습니다.' });
-      return;
-    }
-
-    if (nickWillChange) {
-      let conflict;
-      if (isPiiEncryptionReady()) {
-        const nb = nicknameBlindIndex(nicknameNext);
-        conflict = await pool.query(
-          `SELECT 1 FROM users
-           WHERE (
-             nickname_blind = $1
-              OR (
-                (nickname_blind IS NULL OR nickname_blind = '')
-                AND nickname IS NOT NULL
-                AND nickname = $2
-              )
-           )
-           AND id <> $3::uuid
-           LIMIT 1`,
-          [nb, nicknameNext, userId]
-        );
-      } else {
-        conflict = await pool.query(
-          `SELECT 1 FROM users
-           WHERE nickname IS NOT NULL AND nickname = $1 AND id <> $2::uuid
-           LIMIT 1`,
-          [nicknameNext, userId]
-        );
-      }
-      if (conflict.rowCount > 0) {
-        res.status(409).json({ ok: false, error: '다른 사용자가 이미 사용 중인 닉네임입니다.' });
-        return;
-      }
-      const adminRowsPatch = await loadAdminUserRows(pool);
-      if (nicknameCollidesWithAdminAccount(nicknameNext, adminRowsPatch, userId)) {
-        res.status(409).json({ ok: false, error: '다른 사용자가 이미 사용 중인 닉네임입니다.' });
-        return;
-      }
-    }
-
-    const setParts = [];
-    const vals = [];
-    let p = 1;
-    if (nickWillChange) {
-      if (isPiiEncryptionReady()) {
-        const nb = nicknameBlindIndex(nicknameNext);
-        const nc = encryptUtf8(nicknameNext.trim());
-        setParts.push(`nickname = NULL`, `nickname_blind = $${p++}`, `nickname_cipher = $${p++}`);
-        vals.push(nb, nc);
-      } else {
-        setParts.push(`nickname = $${p++}`);
-        vals.push(nicknameNext.trim());
-      }
-    }
-    if (profileWillChange) {
-      setParts.push(`profile_image = $${p++}`);
-      vals.push(profileNext);
-    }
-    vals.push(userId);
-
-    await pool.query(
-      `UPDATE users SET ${setParts.join(', ')} WHERE id = $${p}::uuid`,
-      vals
-    );
-
-    const out = await pool.query(
-      `SELECT id, username, nickname, profile_image AS "profileImage",
-              username_cipher, nickname_cipher,
-              COALESCE(role, 'user') AS role
-       FROM users WHERE id = $1::uuid LIMIT 1`,
-      [userId]
-    );
-    const urow = out.rows[0];
-    res.json({
-      ok: true,
-      user: {
-        id: urow.id,
-        username: displayUsernameFromRow(urow),
-        nickname: displayNicknameFromRow(urow),
-        profileImage: urow.profileImage,
-        role: urow.role,
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  const sel = await pool.query(
+    `SELECT id, username, nickname, profile_image AS "profileImage",
+            username_cipher, nickname_cipher
+     FROM users WHERE id = $1::uuid LIMIT 1`,
+    [userId]
+  );
+  if (sel.rowCount === 0) {
+    appendClearSessionCookie(res);
+    res.status(401).json({ ok: false, error: '세션이 만료되었거나 계정을 찾을 수 없습니다.' });
+    return;
   }
-});
+  const row = sel.rows[0];
+  const currentNick = displayNicknameFromRow(row);
+  const currentProfile = row.profileImage == null ? '' : String(row.profileImage);
 
-app.post('/api/register', async (req, res) => {
+  const nickWillChange = hasNickname && nicknameNext !== currentNick;
+  const profileWillChange =
+    hasProfile && (profileNext == null ? '' : profileNext) !== currentProfile;
+
+  if (!nickWillChange && !profileWillChange) {
+    res.status(400).json({ ok: false, error: '변경된 내용이 없습니다.' });
+    return;
+  }
+
+  if (nickWillChange) {
+    let taken;
+    if (isPiiEncryptionReady()) {
+      taken = await isNicknameTaken(nicknameNext, userId);
+    } else {
+      const conflict = await pool.query(
+        `SELECT 1 FROM users
+         WHERE nickname IS NOT NULL AND nickname = $1 AND id <> $2::uuid
+         LIMIT 1`,
+        [nicknameNext, userId]
+      );
+      taken = conflict.rowCount > 0;
+    }
+    if (taken || nicknameCollidesWithAdminAccount(nicknameNext, await loadAdminUserRows(pool), userId)) {
+      res.status(409).json({ ok: false, error: '다른 사용자가 이미 사용 중인 닉네임입니다.' });
+      return;
+    }
+  }
+
+  const setParts = [];
+  const vals = [];
+  let p = 1;
+  if (nickWillChange) {
+    if (isPiiEncryptionReady()) {
+      setParts.push(`nickname = NULL`, `nickname_blind = $${p++}`, `nickname_cipher = $${p++}`);
+      vals.push(nicknameBlindIndex(nicknameNext), encryptUtf8(nicknameNext.trim()));
+    } else {
+      setParts.push(`nickname = $${p++}`);
+      vals.push(nicknameNext.trim());
+    }
+  }
+  if (profileWillChange) {
+    setParts.push(`profile_image = $${p++}`);
+    vals.push(profileNext);
+  }
+  vals.push(userId);
+
+  try {
+    await pool.query(`UPDATE users SET ${setParts.join(', ')} WHERE id = $${p}::uuid`, vals);
+  } catch (err) {
+    if (err.code === '23505') {
+      res.status(409).json({ ok: false, error: '다른 사용자가 이미 사용 중인 닉네임입니다.' });
+      return;
+    }
+    throw err;
+  }
+
+  res.json({ ok: true, user: await loadPublicUser(userId) });
+}));
+
+app.post('/api/register', asyncRoute(async (req, res) => {
   if (!requirePool(res)) return;
   const body = req.body || {};
   const stepPassToken = String(body.stepPassToken || '').trim();
@@ -1371,54 +1321,15 @@ app.post('/api/register', async (req, res) => {
     return;
   }
 
-  const rkSecret = getRecaptchaSecretTrimmed();
-  const rkSite = getRecaptchaSiteKeyTrimmed();
-  const recaptchaToken = String(body.recaptchaToken || '').trim();
-
-  if (rkSecret || rkSite) {
-    if (!rkSecret || !rkSite) {
-      console.warn(
-        'reCAPTCHA: RECAPTCHA_SITE_KEY 과 RECAPTCHA_SECRET_KEY 를 함께 설정해야 회원가입 보호가 동작합니다.'
-      );
-      res.status(503).json({
-        ok: false,
-        error:
-          '회원가입 보안 확인(reCAPTCHA) 설정이 불완전합니다. 관리자에게 문의해 주세요. (SITE_KEY·SECRET 모두 필요)',
-      });
-      return;
-    }
-    if (!recaptchaToken) {
-      res.status(400).json({
-        ok: false,
-        error: '보안 확인(Google reCAPTCHA)을 완료한 뒤 다시 시도해 주세요.',
-      });
-      return;
-    }
-
-    try {
-      const verify = await verifyRecaptchaResponse({
-        secret: rkSecret,
-        token: recaptchaToken,
-        remoteip: req.ip,
-      });
-      if (!verify || !verify.success) {
-        const codes =
-          verify && Array.isArray(verify['error-codes']) ? verify['error-codes'].join(',') : '';
-        console.warn('reCAPTCHA 검증 실패:', codes || verify);
-        res.status(400).json({
-          ok: false,
-          error: '보안 확인에 실패했습니다. 확인란을 다시 체크한 뒤 시도해 주세요.',
-        });
-        return;
-      }
-    } catch (err) {
-      console.error('reCAPTCHA siteverify 오류:', err && err.message ? err.message : err);
-      res.status(502).json({
-        ok: false,
-        error: '보안 확인 서비스에 일시적으로 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.',
-      });
-      return;
-    }
+  const protection = getSignupProtection();
+  if (protection.partial) {
+    console.warn(
+      'reCAPTCHA: RECAPTCHA_SITE_KEY 과 RECAPTCHA_SECRET_KEY 를 함께 설정해야 회원가입 보호가 동작합니다.'
+    );
+  }
+  if (!protection.available) {
+    res.status(503).json({ ok: false, error: SIGNUP_UNAVAILABLE_ERROR });
+    return;
   }
 
   const username = String(body.username || '').trim();
@@ -1434,7 +1345,7 @@ app.post('/api/register', async (req, res) => {
     });
     return;
   }
-  const nLen = nicknameCodepointLen(nickname);
+  const nLen = codepointLength(nickname);
   if (nLen < NICKNAME_MIN || nLen > NICKNAME_MAX) {
     res.status(400).json({
       ok: false,
@@ -1460,8 +1371,8 @@ app.post('/api/register', async (req, res) => {
     res.status(400).json({ ok: false, error: '프로필 이미지가 너무 큽니다. 더 작은 이미지를 사용해 주세요.' });
     return;
   }
-  if (profileImage && !/^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(profileImage)) {
-    res.status(400).json({ ok: false, error: '프로필 이미지는 base64 데이터 URL(image/*) 형식이어야 합니다.' });
+  if (profileImage && !PROFILE_DATA_URL_RE.test(profileImage)) {
+    res.status(400).json({ ok: false, error: '프로필 이미지는 PNG·JPEG·WebP·GIF base64 데이터 URL 형식이어야 합니다.' });
     return;
   }
 
@@ -1476,6 +1387,78 @@ app.post('/api/register', async (req, res) => {
     return;
   }
 
+  // 1단계 통과 토큰은 여기서 확인만 하고, 실제 가입 직전에 소모한다(중복 등 검증 실패 시 1단계 재진행 방지).
+  if (!isStepPassTokenValid(stepPassToken)) {
+    res.status(400).json({
+      ok: false,
+      error:
+        '회원가입 1단계가 만료되었거나 보안 문자 확인이 완료되지 않았습니다. 첫 단계로 돌아가 보안 문자부터 다시 진행해 주세요.',
+    });
+    return;
+  }
+
+  const validIds = await loadValidCharacterIdSet(pool);
+  if (validIds.size === 0 && (requestedCharacterIds.length > 0 || !deferOwnedCharacters)) {
+    res.status(503).json({
+      ok: false,
+      error: '캐릭터 데이터가 준비되지 않았습니다. 관리자에게 문의해 주세요.',
+    });
+    return;
+  }
+  if (requestedCharacterIds.some((id) => !validIds.has(id))) {
+    res.status(400).json({
+      ok: false,
+      error: '목록에 없는 캐릭터가 포함되어 있습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.',
+    });
+    return;
+  }
+
+  const adminRows = await loadAdminUserRows(pool);
+  if (usernameCollidesWithAdminAccount(username, adminRows, null) || (await isUsernameTaken(username))) {
+    res.status(409).json({ ok: false, error: '다른 사용자가 이미 사용 중인 아이디입니다.' });
+    return;
+  }
+  if (nicknameCollidesWithAdminAccount(nickname, adminRows, null) || (await isNicknameTaken(nickname))) {
+    res.status(409).json({ ok: false, error: '다른 사용자가 이미 사용 중인 닉네임입니다.' });
+    return;
+  }
+
+  if (protection.recaptchaConfigured) {
+    const recaptchaToken = String(body.recaptchaToken || '').trim();
+    if (!recaptchaToken) {
+      res.status(400).json({
+        ok: false,
+        error: '보안 확인(Google reCAPTCHA)을 완료한 뒤 다시 시도해 주세요.',
+      });
+      return;
+    }
+    let verify;
+    try {
+      verify = await verifyRecaptchaResponse({
+        secret: protection.secret,
+        token: recaptchaToken,
+        remoteip: req.ip,
+      });
+    } catch (err) {
+      console.error('reCAPTCHA siteverify 오류:', err && err.message ? err.message : err);
+      res.status(502).json({
+        ok: false,
+        error: '보안 확인 서비스에 일시적으로 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.',
+      });
+      return;
+    }
+    if (!verify || !verify.success) {
+      const codes =
+        verify && Array.isArray(verify['error-codes']) ? verify['error-codes'].join(',') : '';
+      console.warn('reCAPTCHA 검증 실패:', codes || verify);
+      res.status(400).json({
+        ok: false,
+        error: '보안 확인에 실패했습니다. 확인란을 다시 체크한 뒤 시도해 주세요.',
+      });
+      return;
+    }
+  }
+
   if (!consumeStepPassToken(stepPassToken)) {
     res.status(400).json({
       ok: false,
@@ -1485,170 +1468,90 @@ app.post('/api/register', async (req, res) => {
     return;
   }
 
+  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  const profileForInsert = profileImage || getDefaultSignupProfileDataUrl();
+
+  const client = await pool.connect();
+  let userRow;
   try {
-    const adminRowsRegister = await loadAdminUserRows(pool);
-    if (usernameCollidesWithAdminAccount(username, adminRowsRegister, null)) {
-      res.status(400).json({
-        ok: false,
-        error: '다른 사용자가 이미 사용 중인 아이디입니다.',
-      });
-      return;
-    }
-    if (nicknameCollidesWithAdminAccount(nickname, adminRowsRegister, null)) {
-      res.status(400).json({
-        ok: false,
-        error: '다른 사용자가 이미 사용 중인 닉네임입니다.',
-      });
-      return;
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
-    return;
-  }
-
-  const pg = pool;
-  const client = await pg.connect();
-  try {
-    const validIds = await loadValidCharacterIdSet(pg);
-    if (requestedCharacterIds.length > 0 && validIds.size === 0) {
-      res.status(503).json({
-        ok: false,
-        error: '캐릭터 데이터가 준비되지 않았습니다. 관리자에게 문의해 주세요.',
-      });
-      return;
-    }
-    if (!deferOwnedCharacters && validIds.size === 0) {
-      res.status(503).json({
-        ok: false,
-        error: '캐릭터 데이터가 준비되지 않았습니다. 관리자에게 문의해 주세요.',
-      });
-      return;
-    }
-
-    const ownedFiltered = [];
-    for (const id of requestedCharacterIds) {
-      if (validIds.has(id)) ownedFiltered.push(id);
-    }
-
-    if (ownedFiltered.length < requestedCharacterIds.length) {
-      res.status(400).json({
-        ok: false,
-        error: '목록에 없는 캐릭터가 포함되어 있습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.',
-      });
-      return;
-    }
-
-    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-    const ub = usernameBlindIndex(username);
-    const nb = nicknameBlindIndex(nickname);
-    const uCipher = encryptUtf8(normalizeUsername(username));
-    const nCipher = encryptUtf8(nickname.trim());
-    const profileForInsert = profileImage || getDefaultSignupProfileDataUrl();
-
     await client.query('BEGIN');
-    let userRow;
-    try {
-      const ins = await client.query(
-        `INSERT INTO users (username, nickname, username_blind, nickname_blind, username_cipher, nickname_cipher, password_hash, profile_image)
-         VALUES (NULL, NULL, $1, $2, $3, $4, $5, $6)
-         RETURNING id, username_cipher, nickname_cipher, created_at AS "createdAt"`,
-        [ub, nb, uCipher, nCipher, passwordHash, profileForInsert || null]
-      );
-      userRow = ins.rows[0];
-
-      for (const cid of ownedFiltered) {
-        await client.query(
-          `INSERT INTO user_owned_characters (user_id, character_id) VALUES ($1, $2::uuid)`,
-          [userRow.id, cid]
-        );
-      }
-      await client.query('COMMIT');
-    } catch (txErr) {
-      await client.query('ROLLBACK');
-      throw txErr;
-    }
-
-    res.status(201).json({
-      ok: true,
-      user: {
-        id: userRow.id,
-        username: displayUsernameFromRow(userRow),
-        nickname: displayNicknameFromRow(userRow),
-        createdAt: userRow.createdAt,
-      },
-      ownedCharacterCount: ownedFiltered.length,
-      deferOwnedCharacters,
-    });
+    const ins = await client.query(
+      `INSERT INTO users (username, nickname, username_blind, nickname_blind, username_cipher, nickname_cipher, password_hash, profile_image)
+       VALUES (NULL, NULL, $1, $2, $3, $4, $5, $6)
+       RETURNING id, username_cipher, nickname_cipher, created_at AS "createdAt"`,
+      [
+        usernameBlindIndex(username),
+        nicknameBlindIndex(nickname),
+        encryptUtf8(normalizeUsername(username)),
+        encryptUtf8(nickname),
+        passwordHash,
+        profileForInsert || null,
+      ]
+    );
+    userRow = ins.rows[0];
+    await insertOwnedCharacters(client, userRow.id, requestedCharacterIds);
+    await client.query('COMMIT');
   } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
     if (err.code === '23505') {
       res.status(409).json({ ok: false, error: '이미 사용 중인 아이디 또는 닉네임입니다.' });
       return;
     }
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+    throw err;
   } finally {
     client.release();
   }
-});
 
-app.get('/api/future-sight', async (req, res) => {
+  res.status(201).json({
+    ok: true,
+    user: {
+      id: userRow.id,
+      username: displayUsernameFromRow(userRow),
+      nickname: displayNicknameFromRow(userRow),
+      createdAt: userRow.createdAt,
+    },
+    ownedCharacterCount: requestedCharacterIds.length,
+    deferOwnedCharacters,
+  });
+}));
+
+/* ───────────── 미래시 API ───────────── */
+
+app.get('/api/future-sight', asyncRoute(async (req, res) => {
   if (!requirePool(res)) return;
-  try {
-    const r = await pool.query('SELECT data, updated_at AS "updatedAt" FROM site_future_sight WHERE id = 1 LIMIT 1');
-    const maintained = await runFutureSightMaintenanceJob();
-    const data = await hydrateFutureSightState(pool, maintained.state);
-    res.setHeader('Cache-Control', 'private, no-store');
-    res.json({ ok: true, data, updatedAt: r.rows[0]?.updatedAt || null });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
-  }
-});
+  const maintained = await runFutureSightMaintenanceJob();
+  const data = await hydrateFutureSightState(pool, maintained.state);
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.json({ ok: true, data, updatedAt: maintained.updatedAt || null });
+}));
 
-app.put('/api/admin/future-sight', async (req, res) => {
-  let admin;
-  try {
-    admin = await requireAdminUser(req, res);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
-    return;
-  }
+app.put('/api/admin/future-sight', asyncRoute(async (req, res) => {
+  const admin = await requireAdminUser(req, res);
   if (!admin) return;
 
-  try {
-    const state = applyFutureSightMonthMaintenance(req.body && req.body.data).state;
-    const validIds = await loadValidCharacterIdSet(pool);
-    for (const month of state.months) {
-      for (const entries of Object.values(month.categories)) {
-        for (const entry of entries) {
-          if (!validIds.has(entry.characterId)) {
-            res.status(400).json({
-              ok: false,
-              error: '목록에 없는 캐릭터가 포함되어 있습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.',
-            });
-            return;
-          }
-        }
+  const state = applyFutureSightMonthMaintenance(req.body && req.body.data).state;
+  const validIds = await loadValidCharacterIdSet(pool);
+  for (const month of state.months) {
+    for (const entries of Object.values(month.categories)) {
+      if (entries.some((entry) => !validIds.has(entry.characterId))) {
+        res.status(400).json({
+          ok: false,
+          error: '목록에 없는 캐릭터가 포함되어 있습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.',
+        });
+        return;
       }
     }
-    await pool.query(
-      `INSERT INTO site_future_sight (id, data, updated_at)
-       VALUES (1, $1::jsonb, NOW())
-       ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-      [JSON.stringify(state)]
-    );
-    const data = await hydrateFutureSightState(pool, state);
-    res.json({ ok: true, data });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
   }
-});
+  await updateFutureSightLocked(() => state);
+  const data = await hydrateFutureSightState(pool, state);
+  res.json({ ok: true, data });
+}));
 
-app.get('/api/characters', async (req, res) => {
+/* ───────────── 캐릭터 ───────────── */
+
+app.get('/api/characters', asyncRoute(async (req, res) => {
   if (characterLibrary) {
+    res.setHeader('Cache-Control', 'public, max-age=300');
     res.json({
       ok: true,
       source: 'library',
@@ -1662,27 +1565,22 @@ app.get('/api/characters', async (req, res) => {
     return;
   }
   if (!requirePool(res)) return;
-  try {
-    const result = await pool.query(
-      `SELECT id, name, updated_at AS "updatedAt"
-       FROM characters
-       ORDER BY name ASC`
-    );
-    const characters = result.rows.map((row) => {
-      const id = String(row.id);
-      return {
-        ...row,
-        imageUrl: `/api/characters/${id}/image`,
-      };
-    });
-    res.json({ ok: true, source: 'postgres', characters });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
-  }
-});
+  const result = await pool.query(
+    `SELECT id, name, updated_at AS "updatedAt"
+     FROM characters
+     ORDER BY name ASC`
+  );
+  const characters = result.rows.map((row) => {
+    const id = String(row.id);
+    return {
+      ...row,
+      imageUrl: `/api/characters/${id}/image`,
+    };
+  });
+  res.json({ ok: true, source: 'postgres', characters });
+}));
 
-app.get('/api/characters/:id/image', async (req, res) => {
+app.get('/api/characters/:id/image', asyncRoute(async (req, res) => {
   const id = String(req.params.id || '');
   if (!UUID_RE.test(id)) {
     res.status(400).json({ ok: false, error: '잘못된 캐릭터 ID입니다.' });
@@ -1705,33 +1603,21 @@ app.get('/api/characters/:id/image', async (req, res) => {
     return;
   }
   if (!requirePool(res)) return;
-  try {
-    const result = await pool.query(
-      'SELECT image_mime, image_data FROM characters WHERE id = $1 LIMIT 1',
-      [id]
-    );
-    if (result.rowCount === 0) {
-      res.status(404).json({ ok: false, error: '캐릭터 이미지를 찾을 수 없습니다.' });
-      return;
-    }
-    const row = result.rows[0];
-    res.setHeader('Content-Type', row.image_mime);
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.send(row.image_data);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  const result = await pool.query(
+    'SELECT image_mime, image_data FROM characters WHERE id = $1 LIMIT 1',
+    [id]
+  );
+  if (result.rowCount === 0) {
+    res.status(404).json({ ok: false, error: '캐릭터 이미지를 찾을 수 없습니다.' });
+    return;
   }
-});
+  const row = result.rows[0];
+  res.setHeader('Content-Type', row.image_mime);
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.send(row.image_data);
+}));
 
-const clanBoardLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 60,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' },
-});
-app.use('/api/clan-board', clanBoardLimiter);
+/* ───────────── 게시판 ───────────── */
 
 function clanBoardRequirePool(res) {
   if (!pool) {
@@ -1741,529 +1627,520 @@ function clanBoardRequirePool(res) {
   return true;
 }
 
+/** 게시물 id 가 UUID 가 아니면 DB 형변환 오류(500) 대신 404 */
+app.param('postId', (req, res, next, postId) => {
+  if (!UUID_RE.test(String(postId))) {
+    res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
+    return;
+  }
+  next();
+});
+
+const CLAN_BOARD_BOARDS = ['clan', 'free'];
 const CLAN_BOARD_VALID_CATEGORIES = ['none', 'phase1', 'phase2', 'phase3', 'phase4', 'phase5'];
 const CLAN_BOARD_VALID_SUB_BOARDS = ['clan-semi', 'clan-fullauto'];
-const CATEGORY_LABELS = {
-  none: '없음',
-  general: '자유',
-  phase1: '1넴',
-  phase2: '2넴',
-  phase3: '3넴',
-  phase4: '4넴',
-  phase5: '5넴',
+const CLAN_BOARD_TITLE_MAX = 50;
+const CLAN_BOARD_COMMENT_MAX = 2000;
+const CLAN_BOARD_SEARCH_MAX = 100;
+/** 게시물 구분(클랜전 게시판 전용) — index.html 의 선택지와 동일 */
+const CLAN_POST_CLASSIFIERS = {
+  year: /^(before\d{4}|\d{4})$/,
+  month: /^(1[0-2]|[1-9])$/,
+  stage: /^[1-4]$/,
+  named: /^[1-5]$/,
 };
 
-app.get('/api/clan-board/posts', async (req, res) => {
+/** 클랜전 글은 연도·월·단계·네임드 필수(네임드 → category phaseN), 자유 게시판은 구분 없음 */
+function parsePostClassification(body, board) {
+  if (board !== 'clan') {
+    return { ok: true, values: { year: null, month: null, stage: null, named: null, category: 'none' } };
+  }
+  const values = {};
+  for (const [key, re] of Object.entries(CLAN_POST_CLASSIFIERS)) {
+    const v = String((body && body[key]) || '').trim();
+    if (!re.test(v)) return { ok: false, error: '게시물 구분(연도·월·단계·네임드)을 모두 선택해 주세요.' };
+    values[key] = v;
+  }
+  values.category = `phase${values.named}`;
+  return { ok: true, values };
+}
+
+/** 제목·본문 공통 검증 + 본문 정제. 실패 시 { error } */
+function preparePostContent(body) {
+  const title = String((body && body.title) || '').trim();
+  const rawContent = String((body && body.content) || '');
+  if (!title) return { error: '제목을 입력해 주세요.' };
+  if (codepointLength(title) > CLAN_BOARD_TITLE_MAX) {
+    return { error: `게시물 제목은 ${CLAN_BOARD_TITLE_MAX}자 이내로만 작성 가능합니다.` };
+  }
+  if (rawContent.length > MAX_POST_HTML_LENGTH) {
+    return { error: '본문 용량이 너무 큽니다. 이미지·동영상 크기를 줄여 주세요.' };
+  }
+  const content = sanitizePostHtml(rawContent);
+  const contentText = extractPostText(content);
+  if (!hasMeaningfulContent(content, contentText)) return { error: '내용을 입력해 주세요.' };
+  return { title, content, contentText };
+}
+
+function escapeLikePattern(s) {
+  return s.replace(/[\\%_]/g, (m) => `\\${m}`);
+}
+
+/** 같은 사람이 같은 글을 새로고침해도 조회수가 계속 오르지 않도록(메모리, 6시간) */
+const VIEW_DEDUPE_TTL_MS = 6 * 60 * 60 * 1000;
+const VIEW_DEDUPE_MAX = 100_000;
+const recentPostViews = new Map();
+
+function shouldCountPostView(viewerKey, postId) {
+  const key = `${viewerKey}|${postId}`;
+  const now = Date.now();
+  const seenAt = recentPostViews.get(key);
+  if (seenAt && now - seenAt < VIEW_DEDUPE_TTL_MS) return false;
+  recentPostViews.delete(key);
+  recentPostViews.set(key, now);
+  if (recentPostViews.size > VIEW_DEDUPE_MAX) {
+    recentPostViews.delete(recentPostViews.keys().next().value);
+  }
+  return true;
+}
+
+function toIso(value) {
+  return value?.toISOString?.() || value || null;
+}
+
+function mapPostListRow(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    year: row.year,
+    month: row.month,
+    stage: row.stage,
+    named: row.named,
+    view_count: row.view_count,
+    like_count: Number(row.like_count) || 0,
+    comment_count: Number(row.comment_count) || 0,
+    is_pinned: row.is_pinned,
+    created_at: toIso(row.created_at),
+    author: {
+      nickname: displayNicknameFromRow({ nickname: row.nickname, nickname_cipher: row.nickname_cipher }),
+    },
+  };
+}
+
+app.get('/api/clan-board/posts', asyncRoute(async (req, res) => {
   if (!clanBoardRequirePool(res)) return;
-  try {
-    const page = Math.max(1, parseInt(String(req.query.page || '1'), 10) || 1);
-    const limit = Math.min(40, Math.max(1, parseInt(String(req.query.limit || '40'), 10) || 40));
-    const category = String(req.query.category || '').trim();
-    const search = String(req.query.search || '').trim();
-    const subBoard = String(req.query.sub_board || '').trim();
-    const board = String(req.query.board || 'clan').trim();
+  const page = Math.max(1, parseInt(String(req.query.page || '1'), 10) || 1);
+  const limit = Math.min(40, Math.max(1, parseInt(String(req.query.limit || '40'), 10) || 40));
+  const board = String(req.query.board || 'clan').trim();
+  if (!CLAN_BOARD_BOARDS.includes(board)) {
+    res.status(400).json({ ok: false, error: '올바른 게시판이 아닙니다.' });
+    return;
+  }
+  const category = String(req.query.category || '').trim();
+  const subBoard = String(req.query.sub_board || '').trim();
+  const search = String(req.query.search || '').trim().slice(0, CLAN_BOARD_SEARCH_MAX);
 
-    const params = [];
-    const conditions = [];
+  const params = [board];
+  const conditions = ['p.board = $1'];
+  const addCondition = (sqlWithPlaceholder, value) => {
+    params.push(value);
+    conditions.push(sqlWithPlaceholder.replace('?', `$${params.length}`));
+  };
 
-    if (board && board !== 'all') {
-      params.push(board);
-      conditions.push(`p.board = $${params.length}`);
-    }
+  if (CLAN_BOARD_VALID_CATEGORIES.includes(category)) addCondition('p.category = ?', category);
+  if (CLAN_BOARD_VALID_SUB_BOARDS.includes(subBoard)) addCondition('p.sub_board = ?', subBoard);
+  for (const key of ['year', 'month', 'stage']) {
+    const v = String(req.query[key] || '').trim();
+    if (CLAN_POST_CLASSIFIERS[key].test(v)) addCondition(`p.${key} = ?`, v);
+  }
+  const named = String(req.query.named || '').trim();
+  if (CLAN_POST_CLASSIFIERS.named.test(named)) addCondition('p.category = ?', `phase${named}`);
+  if (search) {
+    params.push(`%${escapeLikePattern(search)}%`);
+    conditions.push(`(p.title ILIKE $${params.length} OR p.content_text ILIKE $${params.length})`);
+  }
 
-    if (category && CLAN_BOARD_VALID_CATEGORIES.includes(category)) {
-      params.push(category);
-      conditions.push(`p.category = $${params.length}`);
-    }
+  const whereClause = `WHERE ${conditions.join(' AND ')}`;
+  const selectColumns = `
+    p.id, p.title, p.category, p.year, p.month, p.stage, p.named,
+    p.view_count, p.is_pinned, p.created_at,
+    u.nickname, u.nickname_cipher,
+    (SELECT COUNT(*) FROM clan_board_comments c WHERE c.post_id = p.id) AS comment_count,
+    (SELECT COUNT(*) FROM clan_board_likes l WHERE l.post_id = p.id) AS like_count
+  `;
 
-    if (subBoard && CLAN_BOARD_VALID_SUB_BOARDS.includes(subBoard)) {
-      params.push(subBoard);
-      conditions.push(`p.sub_board = $${params.length}`);
-    }
+  let pinnedPosts = [];
+  if (page === 1) {
+    const pinnedResult = await pool.query(
+      `SELECT ${selectColumns}
+       FROM clan_board_posts p
+       JOIN users u ON p.author_id = u.id
+       ${whereClause} AND p.is_pinned = true
+       ORDER BY p.created_at DESC`,
+      params
+    );
+    pinnedPosts = pinnedResult.rows.map(mapPostListRow);
+  }
 
-    if (search) {
-      params.push(`%${search}%`);
-      conditions.push(`(p.title ILIKE $${params.length} OR p.content ILIKE $${params.length})`);
-    }
+  const totalResult = await pool.query(
+    `SELECT COUNT(*)::int AS total FROM clan_board_posts p ${whereClause} AND p.is_pinned = false`,
+    params
+  );
+  const total = totalResult.rows[0].total;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const safePage = Math.min(page, totalPages);
+  const offset = (safePage - 1) * limit;
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const result = await pool.query(
+    `SELECT ${selectColumns}
+     FROM clan_board_posts p
+     JOIN users u ON p.author_id = u.id
+     ${whereClause} AND p.is_pinned = false
+     ORDER BY p.created_at DESC
+     LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    [...params, limit, offset]
+  );
 
-    const baseColumns = `
-      p.id, p.title, p.category, p.view_count, p.is_pinned, p.created_at,
-      u.id AS author_id,
-      u.nickname, u.nickname_cipher, u.username, u.username_cipher, u.profile_image AS author_profile_image,
-      (SELECT COUNT(*) FROM clan_board_comments c WHERE c.post_id = p.id) AS comment_count,
-      (SELECT COUNT(*) FROM clan_board_likes l WHERE l.post_id = p.id) AS like_count
-    `;
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({
+    ok: true,
+    posts: [...pinnedPosts, ...result.rows.map(mapPostListRow)],
+    pinned: pinnedPosts,
+    pagination: { page: safePage, limit, total, totalPages },
+  });
+}));
 
-    const mapPost = (row) => ({
+app.get('/api/clan-board/posts/:postId', asyncRoute(async (req, res) => {
+  if (!clanBoardRequirePool(res)) return;
+  const { postId } = req.params;
+  const sessionUser = await getSessionUser(req);
+
+  const result = await pool.query(
+    `SELECT
+       p.id, p.title, p.content, p.category, p.year, p.month, p.stage, p.named,
+       p.board, p.sub_board, p.view_count, p.created_at, p.updated_at, p.author_id,
+       u.nickname, u.nickname_cipher,
+       (SELECT COUNT(*) FROM clan_board_likes l WHERE l.post_id = p.id) AS like_count,
+       (SELECT COUNT(*) FROM clan_board_comments c WHERE c.post_id = p.id) AS comment_count,
+       EXISTS (
+         SELECT 1 FROM clan_board_likes l WHERE l.post_id = p.id AND l.user_id = $2::uuid
+       ) AS liked
+     FROM clan_board_posts p
+     JOIN users u ON p.author_id = u.id
+     WHERE p.id = $1::uuid
+     LIMIT 1`,
+    [postId, sessionUser ? sessionUser.id : null]
+  );
+  if (result.rowCount === 0) {
+    res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
+    return;
+  }
+  const row = result.rows[0];
+  const isAuthor = Boolean(sessionUser && String(row.author_id) === sessionUser.id);
+  const isAdmin = Boolean(sessionUser && sessionUser.role === 'admin');
+
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.json({
+    ok: true,
+    post: {
       id: row.id,
       title: row.title,
-      category: row.category,
-      view_count: row.view_count,
-      like_count: parseInt(row.like_count, 10) || 0,
-      comment_count: parseInt(row.comment_count, 10) || 0,
-      is_pinned: row.is_pinned,
-      created_at: row.created_at?.toISOString?.() || row.created_at,
-      author: {
-        nickname: displayNicknameFromRow({ nickname: row.nickname, nickname_cipher: row.nickname_cipher }),
-        profileImage: row.author_profile_image || null,
-      },
-    });
-
-    const pinnedParams = [...params];
-    let pinnedPosts = [];
-    if (page === 1) {
-      const pinnedQuery = `
-        SELECT ${baseColumns}
-        FROM clan_board_posts p
-        JOIN users u ON p.author_id = u.id
-        ${whereClause ? whereClause + ' AND' : 'WHERE'} p.is_pinned = true
-        ORDER BY p.created_at DESC
-      `;
-      const pinnedResult = await pool.query(pinnedQuery, pinnedParams);
-      pinnedPosts = pinnedResult.rows.map(mapPost);
-    }
-
-    const totalParams = [...params, false];
-    const totalQuery = `SELECT COUNT(*)::int AS total FROM clan_board_posts p ${whereClause ? whereClause + ' AND' : 'WHERE'} p.is_pinned = $${totalParams.length}`;
-    const totalResult = await pool.query(totalQuery, totalParams);
-    const total = totalResult.rows[0].total;
-    const totalPages = Math.max(1, Math.ceil(total / limit));
-    const safePage = Math.min(page, totalPages);
-    const offset = (safePage - 1) * limit;
-
-    const selectParams = [...params, false, limit, offset];
-    const paramIdx = params.length;
-    const selectQuery = `
-      SELECT ${baseColumns}
-      FROM clan_board_posts p
-      JOIN users u ON p.author_id = u.id
-      ${whereClause ? whereClause + ' AND' : 'WHERE'} p.is_pinned = $${paramIdx + 1}
-      ORDER BY p.created_at DESC
-      LIMIT $${paramIdx + 2} OFFSET $${paramIdx + 3}
-    `;
-    const result = await pool.query(selectQuery, selectParams);
-
-    const regularPosts = result.rows.map(mapPost);
-
-    res.json({
-      ok: true,
-      posts: [...pinnedPosts, ...regularPosts],
-      pinned: pinnedPosts,
-      pagination: { page: safePage, limit, total, totalPages },
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
-  }
-});
-
-app.get('/api/clan-board/posts/:id', async (req, res) => {
-  if (!clanBoardRequirePool(res)) return;
-  try {
-    const { id } = req.params;
-    const secret = getSessionSecret();
-    const userId = secret ? getUserIdFromRequest(secret, req.headers.cookie || '') : null;
-
-    const postQuery = `
-      SELECT
-        p.id, p.title, p.content, p.category, p.view_count, p.created_at, p.updated_at,
-        u.id AS author_id,
-        u.nickname, u.nickname_cipher, u.username, u.username_cipher, u.profile_image AS author_profile_image,
-        (SELECT COUNT(*) FROM clan_board_likes l WHERE l.post_id = p.id) AS like_count,
-        (SELECT COUNT(*) FROM clan_board_comments c WHERE c.post_id = p.id) AS comment_count
-      FROM clan_board_posts p
-      JOIN users u ON p.author_id = u.id
-      WHERE p.id = $1::uuid
-      LIMIT 1
-    `;
-    const result = await pool.query(postQuery, [id]);
-    if (result.rowCount === 0) {
-      res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
-      return;
-    }
-    const row = result.rows[0];
-
-    let liked = false;
-    let isAdmin = false;
-    if (userId) {
-      const likeResult = await pool.query(
-        `SELECT 1 FROM clan_board_likes WHERE user_id = $1::uuid AND post_id = $2::uuid LIMIT 1`,
-        [userId, id]
-      );
-      liked = likeResult.rowCount > 0;
-      const roleResult = await pool.query(
-        `SELECT COALESCE(role, 'user') AS role FROM users WHERE id = $1::uuid LIMIT 1`,
-        [userId]
-      );
-      isAdmin = roleResult.rows[0]?.role === 'admin';
-    }
-
-    const isAuthor = userId && row.author_id === userId;
-
-    res.json({
-      ok: true,
-      post: {
-        id: row.id,
-        title: row.title,
-        content: row.content,
-        category: row.category,
-        view_count: row.view_count,
-        like_count: parseInt(row.like_count, 10) || 0,
-        comment_count: parseInt(row.comment_count, 10) || 0,
-        created_at: row.created_at?.toISOString?.() || row.created_at,
-        updated_at: row.updated_at?.toISOString?.() || row.updated_at,
-        author: {
-          nickname: displayNicknameFromRow({ nickname: row.nickname, nickname_cipher: row.nickname_cipher }),
-          profileImage: row.author_profile_image || null,
-        },
-        liked,
-        can_edit: Boolean(isAuthor),
-        can_delete: Boolean(isAuthor || isAdmin),
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
-  }
-});
-
-app.patch('/api/clan-board/posts/:id/view', async (req, res) => {
-  if (!clanBoardRequirePool(res)) return;
-  try {
-    const { id } = req.params;
-    const result = await pool.query(
-      `UPDATE clan_board_posts SET view_count = view_count + 1 WHERE id = $1::uuid RETURNING view_count`,
-      [id]
-    );
-    if (result.rowCount === 0) {
-      res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
-      return;
-    }
-    res.json({ ok: true, view_count: result.rows[0].view_count });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
-  }
-});
-
-app.post('/api/clan-board/posts/:id/likes', async (req, res) => {
-  if (!clanBoardRequirePool(res)) return;
-  const secret = getSessionSecret();
-  if (!secret) {
-    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
-    return;
-  }
-  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
-  if (!userId) {
-    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
-    return;
-  }
-  try {
-    const { id } = req.params;
-    const postCheck = await pool.query(`SELECT 1 FROM clan_board_posts WHERE id = $1::uuid LIMIT 1`, [id]);
-    if (postCheck.rowCount === 0) {
-      res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
-      return;
-    }
-
-    const existing = await pool.query(
-      `SELECT 1 FROM clan_board_likes WHERE user_id = $1::uuid AND post_id = $2::uuid LIMIT 1`,
-      [userId, id]
-    );
-
-    if (existing.rowCount > 0) {
-      await pool.query(
-        `DELETE FROM clan_board_likes WHERE user_id = $1::uuid AND post_id = $2::uuid`,
-        [userId, id]
-      );
-    } else {
-      await pool.query(
-        `INSERT INTO clan_board_likes (user_id, post_id) VALUES ($1::uuid, $2::uuid)`,
-        [userId, id]
-      );
-    }
-
-    const countResult = await pool.query(
-      `SELECT COUNT(*)::int AS count FROM clan_board_likes WHERE post_id = $1::uuid`,
-      [id]
-    );
-    res.json({ ok: true, liked: existing.rowCount === 0, like_count: countResult.rows[0].count });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
-  }
-});
-
-app.get('/api/clan-board/posts/:id/comments', async (req, res) => {
-  if (!clanBoardRequirePool(res)) return;
-  try {
-    const { id } = req.params;
-    const page = Math.max(1, parseInt(String(req.query.page || '1'), 10) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '20'), 10) || 20));
-
-    const totalResult = await pool.query(
-      `SELECT COUNT(*)::int AS total FROM clan_board_comments WHERE post_id = $1::uuid`,
-      [id]
-    );
-    const total = totalResult.rows[0].total;
-    const totalPages = Math.max(1, Math.ceil(total / limit));
-    const safePage = Math.min(page, totalPages);
-    const offset = (safePage - 1) * limit;
-
-    const result = await pool.query(
-      `SELECT
-         c.id, c.content, c.created_at,
-         u.id AS author_id,
-         u.nickname, u.nickname_cipher, u.profile_image AS author_profile_image
-       FROM clan_board_comments c
-       JOIN users u ON c.author_id = u.id
-       WHERE c.post_id = $1::uuid
-       ORDER BY c.created_at ASC
-       LIMIT $2 OFFSET $3`,
-      [id, limit, offset]
-    );
-
-    const comments = result.rows.map((row) => ({
-      id: row.id,
       content: row.content,
-      created_at: row.created_at?.toISOString?.() || row.created_at,
+      category: row.category,
+      year: row.year,
+      month: row.month,
+      stage: row.stage,
+      named: row.named,
+      board: row.board,
+      sub_board: row.sub_board,
+      view_count: row.view_count,
+      like_count: Number(row.like_count) || 0,
+      comment_count: Number(row.comment_count) || 0,
+      created_at: toIso(row.created_at),
+      updated_at: toIso(row.updated_at),
       author: {
         nickname: displayNicknameFromRow({ nickname: row.nickname, nickname_cipher: row.nickname_cipher }),
-        profileImage: row.author_profile_image || null,
       },
-    }));
+      liked: Boolean(row.liked),
+      can_edit: isAuthor,
+      can_delete: isAuthor || isAdmin,
+    },
+  });
+}));
 
-    res.json({ ok: true, comments, pagination: { page: safePage, limit, total, totalPages } });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
-  }
-});
-
-app.post('/api/clan-board/posts', async (req, res) => {
+app.patch('/api/clan-board/posts/:postId/view', asyncRoute(async (req, res) => {
   if (!clanBoardRequirePool(res)) return;
-  const secret = getSessionSecret();
-  if (!secret) {
-    res.status(503).json({ ok: false, error: '로그인 기능을 사용할 수 없습니다.' });
+  const { postId } = req.params;
+  const sessionUser = await getSessionUser(req);
+  const viewerKey = sessionUser ? `u:${sessionUser.id}` : `ip:${req.ip}`;
+  if (!shouldCountPostView(viewerKey, postId)) {
+    const cur = await pool.query(`SELECT view_count FROM clan_board_posts WHERE id = $1::uuid`, [postId]);
+    if (cur.rowCount === 0) {
+      res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
+      return;
+    }
+    res.json({ ok: true, view_count: cur.rows[0].view_count, counted: false });
     return;
   }
-  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
-  if (!userId) {
-    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
+  const result = await pool.query(
+    `UPDATE clan_board_posts SET view_count = view_count + 1 WHERE id = $1::uuid RETURNING view_count`,
+    [postId]
+  );
+  if (result.rowCount === 0) {
+    res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
+    return;
+  }
+  res.json({ ok: true, view_count: result.rows[0].view_count, counted: true });
+}));
+
+app.post('/api/clan-board/posts/:postId/likes', asyncRoute(async (req, res) => {
+  if (!clanBoardRequirePool(res)) return;
+  const sessionUser = await requireSessionUser(req, res);
+  if (!sessionUser) return;
+  const { postId } = req.params;
+  const postCheck = await pool.query(`SELECT 1 FROM clan_board_posts WHERE id = $1::uuid LIMIT 1`, [postId]);
+  if (postCheck.rowCount === 0) {
+    res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
     return;
   }
 
-  const { title, content, category, sub_board, board } = req.body || {};
-  const trimmedTitle = String(title || '').trim();
-  const trimmedContent = String(content || '').trim();
-  const trimmedCategory = String(category || 'none').trim();
-  const trimmedSubBoard = String(sub_board || 'clan-fullauto').trim();
-  const trimmedBoard = String(board || 'clan').trim();
+  // 삭제를 먼저 시도하고, 지운 게 없으면 추가한다(동시 클릭에도 PK 충돌 없이 토글).
+  const removed = await pool.query(
+    `DELETE FROM clan_board_likes WHERE user_id = $1::uuid AND post_id = $2::uuid`,
+    [sessionUser.id, postId]
+  );
+  let liked = false;
+  if (removed.rowCount === 0) {
+    await pool.query(
+      `INSERT INTO clan_board_likes (user_id, post_id) VALUES ($1::uuid, $2::uuid) ON CONFLICT DO NOTHING`,
+      [sessionUser.id, postId]
+    );
+    liked = true;
+  }
 
-  if (!trimmedTitle) {
-    res.status(400).json({ ok: false, error: '제목을 입력해 주세요.' });
-    return;
-  }
-  if (trimmedTitle.length > 50) {
-    res.status(400).json({ ok: false, error: '게시물 제목은 50자 이내로만 작성 가능합니다.' });
-    return;
-  }
-  if (!trimmedContent) {
-    res.status(400).json({ ok: false, error: '내용을 입력해 주세요.' });
-    return;
-  }
-  if (!CLAN_BOARD_VALID_CATEGORIES.includes(trimmedCategory)) {
-    res.status(400).json({ ok: false, error: '올바른 카테고리를 선택해 주세요.' });
-    return;
-  }
-  if (!CLAN_BOARD_VALID_SUB_BOARDS.includes(trimmedSubBoard)) {
+  const countResult = await pool.query(
+    `SELECT COUNT(*)::int AS count FROM clan_board_likes WHERE post_id = $1::uuid`,
+    [postId]
+  );
+  res.json({ ok: true, liked, like_count: countResult.rows[0].count });
+}));
+
+app.get('/api/clan-board/posts/:postId/comments', asyncRoute(async (req, res) => {
+  if (!clanBoardRequirePool(res)) return;
+  const { postId } = req.params;
+  const page = Math.max(1, parseInt(String(req.query.page || '1'), 10) || 1);
+  const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '20'), 10) || 20));
+
+  const totalResult = await pool.query(
+    `SELECT COUNT(*)::int AS total FROM clan_board_comments WHERE post_id = $1::uuid`,
+    [postId]
+  );
+  const total = totalResult.rows[0].total;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const safePage = Math.min(page, totalPages);
+  const offset = (safePage - 1) * limit;
+
+  const result = await pool.query(
+    `SELECT
+       c.id, c.content, c.created_at,
+       u.nickname, u.nickname_cipher, u.profile_image AS author_profile_image
+     FROM clan_board_comments c
+     JOIN users u ON c.author_id = u.id
+     WHERE c.post_id = $1::uuid
+     ORDER BY c.created_at ASC
+     LIMIT $2 OFFSET $3`,
+    [postId, limit, offset]
+  );
+
+  const comments = result.rows.map((row) => ({
+    id: row.id,
+    content: row.content,
+    created_at: toIso(row.created_at),
+    author: {
+      nickname: displayNicknameFromRow({ nickname: row.nickname, nickname_cipher: row.nickname_cipher }),
+      profileImage: row.author_profile_image || null,
+    },
+  }));
+
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ ok: true, comments, pagination: { page: safePage, limit, total, totalPages } });
+}));
+
+app.post('/api/clan-board/posts', asyncRoute(async (req, res) => {
+  if (!clanBoardRequirePool(res)) return;
+  const sessionUser = await requireSessionUser(req, res);
+  if (!sessionUser) return;
+
+  const body = req.body || {};
+  const board = String(body.board || 'clan').trim();
+  if (!CLAN_BOARD_BOARDS.includes(board)) {
     res.status(400).json({ ok: false, error: '올바른 게시판을 선택해 주세요.' });
     return;
   }
-
-  try {
-    const result = await pool.query(
-      `INSERT INTO clan_board_posts (author_id, title, content, category, sub_board, board)
-       VALUES ($1::uuid, $2, $3, $4, $5, $6)
-       RETURNING id`,
-      [userId, trimmedTitle, trimmedContent, trimmedCategory, trimmedSubBoard, trimmedBoard]
-    );
-    res.status(201).json({ ok: true, id: result.rows[0].id });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
-  }
-});
-
-app.patch('/api/clan-board/posts/:id', async (req, res) => {
-  if (!clanBoardRequirePool(res)) return;
-  const secret = getSessionSecret();
-  if (!secret) {
-    res.status(503).json({ ok: false, error: '로그인 기능을 사용할 수 없습니다.' });
-    return;
-  }
-  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
-  if (!userId) {
-    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
-    return;
-  }
-
-  const { id } = req.params;
-  const { title, content, category } = req.body || {};
-  const trimmedTitle = String(title || '').trim();
-  const trimmedContent = String(content || '').trim();
-  const trimmedCategory = String(category || 'none').trim();
-
-  if (!trimmedTitle) {
-    res.status(400).json({ ok: false, error: '제목을 입력해 주세요.' });
-    return;
-  }
-  if (trimmedTitle.length > 50) {
-    res.status(400).json({ ok: false, error: '게시물 제목은 50자 이내로만 작성 가능합니다.' });
-    return;
-  }
-  if (!trimmedContent) {
-    res.status(400).json({ ok: false, error: '내용을 입력해 주세요.' });
-    return;
-  }
-  if (!CLAN_BOARD_VALID_CATEGORIES.includes(trimmedCategory)) {
-    res.status(400).json({ ok: false, error: '올바른 카테고리를 선택해 주세요.' });
-    return;
-  }
-
-  try {
-    const postResult = await pool.query(
-      `SELECT author_id FROM clan_board_posts WHERE id = $1::uuid LIMIT 1`,
-      [id]
-    );
-    if (postResult.rowCount === 0) {
-      res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
+  let subBoard = 'none';
+  if (board === 'clan') {
+    subBoard = String(body.sub_board || 'clan-fullauto').trim();
+    if (!CLAN_BOARD_VALID_SUB_BOARDS.includes(subBoard)) {
+      res.status(400).json({ ok: false, error: '올바른 게시판을 선택해 주세요.' });
       return;
     }
-    if (postResult.rows[0].author_id !== userId) {
-      res.status(403).json({ ok: false, error: '게시물을 수정할 권한이 없습니다.' });
-      return;
-    }
-
-    const result = await pool.query(
-      `UPDATE clan_board_posts
-       SET title = $2, content = $3, category = $4, updated_at = NOW()
-       WHERE id = $1::uuid
-       RETURNING id, updated_at`,
-      [id, trimmedTitle, trimmedContent, trimmedCategory]
-    );
-    res.json({
-      ok: true,
-      id: result.rows[0].id,
-      updated_at: result.rows[0].updated_at?.toISOString?.() || result.rows[0].updated_at,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
   }
-});
+  const classification = parsePostClassification(body, board);
+  if (!classification.ok) {
+    res.status(400).json({ ok: false, error: classification.error });
+    return;
+  }
+  const prepared = preparePostContent(body);
+  if (prepared.error) {
+    res.status(400).json({ ok: false, error: prepared.error });
+    return;
+  }
+  const c = classification.values;
 
-app.delete('/api/clan-board/posts/:id', async (req, res) => {
+  const result = await pool.query(
+    `INSERT INTO clan_board_posts
+       (author_id, title, content, content_text, category, sub_board, board, year, month, stage, named)
+     VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+     RETURNING id`,
+    [sessionUser.id, prepared.title, prepared.content, prepared.contentText, c.category, subBoard, board, c.year, c.month, c.stage, c.named]
+  );
+  res.status(201).json({ ok: true, id: result.rows[0].id });
+}));
+
+app.patch('/api/clan-board/posts/:postId', asyncRoute(async (req, res) => {
   if (!clanBoardRequirePool(res)) return;
-  const secret = getSessionSecret();
-  if (!secret) {
-    res.status(503).json({ ok: false, error: '로그인 기능을 사용할 수 없습니다.' });
+  const sessionUser = await requireSessionUser(req, res);
+  if (!sessionUser) return;
+  const { postId } = req.params;
+
+  const postResult = await pool.query(
+    `SELECT author_id, board FROM clan_board_posts WHERE id = $1::uuid LIMIT 1`,
+    [postId]
+  );
+  if (postResult.rowCount === 0) {
+    res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
     return;
   }
-  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
-  if (!userId) {
-    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
+  if (String(postResult.rows[0].author_id) !== sessionUser.id) {
+    res.status(403).json({ ok: false, error: '게시물을 수정할 권한이 없습니다.' });
     return;
   }
 
-  const { id } = req.params;
-
-  try {
-    const postResult = await pool.query(
-      `SELECT author_id FROM clan_board_posts WHERE id = $1::uuid LIMIT 1`,
-      [id]
-    );
-    if (postResult.rowCount === 0) {
-      res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
-      return;
-    }
-
-    const isAuthor = postResult.rows[0].author_id === userId;
-    if (!isAuthor) {
-      const roleResult = await pool.query(
-        `SELECT COALESCE(role, 'user') AS role FROM users WHERE id = $1::uuid LIMIT 1`,
-        [userId]
-      );
-      if (roleResult.rows[0]?.role !== 'admin') {
-        res.status(403).json({ ok: false, error: '게시물을 삭제할 권한이 없습니다.' });
-        return;
-      }
-    }
-
-    await pool.query(`DELETE FROM clan_board_posts WHERE id = $1::uuid`, [id]);
-    res.json({ ok: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
+  const body = req.body || {};
+  const classification = parsePostClassification(body, postResult.rows[0].board);
+  if (!classification.ok) {
+    res.status(400).json({ ok: false, error: classification.error });
+    return;
   }
-});
+  const prepared = preparePostContent(body);
+  if (prepared.error) {
+    res.status(400).json({ ok: false, error: prepared.error });
+    return;
+  }
+  const c = classification.values;
 
-app.post('/api/clan-board/posts/:id/comments', async (req, res) => {
+  const result = await pool.query(
+    `UPDATE clan_board_posts
+     SET title = $2, content = $3, content_text = $4, category = $5,
+         year = $6, month = $7, stage = $8, named = $9, updated_at = NOW()
+     WHERE id = $1::uuid
+     RETURNING id, updated_at`,
+    [postId, prepared.title, prepared.content, prepared.contentText, c.category, c.year, c.month, c.stage, c.named]
+  );
+  res.json({
+    ok: true,
+    id: result.rows[0].id,
+    updated_at: toIso(result.rows[0].updated_at),
+  });
+}));
+
+app.delete('/api/clan-board/posts/:postId', asyncRoute(async (req, res) => {
   if (!clanBoardRequirePool(res)) return;
-  const secret = getSessionSecret();
-  if (!secret) {
-    res.status(503).json({ ok: false, error: '로그인 기능을 사용할 수 없습니다.' });
+  const sessionUser = await requireSessionUser(req, res);
+  if (!sessionUser) return;
+  const { postId } = req.params;
+
+  const postResult = await pool.query(
+    `SELECT author_id FROM clan_board_posts WHERE id = $1::uuid LIMIT 1`,
+    [postId]
+  );
+  if (postResult.rowCount === 0) {
+    res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
     return;
   }
-  const userId = getUserIdFromRequest(secret, req.headers.cookie || '');
-  if (!userId) {
-    res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
+  const isAuthor = String(postResult.rows[0].author_id) === sessionUser.id;
+  if (!isAuthor && sessionUser.role !== 'admin') {
+    res.status(403).json({ ok: false, error: '게시물을 삭제할 권한이 없습니다.' });
     return;
   }
 
-  const { id } = req.params;
+  await pool.query(`DELETE FROM clan_board_posts WHERE id = $1::uuid`, [postId]);
+  res.json({ ok: true });
+}));
+
+app.post('/api/clan-board/posts/:postId/comments', asyncRoute(async (req, res) => {
+  if (!clanBoardRequirePool(res)) return;
+  const sessionUser = await requireSessionUser(req, res);
+  if (!sessionUser) return;
+
+  const { postId } = req.params;
   const trimmedContent = String((req.body && req.body.content) || '').trim();
 
   if (!trimmedContent) {
     res.status(400).json({ ok: false, error: '댓글 내용을 입력해 주세요.' });
     return;
   }
-
-  try {
-    const postCheck = await pool.query(`SELECT 1 FROM clan_board_posts WHERE id = $1::uuid LIMIT 1`, [id]);
-    if (postCheck.rowCount === 0) {
-      res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
-      return;
-    }
-
-    const result = await pool.query(
-      `INSERT INTO clan_board_comments (post_id, author_id, content)
-       VALUES ($1::uuid, $2::uuid, $3)
-       RETURNING id, created_at`,
-      [id, userId, trimmedContent]
-    );
-    res.status(201).json({
-      ok: true,
-      comment: {
-        id: result.rows[0].id,
-        content: trimmedContent,
-        created_at: result.rows[0].created_at?.toISOString?.() || result.rows[0].created_at,
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
-  }
-});
-
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) {
-    res.status(404).json({ ok: false, error: '알 수 없는 API입니다.' });
+  if (codepointLength(trimmedContent) > CLAN_BOARD_COMMENT_MAX) {
+    res.status(400).json({ ok: false, error: `댓글은 ${CLAN_BOARD_COMMENT_MAX}자 이내로 작성해 주세요.` });
     return;
   }
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+
+  const result = await pool.query(
+    `INSERT INTO clan_board_comments (post_id, author_id, content)
+     SELECT p.id, $2::uuid, $3 FROM clan_board_posts p WHERE p.id = $1::uuid
+     RETURNING id, created_at`,
+    [postId, sessionUser.id, trimmedContent]
+  );
+  if (result.rowCount === 0) {
+    res.status(404).json({ ok: false, error: '게시물을 찾을 수 없습니다.' });
+    return;
+  }
+  res.status(201).json({
+    ok: true,
+    comment: {
+      id: result.rows[0].id,
+      content: trimmedContent,
+      created_at: toIso(result.rows[0].created_at),
+    },
+  });
+}));
+
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ ok: false, error: '알 수 없는 API입니다.' });
+});
+
+app.get('*', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache');
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
+
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    next(err);
+    return;
+  }
+  if (err && err.type === 'entity.too.large') {
+    res.status(413).json({ ok: false, error: '요청 데이터가 너무 큽니다. 이미지·동영상 용량을 줄여 주세요.' });
+    return;
+  }
+  if (err && err.type === 'entity.parse.failed') {
+    res.status(400).json({ ok: false, error: '요청 형식이 올바르지 않습니다.' });
+    return;
+  }
+  console.error(err);
+  res.status(500).json({ ok: false, error: '서버 오류가 발생했습니다.' });
 });
 
 function gracefulShutdown(signal) {
@@ -2299,6 +2176,26 @@ function gracefulShutdown(signal) {
 process.once('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.once('SIGINT', () => gracefulShutdown('SIGINT'));
 
+function warnAboutRiskyProductionConfig() {
+  if (!isProductionLike()) return;
+  if (!getSessionSecret()) {
+    console.warn(
+      'SESSION_SECRET이 비어 있습니다. 로그인(POST /api/login)은 동작하지 않습니다. 변수를 추가한 뒤 재배포하세요.'
+    );
+  } else if (isPiiKeyDerivedFromSessionSecret()) {
+    console.warn(
+      '[users] USER_PII_ENCRYPTION_KEY 가 없어 아이디·닉네임 암호화 키를 SESSION_SECRET 에서 파생합니다. ' +
+        'SESSION_SECRET 을 바꾸면 기존 계정이 모두 로그인 불가가 되므로 교체하지 마세요.'
+    );
+  }
+  const protection = getSignupProtection();
+  if (!protection.available) {
+    console.warn(
+      '[signup] RECAPTCHA_SITE_KEY·RECAPTCHA_SECRET_KEY 가 모두 설정되지 않아 운영 환경 회원가입을 막았습니다.'
+    );
+  }
+}
+
 async function start() {
   await initDb();
   await bootstrapAdminFromEnvIfNeeded(pool);
@@ -2315,16 +2212,13 @@ async function start() {
     console.error('[future-sight] 기동 시 월별 유지보수 실패:', err);
   }
   scheduleFutureSightMaintenanceDaily();
+  scheduleExpiredSessionCleanup();
   console.log(
     `[future-sight] 매일 KST ${String(FUTURE_SIGHT_MAINTENANCE_KST_HOUR).padStart(2, '0')}:${String(FUTURE_SIGHT_MAINTENANCE_KST_MINUTE).padStart(2, '0')}에 월별 유지보수를 실행합니다.`
   );
   httpServer = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server listening on ${PORT}`);
-    if (process.env.NODE_ENV === 'production' && !(process.env.SESSION_SECRET || '').trim()) {
-      console.warn(
-        'SESSION_SECRET이 비어 있습니다. 로그인(POST /api/login)은 동작하지 않습니다. 변수를 추가한 뒤 재배포하세요.'
-      );
-    }
+    warnAboutRiskyProductionConfig();
   });
 }
 
