@@ -108,5 +108,6 @@ test('자리표시자 모양의 글자를 미리 넣어도 다른 base64가 끼�
   const html = `<p>b64${'0'.repeat(32)}x0x</p><img src="data:image/png;base64,${bigBase64}">`;
   const out = sanitizePostHtml(html);
   assert.equal(out, sanitizePostHtmlWithoutShortcut(html));
-  assert.equal(countMatches(out, new RegExp(bigBase64.slice(0, 40), 'g')), 1);
+  // 원래 base64는 img의 src 한 곳에만 들어가야 한다 (base64의 + 는 정규식 기호라 문자열로 센다).
+  assert.equal(out.split(bigBase64).length - 1, 1);
 });
