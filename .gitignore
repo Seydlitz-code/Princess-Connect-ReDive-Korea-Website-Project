@@ -5,3 +5,5 @@ node_modules/
 .env
 *.log
 test-results/
+# 배포 환경 비밀값 백업 (scripts/admin.mjs --remote에 USER_PII_ENCRYPTION_KEY가 필요). git에 올리지 않는다.
+.secrets.*

@@ -8,7 +8,8 @@
  * 아이디·닉네임·비밀번호는 터미널에서 물어본다(비밀번호는 화면에 표시하지 않음).
  * 비밀번호 해시와 아이디·닉네임 암호화는 이 컴퓨터에서 하고 결과만 D1에 저장한다.
  * 그래서 Worker와 같은 USER_PII_ENCRYPTION_KEY가 필요하다:
- *   --local: .dev.vars의 값을 읽는다.  --remote: 환경 변수에 없으면 물어본다.
+ *   --local: .dev.vars의 값을 읽는다.
+ *   --remote: 환경 변수 → .secrets.production.json(배포 비밀값 백업, git 제외) 순서로 찾고, 둘 다 없으면 물어본다.
  * 자동화용으로 ADMIN_USERNAME / ADMIN_NICKNAME / ADMIN_PASSWORD / USER_PII_ENCRYPTION_KEY 환경 변수도 받는다.
  * Worker 코드(src/lib/*.ts)를 Node의 TypeScript 실행 기능으로 그대로 불러 쓰므로 Node 24 이상이 필요하다.
  */
@@ -34,6 +35,8 @@ const DB_NAME = 'priconne-db';
 // npx/셸을 거치지 않고 wrangler를 Node로 직접 실행한다 (Windows에서 인자 이스케이프 문제 방지).
 const WRANGLER = join(ROOT, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
 const ADMIN_PROFILE_IMAGE = join(ROOT, 'scripts', 'admin-profile-source.png');
+/** 배포 비밀값 로컬 백업 (git 제외). --remote에서 키를 물어보기 전에 먼저 읽는다. */
+const PRODUCTION_SECRETS_FILE = join(ROOT, '.secrets.production.json');
 /** 프로필 이미지를 SQL에 나눠 넣는 크기: 80,000자 (D1의 SQL 문 하나 상한 100KB 안) */
 const PROFILE_SQL_CHUNK_CHARS = 80_000;
 
@@ -89,6 +92,17 @@ function readDevVar(name) {
   return '';
 }
 
+/** 배포 비밀값 백업 파일(JSON)에서 값 하나를 읽는다. 없으면 빈 문자열 */
+function readProductionSecret(name) {
+  if (!existsSync(PRODUCTION_SECRETS_FILE)) return '';
+  try {
+    const value = JSON.parse(readFileSync(PRODUCTION_SECRETS_FILE, 'utf8'))[name];
+    return typeof value === 'string' ? value : '';
+  } catch {
+    return '';
+  }
+}
+
 async function resolvePiiKey(target) {
   const fromEnv = String(process.env.USER_PII_ENCRYPTION_KEY || '').trim();
   if (fromEnv) return fromEnv;
@@ -96,6 +110,12 @@ async function resolvePiiKey(target) {
     const fromDevVars = readDevVar('USER_PII_ENCRYPTION_KEY').trim();
     if (fromDevVars) return fromDevVars;
     exitWithUsage('.dev.vars에 USER_PII_ENCRYPTION_KEY가 없습니다. .dev.vars.example을 복사해 만드세요.');
+  }
+  // 손으로 붙여 넣다가 일부만 들어가면 로그인할 수 없는 계정이 만들어지므로, 백업 파일이 있으면 그 값을 쓴다.
+  const fromFile = readProductionSecret('USER_PII_ENCRYPTION_KEY').trim();
+  if (fromFile) {
+    console.log('USER_PII_ENCRYPTION_KEY: .secrets.production.json의 값을 씁니다.');
+    return fromFile;
   }
   const typed = (await ask('USER_PII_ENCRYPTION_KEY (wrangler secret으로 넣은 값과 같게): ', { hidden: true })).trim();
   if (!typed) exitWithUsage('USER_PII_ENCRYPTION_KEY가 필요합니다.');
