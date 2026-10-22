@@ -1,9 +1,0 @@
-[variables]
-NIXPACKS_NODE_VERSION = "24"
-
-[phases.install]
-# 운영 이미지에는 개발 의존성(sharp 등)을 넣지 않는다.
-cmds = ["npm ci --omit=dev"]
-
-[start]
-cmd = "node server.js"

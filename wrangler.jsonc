@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "priconne-kr",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  // sanitize-html(htmlparser2)이 Node 내장 모듈 일부를 쓰므로 켠다.
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    // 주소에 맞는 파일이 없으면 index.html(SPA)을 돌려준다. 화면 전환은 public/js/main.js가 맡는다.
+    "not_found_handling": "single-page-application",
+    // /api/는 같은 이름의 파일이 있어도 항상 Worker가 처리한다.
+    // /__scheduled: 테스트(`wrangler dev --test-scheduled`)가 Cron을 부르는 주소. 배포 환경에서는 index.html을 돌려준다.
+    "run_worker_first": ["/api/*", "/__scheduled"]
+  },
+  // 기본 프로필 이미지(PNG)를 Worker 코드에 ArrayBuffer로 넣는다 (src/lib/defaultProfile.ts).
+  "rules": [{ "type": "Data", "globs": ["**/*.png"], "fallthrough": true }],
+  "observability": { "enabled": true },
+  "upload_source_maps": true,
+  // 매일 KST 00:05 (UTC 15:05): 미래시 월별 정리, 만료 세션·시도 제한·보안 문자 기록 정리
+  "triggers": { "crons": ["5 15 * * *"] },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "priconne-db",
+      // `npx wrangler d1 create priconne-db`로 만든 뒤 나오는 database_id로 바꾼다. 로컬 개발·테스트는 이 값과 상관없이 동작한다.
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ]
+}

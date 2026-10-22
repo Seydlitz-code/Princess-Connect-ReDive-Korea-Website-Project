@@ -1,4 +1,5 @@
-# Railway 는 master 브랜치를 배포한다. 작업은 브랜치에서 하고, 이 CI 가 통과한 뒤 master 로 병합한다.
+# 작업은 브랜치에서 하고, 이 CI가 통과한 뒤 master로 병합한다.
+# 배포는 CI가 아니라 `npm run deploy`(wrangler)로 직접 한다 (README.md 참고).
 name: CI
 
 on:
@@ -38,46 +39,31 @@ jobs:
             exit 1
           fi
 
-  unit:
-    name: 문법·단위 테스트·의존성 감사 (Node ${{ matrix.node }})
+  test:
+    name: 문법·타입·단위·통합 테스트 (wrangler dev)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node: [22, 24]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 24
           cache: npm
       - run: npm ci
-      - name: 문법 검사(모든 JS)
-        run: git ls-files '*.js' '*.cjs' '*.mjs' | xargs -n1 node --check
-      - name: 단위 테스트
+      - name: 문법 검사(브라우저·Node 스크립트)
+        run: npm run lint
+      - name: 타입 검사
+        run: npm run typecheck
+      - name: 단위·통합 테스트
         run: npm test
+      - name: 배포 묶음 만들기 확인(업로드 없음)
+        run: npx wrangler deploy --dry-run --outdir dist
       - name: 운영 의존성 취약점 감사(high 이상 실패)
         run: npm audit --omit=dev --audit-level=high
 
-  e2e:
-    name: E2E (PostgreSQL + Chromium)
+  browser:
+    name: 브라우저 E2E (wrangler dev + Chromium)
     runs-on: ubuntu-latest
-    needs: unit
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: priconne
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/priconne
+    needs: test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -87,44 +73,5 @@ jobs:
       - run: npm ci
       - name: Chromium 설치
         run: npx playwright-core install --with-deps chromium
-      - name: E2E 실행
-        run: npm run test:e2e
-
-  docker:
-    name: Docker 이미지 빌드·기동 확인
-    runs-on: ubuntu-latest
-    needs: unit
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: priconne
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    steps:
-      - uses: actions/checkout@v4
-      - name: 이미지 빌드
-        run: docker build -t priconne-site:ci .
-      - name: 컨테이너 기동 후 health 확인
-        run: |
-          docker run -d --name app --network host \
-            -e DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/priconne \
-            -e SESSION_SECRET=ci-session-secret \
-            priconne-site:ci
-          for i in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:8080/api/health | grep -q '"poolReady":true'; then break; fi
-            sleep 2
-          done
-          curl -fsS http://127.0.0.1:8080/api/health | grep -q '"poolReady":true'
-          curl -fsS -o /dev/null http://127.0.0.1:8080/
-          test "$(curl -fsS http://127.0.0.1:8080/api/characters | node -pe 'JSON.parse(require("fs").readFileSync(0)).characters.length')" -gt 300
-          echo "컨테이너 정상 기동(Node $(docker exec app node -v), 사용자 $(docker exec app whoami))"
-      - name: 실패 시 컨테이너 로그
-        if: failure()
-        run: docker logs app || true
+      - name: 브라우저 E2E 실행
+        run: npm run test:browser

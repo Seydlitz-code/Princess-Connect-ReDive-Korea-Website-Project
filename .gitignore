@@ -1,2 +1,7 @@
 node_modules/
-scripts/admin-credentials.local.js
+# wrangler 로컬 상태(로컬 D1)와 로컬 비밀값
+.wrangler/
+.dev.vars
+.env
+*.log
+test-results/
