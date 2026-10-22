@@ -19,7 +19,7 @@
 - **소유 캐릭터 관리**: 가입 유저가 자신이 보유한 캐릭터를 체크하여 관리
 - **관리자 기능**: Future Sight 데이터 직접 편집
 - **회원 가입/로그인**: 서명 쿠키 + 서버 세션 테이블(`user_sessions`) — 로그아웃 시 토큰 즉시 무효화
-- **2단계 봇 방지**: 커스텀 SVG(path 글리프) 캡차 + Google reCAPTCHA v2 (배포 환경 필수)
+- **봇 방지**: 커스텀 SVG(path 글리프) 캡차 + 시도 제한, Google reCAPTCHA v2는 키를 넣으면 추가 (현재 미사용)
 - **게시판**: 클랜전(세미오토/플오토, 연도·월·단계·네임드 분류) / 자유 게시판, 텍틱 기록기, 추천·댓글
 
 ---
@@ -187,7 +187,7 @@ id는 Worker가 만든 UUID 문자열, 시각은 ISO 8601 UTC 문자열입니다
 
 **회원가입 플로우** (2단계 봇 방지):
 1. **1단계**: SVG path 글리프 캡차 (무작위 5자리, `<text>` 미사용) → `stepPassToken` 획득. 문제는 답을 한 번 확인하면 지워집니다.
-2. **2단계**: Google reCAPTCHA v2 → 전체 가입 제출. 배포 환경에서 키가 없으면 가입을 막습니다(`signupAvailable=false`). `ENVIRONMENT=development`(로컬)에서만 캡차만으로 가입할 수 있습니다.
+2. **2단계**: Google reCAPTCHA v2 → 전체 가입 제출. reCAPTCHA 키가 없으면 `ALLOW_SIGNUP_WITHOUT_RECAPTCHA=true`(배포, `wrangler.jsonc` vars) 또는 `ENVIRONMENT=development`(로컬)일 때만 캡차만으로 가입을 엽니다. 둘 다 아니면 가입을 막습니다(`signupAvailable=false`). 판단은 `src/lib/signupProtection.ts`.
 3. 1단계 토큰은 중복 검사 등 검증을 모두 통과한 뒤에만 소모됩니다.
 
 ---
@@ -280,7 +280,8 @@ Windows PowerShell에서 `npm.ps1` 실행이 막혀 있으면 `npm.cmd`/`npx.cmd
 |---|---|---|
 | `SESSION_SECRET` | secret | 세션 쿠키 서명 키 (로그인에 필수) |
 | `USER_PII_ENCRYPTION_KEY` | secret | 아이디·닉네임 암호화 키 (64자리 16진수 권장). ⚠️ 한 번 정하면 바꾸지 않음 |
-| `RECAPTCHA_SITE_KEY` + `RECAPTCHA_SECRET_KEY` | secret | Google reCAPTCHA (배포 환경 회원가입에 필수) |
+| `RECAPTCHA_SITE_KEY` + `RECAPTCHA_SECRET_KEY` | secret | Google reCAPTCHA (선택, 넣으면 가입 때 함께 확인) |
+| `ALLOW_SIGNUP_WITHOUT_RECAPTCHA` | `wrangler.jsonc` vars | `true`면 reCAPTCHA 없이 캡차만으로 가입 허용 (2026-10-22부터 `true`) |
 | `ENVIRONMENT` | `.dev.vars`만 | `development`면 reCAPTCHA 없이 가입 가능 (배포 환경에는 넣지 않음) |
 
 배포 환경은 `npx wrangler secret put <이름>`, 로컬은 `.dev.vars`(`.dev.vars.example` 복사)로 넣습니다.
@@ -379,6 +380,9 @@ Git 커밋 메시지(`프리코네 한섭 게임공략 웹사이트 / Ver X.X.X`
 **최적화**
 - 게시물 정제 시 큰 base64를 빼고 정제해 1.7MB 본문 기준 CPU 약 26ms → 5ms (무료 플랜 요청당 10ms 한도)
 - 보유 캐릭터 저장을 `json_each` 한 쿼리로 (D1 쿼리당 바인딩 100개 상한 회피)
+
+**회원가입 (2026-10-22 추가)**
+- reCAPTCHA 키 없이 보안 문자(+ 시도 제한)만으로 가입을 열 수 있는 `ALLOW_SIGNUP_WITHOUT_RECAPTCHA` 설정 추가, 배포 환경에서 켬
 
 **테스트**
 - 단위 테스트를 TypeScript 모듈 대상으로 이식, 기존 Node crypto 구현과 같은 결과인지 확인

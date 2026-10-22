@@ -451,11 +451,34 @@ describe('Cron', () => {
   });
 });
 
-describe('배포 환경(ENVIRONMENT=production)', () => {
+describe('배포 환경: reCAPTCHA 없이 보안 문자만으로 가입 (wrangler.jsonc 기본 설정)', () => {
   let prod;
 
   before(async () => {
+    // ALLOW_SIGNUP_WITHOUT_RECAPTCHA는 wrangler.jsonc vars의 값(true)을 그대로 쓴다.
     prod = await startServer({ vars: { ENVIRONMENT: 'production' } });
+  });
+
+  after(async () => {
+    await prod?.stop();
+  });
+
+  it('보안 문자를 통과하면 reCAPTCHA 없이 가입·로그인된다', async () => {
+    const client = new Client(prod.base);
+    assert.deepEqual((await client.get('/api/config')).data, { ok: true, recaptchaSiteKey: null, signupAvailable: true });
+    assert.equal((await client.get('/api/signup/captcha')).status, 200);
+    const [challenge] = seedCaptchaChallenges(prod.persistDir, 1);
+    const res = await client.register(challenge, { username: 'prodsignup', nickname: '배포가입' });
+    assert.equal(res.status, 201, res.text);
+    assert.equal((await client.login('prodsignup', 'password123')).nickname, '배포가입');
+  });
+});
+
+describe('배포 환경: 가입 허용 설정을 끈 경우', () => {
+  let prod;
+
+  before(async () => {
+    prod = await startServer({ vars: { ENVIRONMENT: 'production', ALLOW_SIGNUP_WITHOUT_RECAPTCHA: 'false' } });
   });
 
   after(async () => {

@@ -10,6 +10,8 @@ export type Env = {
   RECAPTCHA_SECRET_KEY?: string;
   /** 'development'면 reCAPTCHA 없이 회원가입을 연다. 배포 환경에는 넣지 않는다. */
   ENVIRONMENT?: string;
+  /** 'true'면 배포 환경에서도 reCAPTCHA 없이 보안 문자만으로 회원가입을 연다 (wrangler.jsonc vars). */
+  ALLOW_SIGNUP_WITHOUT_RECAPTCHA?: string;
 };
 
 export type SessionUser = { id: string; role: string };
