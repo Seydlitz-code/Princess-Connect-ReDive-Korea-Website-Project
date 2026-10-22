@@ -3,7 +3,7 @@
  * /api/config, /api/health, /api/signup/*, /api/users/check, /api/register, /api/login, /api/logout
  */
 import { Hono, type Context } from 'hono';
-import type { AppEnv, Env } from '../types.ts';
+import type { AppEnv } from '../types.ts';
 import {
   isValidNicknameChars,
   isValidProfileDataUrl,
@@ -27,6 +27,7 @@ import { normalizeUsername } from '../lib/pii.ts';
 import { verifyRecaptcha, type RecaptchaResult } from '../lib/recaptcha.ts';
 import { endSession, getSessionSecret, loadSessionUser, startSession } from '../lib/session.ts';
 import { consumeStepPass, createSignupChallenge, isStepPassValid, verifySignupChallenge } from '../lib/signupCaptcha.ts';
+import { getSignupProtection } from '../lib/signupProtection.ts';
 import { NOW_SQL } from '../lib/time.ts';
 import { isNicknameTaken, isUsernameTaken, loadPublicUser, requirePii } from '../lib/users.ts';
 
@@ -36,19 +37,6 @@ const SIGNUP_UNAVAILABLE_ERROR = '회원가입이 일시 중단되었습니다. 
 const LOGIN_FAILED_ERROR = '아이디 또는 비밀번호가 올바르지 않습니다.';
 const STEP_PASS_EXPIRED_ERROR =
   '회원가입 1단계가 만료되었거나 보안 문자 확인이 완료되지 않았습니다. 첫 단계로 돌아가 보안 문자부터 다시 진행해 주세요.';
-
-/**
- * 배포 환경에서는 reCAPTCHA(사이트 키 + 시크릿)가 모두 설정돼야 회원가입을 연다.
- * ENVIRONMENT=development(로컬)에서는 보안 문자만으로도 가입할 수 있다.
- */
-function getSignupProtection(env: Env) {
-  const site = String(env.RECAPTCHA_SITE_KEY || '').trim();
-  const secret = String(env.RECAPTCHA_SECRET_KEY || '').trim();
-  const isRecaptchaConfigured = Boolean(site && secret);
-  const isPartial = Boolean(site || secret) && !isRecaptchaConfigured;
-  const isAvailable = isRecaptchaConfigured || (!isPartial && env.ENVIRONMENT === 'development');
-  return { site, secret, isRecaptchaConfigured, isPartial, isAvailable };
-}
 
 app.get('/config', (c) => {
   const protection = getSignupProtection(c.env);

@@ -17,6 +17,9 @@
   // 기본 프로필 이미지(PNG)를 Worker 코드에 ArrayBuffer로 넣는다 (src/lib/defaultProfile.ts).
   "rules": [{ "type": "Data", "globs": ["**/*.png"], "fallthrough": true }],
   "observability": { "enabled": true },
+  // 비밀이 아닌 설정값. reCAPTCHA 키 없이 보안 문자(+ 시도 제한)만으로 회원가입을 연다 (2026-10-22 결정).
+  // reCAPTCHA 키를 넣으면 이 값과 상관없이 reCAPTCHA도 함께 확인한다.
+  "vars": { "ALLOW_SIGNUP_WITHOUT_RECAPTCHA": "true" },
   "upload_source_maps": true,
   // 매일 KST 00:05 (UTC 15:05): 미래시 월별 정리, 만료 세션·시도 제한·보안 문자 기록 정리
   "triggers": { "crons": ["5 15 * * *"] },
