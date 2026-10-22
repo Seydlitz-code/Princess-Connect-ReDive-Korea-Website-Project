@@ -1,0 +1,12 @@
+# 로컬 개발용 비밀값. 이 파일을 .dev.vars로 복사한 뒤 값을 바꿔 쓴다 (.dev.vars는 git에 올리지 않는다).
+# 배포 환경에는 `npx wrangler secret put <이름>`으로 넣는다.
+
+# 세션 쿠키 서명 키 (긴 무작위 문자열)
+SESSION_SECRET=change-me-local-session-secret
+# 아이디·닉네임 암호화 키: 64자리 16진수 권장 (node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+USER_PII_ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000
+# development면 reCAPTCHA 없이도 회원가입을 연다 (배포 환경에는 넣지 않는다)
+ENVIRONMENT=development
+# Google reCAPTCHA v2 (선택). 두 값을 모두 넣어야 동작한다.
+# RECAPTCHA_SITE_KEY=
+# RECAPTCHA_SECRET_KEY=

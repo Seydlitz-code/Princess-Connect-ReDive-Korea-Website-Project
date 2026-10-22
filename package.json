@@ -1,34 +1,37 @@
 {
   "name": "priconne-kr-strategy-site",
-  "version": "1.0.0",
-  "description": "프린세스 커넥트! Re:Dive 한국 서버 공략 웹사이트",
-  "main": "server.js",
+  "version": "2.0.0",
+  "description": "프린세스 커넥트! Re:Dive 한국 서버 공략 웹사이트 (Cloudflare Workers)",
   "private": true,
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "test": "node --test",
-    "test:e2e": "node tests/e2e/run-all.mjs",
-    "build:logo": "node scripts/process-logo.js",
-    "import:characters": "node scripts/import-characters.js",
-    "build:characters": "node scripts/build-character-library.js",
-    "bootstrap:admin": "node scripts/create-admin.js",
-    "db:check": "node scripts/check-db.js",
-    "railway:db-hint": "node scripts/railway-db-vars-hint.js"
-  },
+  "type": "module",
   "engines": {
-    "node": ">=22.12"
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "lint": "node scripts/check-static.mjs",
+    "test": "node --test --test-concurrency=1 \"test/unit/*.test.mjs\" \"test/*.test.mjs\"",
+    "test:unit": "node --test \"test/unit/*.test.mjs\"",
+    "test:browser": "node test/browser/run.mjs",
+    "db:migrate:local": "wrangler d1 migrations apply priconne-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply priconne-db --remote",
+    "admin": "node scripts/admin.mjs",
+    "build:logo": "node scripts/process-logo.cjs",
+    "build:characters": "node scripts/build-character-library.cjs",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "bcrypt": "^6.0.0",
-    "express": "^4.22.3",
-    "express-rate-limit": "^7.5.1",
-    "helmet": "^8.2.0",
-    "pg": "^8.13.1",
+    "hono": "^4.13.13",
     "sanitize-html": "^2.18.1"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261021.1",
+    "@types/sanitize-html": "^2.16.2",
     "playwright-core": "^1.64.1",
-    "sharp": "^0.35.5"
+    "sharp": "^0.35.5",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.151.3"
   }
 }

@@ -1,6 +1,0 @@
-node_modules
-.git
-.idea
-*.md
-.env*
-tests
