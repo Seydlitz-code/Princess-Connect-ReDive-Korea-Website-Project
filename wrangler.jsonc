@@ -24,8 +24,8 @@
     {
       "binding": "DB",
       "database_name": "priconne-db",
-      // `npx wrangler d1 create priconne-db`로 만든 뒤 나오는 database_id로 바꾼다. 로컬 개발·테스트는 이 값과 상관없이 동작한다.
-      "database_id": "00000000-0000-0000-0000-000000000000"
+      // 2026-10-22 APAC 지역에 만든 배포용 D1. 로컬 개발·테스트는 이 값과 상관없이 로컬 D1을 쓴다.
+      "database_id": "5920c726-f0e7-4855-b938-d5560be6c12e"
     }
   ]
 }
