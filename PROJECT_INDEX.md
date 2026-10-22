@@ -2,10 +2,11 @@
 
 > **패키지명**: `priconne-kr-strategy-site`  
 > **진입점**: `server.js`  
-> **현재 버전**: Ver 0.5.0  
+> **현재 버전**: Ver 0.5.9.4 (+ 아래 「다음 버전(미배포)」 변경)  
 > **언어**: JavaScript (Node.js, TypeScript 미사용)  
+> **런타임**: Node.js 22.12 이상 (Docker·Nixpacks 는 Node 24)  
 > **배포 대상**: Railway (cloud), Docker / 로컬 실행 가능  
-> **생성일**: 2026-05-20
+> **생성일**: 2026-05-20 · **최종 갱신**: 2026-10-17
 
 ---
 
@@ -17,8 +18,9 @@
 - **Future Sight 테이블**: 월별 캐릭터/이벤트 로드맵
 - **소유 캐릭터 관리**: 가입 유저가 자신이 보유한 캐릭터를 체크하여 관리
 - **관리자 기능**: Future Sight 데이터 직접 편집, 캐릭터 이미지 관리
-- **회원 가입/로그인**: 자체 세션 인증 (HMAC-SHA256 signed cookie)
-- **2단계 봇 방지**: 커스텀 SVG 캡차 + Google reCAPTCHA v2 (선택)
+- **회원 가입/로그인**: 서명 쿠키 + 서버 세션 테이블(`user_sessions`) — 로그아웃 시 토큰 즉시 무효화
+- **2단계 봇 방지**: 커스텀 SVG(path 글리프) 캡차 + Google reCAPTCHA v2 (운영 환경 필수)
+- **게시판**: 클랜전(세미오토/플오토, 연도·월·단계·네임드 분류) / 자유 게시판, 텍틱 기록기, 추천·댓글
 
 ---
 
@@ -26,18 +28,20 @@
 
 | 계층 | 기술 |
 |---|---|
-| **런타임** | Node.js >=18 |
-| **HTTP 프레임워크** | Express 4.21 |
-| **데이터베이스** | PostgreSQL (`pg` 8.13) |
-| **인증/세션** | 커스텀 HMAC-SHA256 signed cookie (Passport.js 미사용) |
-| **비밀번호 해싱** | bcrypt |
+| **런타임** | Node.js >=22.12 (sanitize-html 요구사항, Node 20 은 2026-04 지원 종료) |
+| **HTTP 프레임워크** | Express 4.22 + helmet(CSP) + express-rate-limit |
+| **데이터베이스** | PostgreSQL (`pg` 8) |
+| **인증/세션** | HMAC-SHA256 서명 쿠키(`sub`+`sid`) + `user_sessions` 테이블 확인 (Passport.js 미사용) |
+| **비밀번호 해싱** | bcrypt 6 |
 | **PII 암호화** | AES-256-GCM (유저명/닉네임 암호화 + blind HMAC 인덱싱) |
-| **캡차** | 커스텀 SVG 캡차 + Google reCAPTCHA v2 |
+| **캡차** | 커스텀 SVG path 글리프 캡차 + Google reCAPTCHA v2 |
+| **게시물 HTML 정제** | sanitize-html (allowlist, 서버 저장 시 정제) |
 | **이미지 처리** | Sharp (devDependency, 로고 처리용) |
+| **테스트** | `node:test` 단위 테스트 (`npm test`) |
 | **프론트엔드** | Vanilla JS (프레임워크 없음, 빌드 스텝 없음), 순수 CSS |
 | **폰트** | Google Fonts (Noto Sans KR/JP), Gyeonggi Cheonnyeon 폰트 |
-| **컨테이너** | Docker (node:20-alpine) |
-| **배포** | Nixpacks (Railway 네이티브) |
+| **컨테이너** | Docker (node:24-alpine, non-root `node` 사용자) |
+| **배포** | Nixpacks (Railway 네이티브, Node 24, `npm ci --omit=dev`) |
 
 ---
 
@@ -45,26 +49,31 @@
 
 ```
 /
-├── server.js                     # 메인 Express 서버 (~2093 라인)
+├── server.js                     # 메인 Express 서버 (~2230 라인)
 ├── package.json                  # 의존성 및 스크립트
-├── Dockerfile                    # Docker 빌드 (node:20-alpine, port 8080)
-├── nixpacks.toml                 # Railway Nixpacks 설정
+├── Dockerfile                    # Docker 빌드 (node:24-alpine, port 8080, non-root)
+├── nixpacks.toml                 # Railway Nixpacks 설정 (Node 24)
 ├── .dockerignore
 ├── .gitignore
 │
 ├── lib/                          # 백엔드 라이브러리 모듈
 │   ├── dbConfig.js               # PostgreSQL 연결 문자열 해석 (멀티 환경)
-│   ├── sessionAuth.js            # HMAC 서명 세션 쿠키 관리
+│   ├── sessionAuth.js            # HMAC 서명 세션 쿠키(sub+sid), 운영 환경 판별
 │   ├── userPiiCrypto.js          # AES-256-GCM PII 암호화 + blind HMAC 인덱싱
 │   ├── userPiiSchema.js          # PII 컬럼 DB 스키마 마이그레이션
 │   ├── recaptcha.js              # Google reCAPTCHA v2 siteverify 클라이언트
-│   ├── signupCaptcha.js          # 커스텀 SVG 캡차 (챌린지/응답)
+│   ├── signupCaptcha.js          # 커스텀 SVG path 글리프 캡차 (챌린지/응답, 1단계 토큰)
+│   ├── postSanitizer.js          # 게시물 HTML allowlist 정제 + 검색용 평문 추출
+│   ├── futureSight.js            # 미래시 정규화·KST 월별 정리(순수 함수)
 │   └── charactersLibrary.js      # 정적 파일 기반 캐릭터 라이브러리 로더
 │
+├── tests/                        # node:test 단위 테스트 (npm test)
+│   └── fixtures/tactic-post.html # 에디터가 실제로 보내는 텍틱 표 HTML(브라우저 캡처)
+│
 ├── public/                       # 정적 파일 (Express 제공)
-│   ├── index.html                # 단일 HTML 페이지 (SPA 셸) — 837 라인
-│   ├── css/main.css              # 모든 스타일 — 3890 라인
-│   ├── js/main.js                # 모든 클라이언트 사이드 JS (IIFE) — 3879 라인
+│   ├── index.html                # 단일 HTML 페이지 (SPA 셸) — ~1025 라인
+│   ├── css/main.css              # 모든 스타일 — ~5420 라인
+│   ├── js/main.js                # 모든 클라이언트 사이드 JS (IIFE) — ~5945 라인
 │   ├── data/characters.json      # 정적 캐릭터 라이브러리 매니페스트
 │   ├── characters/               # 캐릭터 이미지 (JPEG/PNG)
 │   ├── fonts/gyeonggi-cheonnyeon/ # 로컬 폰트
@@ -73,8 +82,9 @@
 │       └── future-main/          # 배너 배경 이미지
 │
 ├── scripts/                      # 유틸리티 / CLI 스크립트
-│   ├── create-admin.js           # 관리자 계정 생성
-│   ├── build-character-library.js # 정적 캐릭터 라이브러리 빌드
+│   ├── lib/characterSource.js    # 캐릭터 원본 폴더 공통 처리(build·import 공용)
+│   ├── create-admin.js           # 관리자 계정 생성·갱신(기존 계정은 삭제하지 않고 갱신)
+│   ├── build-character-library.js # 정적 캐릭터 라이브러리 빌드(기존 id 유지, 변경분만 복사)
 │   ├── import-characters.js      # 캐릭터 이미지를 PostgreSQL로 가져오기
 │   ├── check-db.js               # DB 연결 확인
 │   ├── process-logo.js           # 로고 이미지 처리
@@ -90,13 +100,18 @@
 
 ### 4.1 서버 아키텍처 (`server.js`)
 
-**단일 파일 Express 서버**로, 모든 라우트가 인라인으로 정의되어 있습니다 (약 2093 라인). 서버 기동 시퀀스는 다음과 같습니다:
+**단일 파일 Express 서버**로, 라우트는 `server.js`에 인라인으로 정의하고 순수 로직(정제·캡차·세션 서명·미래시)은 `lib/`로 분리했습니다. 서버 기동 시퀀스는 다음과 같습니다:
 
 1. `initDb()` — 재시도 로직을 통해 PostgreSQL 연결 (`PG_INIT_RETRIES`로 설정 가능)
-2. `ensureSchema()` — DB 테이블 자동 생성/마이그레이션 (`users`, `characters`, `user_owned_characters`, `site_future_sight`)
+2. `ensureSchema()` — DB 테이블 자동 생성/마이그레이션 + `migrateLegacyPostContent()`(정제 이전 게시물 본문을 1회 정제하고 `content_text` 채움)
 3. `bootstrapAdminFromEnvIfNeeded()` — 환경 변수로 관리자 계정 자동 생성 (Railway 친화적)
 4. `readCharacterLibrarySync()` — `public/data/characters.json`에서 정적 캐릭터 라이브러리 로드 시도 (DB 조회보다 빠름)
-5. HTTP 서버 시작
+5. 미래시 정리 1회 + 매일 KST 00:05 예약, 만료 세션 정리(1시간 주기) 예약
+6. HTTP 서버 시작, 운영 설정 경고 출력(USER_PII_ENCRYPTION_KEY 미설정, reCAPTCHA 미설정 등)
+
+**미들웨어 순서**: helmet(CSP) → 정적 파일(캐시 헤더) → `/api` rate limit → JSON 파서(`/api`만, 2MB) → 라우트 → JSON 404 → SPA 폴백 → JSON 오류 처리기
+
+**Rate limit**: `/api` 전체 분당 300회, 로그인 분당 10회, 가입 흐름(캡차·중복 확인·가입) 분당 30회, 게시판 쓰기 분당 30회. 정적 파일(캐릭터 이미지 332장 등)은 한도에 포함하지 않습니다.
 
 **Graceful Shutdown**: SIGTERM/SIGINT 시그널을 받으면 DB 연결을 정리하고 서버를 종료합니다.
 
@@ -104,7 +119,7 @@
 
 | 메서드 | 라우트 | 목적 |
 |---|---|---|
-| GET | `/api/config` | 공개 런타임 설정 (reCAPTCHA site key) |
+| GET | `/api/config` | 공개 런타임 설정 (reCAPTCHA site key, `signupAvailable`) |
 | GET | `/api/signup/captcha` | SVG 캡차 챌린지 생성 |
 | POST | `/api/signup/verify-step1` | 캡차 검증 → step pass 토큰 발급 |
 | POST | `/api/register` | 전체 가입 (2단계: 캡차 + reCAPTCHA + 유저 데이터) |
@@ -119,12 +134,12 @@
 | GET | `/api/characters/:id/image` | 캐릭터 이미지 제공 (정적 파일 또는 DB BLOB) |
 | GET | `/api/future-sight` | Future Sight 로드맵 데이터 조회 |
 | PUT | `/api/admin/future-sight` | 관리자: Future Sight 데이터 수정 |
-| GET | `/api/clan-board/posts` | 게시물 목록 조회 (`?board=`, `?sub_board=`, `?category=`, `?search=`, `?page=`, `?limit=`) |
-| GET | `/api/clan-board/posts/:id` | 게시물 상세 조회 |
-| POST | `/api/clan-board/posts` | 게시물 작성 (`board`, `sub_board`, `title`, `content`, `category`) |
-| PATCH | `/api/clan-board/posts/:id` | 게시물 수정 |
-| DELETE | `/api/clan-board/posts/:id` | 게시물 삭제 |
-| PATCH | `/api/clan-board/posts/:id/view` | 조회수 증가 |
+| GET | `/api/clan-board/posts` | 게시물 목록 조회 (`?board=clan\|free`, `?sub_board=`, `?year=`, `?month=`, `?stage=`, `?named=`, `?category=`, `?search=`(제목·본문 평문), `?page=`, `?limit=`) |
+| GET | `/api/clan-board/posts/:id` | 게시물 상세 조회 (잘못된 id 는 404) |
+| POST | `/api/clan-board/posts` | 게시물 작성 (`board`, `sub_board`, `title`, `content`; 클랜전은 `year`·`month`·`stage`·`named` 필수, 네임드 → `category` phaseN) |
+| PATCH | `/api/clan-board/posts/:id` | 게시물 수정 (작성자만) |
+| DELETE | `/api/clan-board/posts/:id` | 게시물 삭제 (작성자·관리자) |
+| PATCH | `/api/clan-board/posts/:id/view` | 조회수 증가 (같은 사용자/IP 6시간 내 중복 미집계) |
 | POST | `/api/clan-board/posts/:id/likes` | 추천 토글 (계정당 1회) |
 | GET | `/api/clan-board/posts/:id/comments` | 댓글 목록 조회 |
 | POST | `/api/clan-board/posts/:id/comments` | 댓글 작성 |
@@ -133,26 +148,30 @@
 
 ### 4.3 데이터베이스 스키마
 
-`ensureSchema()`에 의해 자동 생성되는 5개의 테이블:
+`ensureSchema()`에 의해 자동 생성되는 테이블:
 
 - **`users`** — id (UUID PK), username, nickname, password_hash, profile_image, role ('user'/'admin'), created_at + PII 컬럼
+- **`user_sessions`** — id (UUID PK = 쿠키의 `sid`), user_id (FK, CASCADE), created_at, expires_at — 로그아웃 시 행 삭제로 토큰 무효화
 - **`characters`** — id (UUID PK), name (UNIQUE), image_mime, image_data (BYTEA), updated_at
-- **`clan_board_posts`** — id (UUID PK), author_id (FK), title (VARCHAR 200), content (TEXT), category (VARCHAR 32), sub_board (VARCHAR 32, `clan-semi`/`clan-fullauto`), board (VARCHAR 32, `clan`/`free`), view_count, is_pinned, created_at, updated_at
-- **`clan_board_comments`** — id (UUID PK), post_id (FK), author_id (FK), content (TEXT), created_at
-- **`clan_board_likes`** — user_id (FK), post_id (FK), created_at; composite PK (계정당 게시물별 1회 추천)
+- **`clan_board_posts`** — id (UUID PK), author_id (FK), title (VARCHAR 200), content (TEXT, 정제된 HTML), content_text (검색용 평문), category (VARCHAR 32), sub_board (VARCHAR 32, `clan-semi`/`clan-fullauto`, 자유 게시판은 `none`), board (VARCHAR 32, `clan`/`free`), year·month·stage·named (클랜전 분류), view_count, is_pinned, created_at, updated_at
+- **`clan_board_comments`** — id (UUID PK), post_id (FK), author_id (FK), content (TEXT, 최대 2000자), created_at
+- **`clan_board_likes`** — user_id (FK), post_id (FK), created_at; composite PK (계정당 게시물별 1회 추천) + post_id 인덱스
 - **`user_owned_characters`** — user_id (FK), character_id (UUID), created_at; composite PK
 - **`site_future_sight`** — 싱글톤 행 (id=1 CHECK 제약), data (JSONB), updated_at
 - **PII 컬럼** (`ensureUserPiiSchema`에 의해 추가): `username_blind`, `nickname_blind`, `username_cipher`, `nickname_cipher` — 부분 unique 인덱스 포함
 
 ### 4.4 인증 및 보안
 
-**세션**: 커스텀 구현 — HMAC-SHA256 서명 토큰을 HttpOnly 쿠키(`priconne_sid`)에 저장. 7일 만료, SameSite=Lax, 프로덕션 환경에서 Secure.
+**세션**: HMAC-SHA256 서명 토큰(`sub`=사용자, `sid`=`user_sessions.id`, `exp`)을 HttpOnly 쿠키(`priconne_sid`)에 저장. 요청마다 서명과 함께 `user_sessions` 행(만료 전)을 확인하므로 로그아웃·계정 삭제 시 토큰이 즉시 무효가 됩니다. 7일 만료, SameSite=Lax, 운영 환경에서 Secure. 운영 판별은 `NODE_ENV=production` 또는 Railway 환경 변수(`RAILWAY_ENVIRONMENT*`) — 운영에서는 개발용 고정 키를 절대 쓰지 않습니다.
 
-**PII 보호**: 유저명과 닉네임은 AES-256-GCM으로 암호화되어 저장됩니다. 동시에 "blind index"(HMAC 기반)를 사용하여 평문을 노출하지 않고 중복 검사를 수행합니다. 마이그레이션 후 평문 컬럼은 NULL로 설정됩니다. 이를 통해 DB가 유출되더라도 개인 식별 정보(PII)가 보호됩니다.
+**PII 보호**: 유저명과 닉네임은 AES-256-GCM으로 암호화되어 저장됩니다. 동시에 "blind index"(HMAC 기반)를 사용하여 평문을 노출하지 않고 중복 검사를 수행합니다. 마이그레이션 후 평문 컬럼은 NULL로 설정됩니다. ⚠️ `USER_PII_ENCRYPTION_KEY`가 없으면 키를 `SESSION_SECRET`에서 파생하므로, 이 경우 `SESSION_SECRET`을 바꾸면 기존 계정 전체가 로그인 불가가 됩니다.
+
+**게시물 HTML**: 서버가 저장 시 `lib/postSanitizer.js`(sanitize-html allowlist)로 정제합니다. 스크립트·이벤트 핸들러·외부 리소스·`javascript:` URL·위장용 class/style(`position` 등)은 제거되고, 텍틱 표 class(`clan-tactic-table*`)와 서식(font-size·color 등)만 남습니다. CSP(`script-src 'self'`, `media-src 'self' data:`)가 2차 방어선입니다.
 
 **회원가입 플로우** (2단계 봇 방지):
-1. **1단계**: 커스텀 SVG 캡차 (무작위 5자리 영숫자, 노이즈 라인/회전이 적용된 SVG) → `stepPassToken` 획득
-2. **2단계**: 선택적 Google reCAPTCHA v2 → 전체 가입 제출
+1. **1단계**: SVG path 글리프 캡차 (무작위 5자리, 획 흔들림·기울임·방해 획, `<text>` 미사용) → `stepPassToken` 획득
+2. **2단계**: Google reCAPTCHA v2 → 전체 가입 제출. 운영 환경에서 키가 없으면 가입 자체를 막습니다(`signupAvailable=false`).
+3. 1단계 토큰은 중복 검사 등 검증을 모두 통과한 뒤에만 소모되어, 아이디 중복 같은 실패로 보안 문자를 다시 풀 필요가 없습니다.
 
 **봇 방지**: 인메모리 챌린지 맵 + TTL (캡차 8분, step pass 30분).
 
@@ -162,12 +181,12 @@
 
 ### 5.1 캐릭터 데이터 (두 가지 모드)
 
-1. **정적 라이브러리** (우선): `public/data/characters.json` + `public/characters/*.jpg/png`. 서버 기동 시 Map에 로드됩니다. `res.sendFile()`로 직접 정적 파일을 제공하여 더 빠릅니다.
+1. **정적 라이브러리** (우선): `public/data/characters.json` + `public/characters/*.jpg/png`. 서버 기동 시 Map에 로드됩니다. 클라이언트는 캐시되는 정적 URL(`/characters/...`, `max-age=86400`)을 먼저 쓰고 실패 시 `/api/characters/:id/image`로 한 번 재시도합니다.
 2. **PostgreSQL**: `characters` 테이블에 BYTEA로 이미지 저장. 정적 라이브러리를 사용할 수 없을 때 폴백으로 사용됩니다.
 
 ### 5.2 Future Sight 데이터
 
-JSONB 형식으로 `site_future_sight` 싱글톤 테이블에 저장됩니다. `applyFutureSightMonthMaintenance()`가 매일 자동으로 월 인덱스를 조정하고 오래된 항목을 제거합니다.
+JSONB 형식으로 `site_future_sight` 싱글톤 테이블에 저장됩니다. `applyFutureSightMonthMaintenance()`(`lib/futureSight.js`)가 매일 자동으로 월 인덱스를 조정하고 오래된 항목을 제거합니다. 정리 결과 저장과 관리자 저장은 모두 행을 `FOR UPDATE`로 잠근 트랜잭션에서 수행해 서로 덮어쓰지 않습니다. 관리자 저장 시에도 정리가 적용되어 월 이름은 항상 이번 달부터 연속으로 다시 매겨집니다.
 
 ### 5.3 전체 데이터 흐름
 
@@ -223,15 +242,17 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 
 | 명령어 | 동작 |
 |---|---|
-| `npm start` / `npm run dev` | 서버 시작 (`node server.js`) |
+| `npm start` | 서버 시작 (`node server.js`) |
+| `npm run dev` | 파일 변경 시 자동 재시작 (`node --watch server.js`) |
+| `npm test` | 단위 테스트 (`node --test`, `tests/*.test.js`: 정제기·캡차·세션 서명·미래시) |
 | `npm run build:logo` | Sharp를 통한 로고 이미지 처리 |
-| `npm run import:characters` | 로컬 폴더의 캐릭터 이미지를 PostgreSQL로 가져오기 |
-| `npm run build:characters` | 정적 캐릭터 라이브러리 빌드 (JSON 매니페스트 + 이미지 복사) |
-| `npm run bootstrap:admin` | 관리자 계정 생성/업데이트 |
+| `npm run import:characters` | 로컬 폴더의 캐릭터 이미지를 PostgreSQL로 가져오기 (행 단위 savepoint, 일부 실패해도 나머지 반영) |
+| `npm run build:characters` | 정적 캐릭터 라이브러리 빌드 (기존 id 유지, 바뀐 이미지만 복사, 원본에 없는 파일 경고) |
+| `npm run bootstrap:admin` | 관리자 계정 생성/갱신 (기존 계정은 삭제하지 않음) |
 | `npm run db:check` | PostgreSQL 연결 테스트 |
 | `npm run railway:db-hint` | Railway 설정 안내 출력 |
 
-**테스트, 린트, 타입체크 스크립트는 설정되어 있지 않습니다.**
+캐릭터 원본 폴더는 `CHARACTERS_IMAGE_DIR`, 없으면 `<홈>/Documents/프리코네 캐릭터 데이터베이스`입니다. 린트·타입체크 스크립트는 없습니다.
 
 ---
 
@@ -239,25 +260,41 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 
 ### 8.1 Docker
 
-- 베이스 이미지: `node:20-alpine`
-- 실행: `npm ci --omit=dev`, expose 8080, `CMD ["node", "server.js"]`
+- 베이스 이미지: `node:24-alpine` (bcrypt 6 은 musl 사전 빌드 포함, 컴파일 불필요)
+- 실행: `npm ci --omit=dev`, expose 8080, non-root `node` 사용자, `CMD ["node", "server.js"]`
 - SIGTERM/SIGINT를 통한 Graceful Shutdown 지원
 
 ### 8.2 Nixpacks (Railway)
 
-- 설치 단계: `npm ci`
+- Node 버전: 24 (`NIXPACKS_NODE_VERSION`)
+- 설치 단계: `npm ci --omit=dev`
 - 시작 명령: `node server.js`
 
-### 8.3 필수 환경 변수
+### 8.3 환경 변수
 
 | 변수명 | 용도 |
 |---|---|
 | `DATABASE_PRIVATE_URL` 또는 `DATABASE_URL` | PostgreSQL 연결 문자열 |
 | `SESSION_SECRET` | 세션 서명 키 (로그인에 필수) |
-| `USER_PII_ENCRYPTION_KEY` | PII 암호화 키 (없으면 `SESSION_SECRET`에서 파생) |
-| `RECAPTCHA_SITE_KEY` + `RECAPTCHA_SECRET_KEY` | Google reCAPTCHA (선택) |
+| `USER_PII_ENCRYPTION_KEY` | PII 암호화 키. 없으면 `SESSION_SECRET`에서 파생. ⚠️ **이미 가입자가 있는 상태에서 새로 추가·변경하면 기존 계정이 전부 잠깁니다**(키 교체 마이그레이션 없음). 신규 배포에서만 처음부터 설정하고, 미설정 운영 환경은 `SESSION_SECRET`을 교체하지 마세요. |
+| `RECAPTCHA_SITE_KEY` + `RECAPTCHA_SECRET_KEY` | Google reCAPTCHA (**운영 환경 회원가입에 필수**, 없으면 가입이 중단됨) |
 | `ADMIN_BOOTSTRAP_PASSWORD` | 최초 배포 시 관리자 자동 생성 |
 | `PORT` | 기본 3000 (Docker에서는 8080) |
+
+### 8.4 브랜치 운영과 CI
+
+Railway 는 `master` 브랜치를 바로 배포하므로, 작업은 별도 브랜치에서 하고 CI 통과 후 `master` 로 병합합니다.
+`.github/workflows/ci.yml` 은 `master` 가 아닌 브랜치 푸시와 `master` 대상 PR 에서 실행됩니다.
+
+| 작업 | 내용 |
+|---|---|
+| `merge-check` | `origin/master` 와 실제 병합을 시도해 충돌 파일이 있으면 실패 |
+| `unit` | Node 22·24 에서 모든 JS 문법 검사, `npm test`, 운영 의존성 `npm audit --audit-level=high` |
+| `e2e` | PostgreSQL 16 서비스 + Chromium 으로 `npm run test:e2e` (브라우저 E2E + 회원가입·운영 모드 API 점검) |
+| `docker` | Docker 이미지 빌드 후 PostgreSQL 에 붙여 기동, `/api/health`·메인 페이지·캐릭터 API 확인 |
+
+로컬에서 E2E 실행: `DATABASE_URL=<빈 DB> E2E_BROWSER_PATH=<Edge/Chrome 경로> npm run test:e2e`
+(`E2E_BROWSER_PATH` 없이 쓰려면 `npx playwright-core install chromium` 먼저 실행)
 
 ---
 
@@ -298,13 +335,15 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 
 | 파일 | 라인 수 | 역할 |
 |---|---|---|
-| `server.js` | ~2334 | 전체 백엔드 로직: 서버 기동, DB 스키마, 모든 API 라우트, 정적 파일 제공, 세션 관리 |
-| `public/index.html` | ~915 | SPA 셸: 모든 모달과 UI 섹션을 포함하는 단일 HTML |
-| `public/js/main.js` | ~5372 | 모든 프론트엔드 로직: API 호출, DOM 조작, 이벤트 처리, 상태 관리 |
-| `public/css/main.css` | ~5149 | 전체 스타일시트: 레이아웃, 테마, 반응형 디자인, 모달, 애니메이션, 텍틱 표 |
-| `lib/sessionAuth.js` | — | HMAC-SHA256 세션 쿠키 생성/검증 유틸리티 |
-| `lib/userPiiCrypto.js` | — | AES-256-GCM 암호화 + Blind HMAC 인덱싱 |
-| `lib/signupCaptcha.js` | — | 커스텀 SVG 캡차 생성 및 검증 |
+| `server.js` | ~2230 | 백엔드: 서버 기동, DB 스키마, 모든 API 라우트, 정적 파일 제공, 세션 확인 |
+| `public/index.html` | ~1025 | SPA 셸: 모든 모달과 UI 섹션을 포함하는 단일 HTML |
+| `public/js/main.js` | ~5945 | 모든 프론트엔드 로직: API 호출, DOM 조작, 이벤트 처리(텍틱 표는 에디터 위임 핸들러), 상태 관리 |
+| `public/css/main.css` | ~5420 | 전체 스타일시트: 레이아웃, 테마, 반응형 디자인, 모달, 텍틱 표. 전역 `[hidden]{display:none !important}` |
+| `lib/sessionAuth.js` | 126 | HMAC-SHA256 세션 쿠키(sub+sid) 생성/검증, 운영 환경 판별 |
+| `lib/userPiiCrypto.js` | 121 | AES-256-GCM 암호화 + Blind HMAC 인덱싱 |
+| `lib/signupCaptcha.js` | 222 | SVG path 글리프 캡차 생성·검증, 1단계 토큰 |
+| `lib/postSanitizer.js` | 123 | 게시물 HTML allowlist 정제, 검색용 평문 추출 |
+| `lib/futureSight.js` | 193 | 미래시 정규화·KST 월별 정리 |
 | `lib/charactersLibrary.js` | — | 정적 캐릭터 라이브러리 로더 |
 | `lib/dbConfig.js` | — | 환경별 PostgreSQL 연결 문자열 해석 |
 
@@ -313,6 +352,51 @@ IIFE 클로저 내의 스코프 변수를 통한 상태 관리 (프레임워크 
 ## 12. 버전 및 업데이트 내역
 
 Git 커밋 메시지(`프리코네 한섭 게임공략 웹사이트 / Ver X.X.X`) 기준으로 정리합니다. 최신 항목이 위에 옵니다.
+
+> Ver 0.5.1 ~ Ver 0.5.9.4 의 상세 이력은 이 문서에 기록되지 않았습니다(git log 참고).
+
+### 다음 버전 (미배포) — 보안·안정성 정비 (2026-10-17)
+
+**보안**
+- 게시물 본문 서버 측 HTML 정제(sanitize-html allowlist) 도입, 기존 게시물은 기동 시 1회 정제
+- 회원가입 보안 문자를 `<text>` → 왜곡된 path 글리프로 교체(이전에는 SVG 파싱만으로 100% 자동 통과)
+- 운영 환경에서 reCAPTCHA 키가 없으면 회원가입 중단
+- 서버 세션 테이블 도입: 로그아웃 시 토큰 즉시 무효화(배포 후 기존 로그인은 한 번 풀림)
+- NODE_ENV 누락 시에도 Railway 환경이면 개발용 고정 세션 키를 쓰지 않도록 보강
+- 로그인 응답 시간으로 아이디 존재 여부가 드러나지 않도록 보정, 프로필 이미지는 PNG·JPEG·WebP·GIF 만 허용
+- 운영 health 응답에서 환경 변수 이름 목록 제거, 공개 `characters.json` 에서 PC 절대 경로 제거
+- 의존성 취약점 해소: express 4.22.3, bcrypt 6, sharp 0.35.5 (npm audit 0건), Node 24 로 상향
+
+**버그 수정**
+- 정적 이미지가 전역 rate limit 에 포함돼 캐릭터 목록 스크롤만으로 사이트 전체가 429 로 막히던 문제
+- 자유 게시판 글쓰기가 숨겨진 「게시물 구분」 검사 때문에 불가능하던 문제
+- 클랜전 게시물 분류(연도·월·단계·네임드)가 저장·필터링되지 않던 문제(서버 컬럼·필터 추가)
+- 글꼴 크기 8~72 선택이 모두 7단계(48px)로 저장되던 문제
+- 텍틱 표 Auto/SET 여부·테마 선택이 저장 후 초기값으로 돌아가던 문제
+- 텍틱 표 RANK 입력칸에 타이핑이 되지 않던 문제
+- 수정 모드에서 성급 선택·시간 보정·표 삭제 버튼이 동작하지 않던 문제(에디터 위임 핸들러로 통일)
+- 표·이미지 삽입 시 `setStartAfter` 예외, 선택 영역이 에디터 밖이면 엉뚱한 곳에 삽입되던 문제
+- 게시물 동영상이 CSP 에 막혀 재생되지 않던 문제(`media-src data:` 허용, 1.2MB 제한)
+- 잘못된 게시물 id 요청 시 500, 동시 추천 시 500, 새로고침마다 조회수 증가
+- 아이디 중복 등으로 가입 실패 시 보안 문자부터 다시 해야 하던 문제
+- 비밀번호 눈 아이콘 토글이 동작하지 않던 문제(SVG 에 `.hidden` 프로퍼티 없음)
+- 게시물 URL 로 바로 들어오면 로그인 상태여도 댓글 입력란이 숨겨지던 문제
+- 검색 결과가 0건이면 검색창이 사라지던 문제, 제목 경고가 30자에서 뜨던 문제(50자로 수정)
+- 로그인·가입 경로가 rate limit 하나를 공유해 가입 한 번으로 분당 한도에 걸리던 문제
+- `import-characters`: 한 행 실패 시 트랜잭션 전체가 롤백되던 문제(savepoint)
+- `create-admin`: 아이디·닉네임이 겹치는 계정을 DELETE 해 게시물까지 지워지던 문제(갱신으로 변경)
+- `build-character-library`: 재빌드 시 일부 캐릭터 id 가 바뀌어 보유 목록이 끊길 수 있던 문제(기존 id 유지)
+
+**최적화·정리**
+- 게시물 목록 응답에서 작성자 프로필 이미지(data URL) 제거(페이지당 최대 수십 MB → 수 KB)
+- 검색을 HTML 원문 대신 평문 컬럼(`content_text`)으로, `%`·`_` 이스케이프
+- 정적 파일 캐시 헤더(이미지 1일·폰트 30일), 캐릭터 이미지는 캐시되는 정적 URL 우선
+- 큰 사진은 삽입 시 긴 변 1600px JPEG 로 자동 축소, 본문 용량 사전 검사
+- 보유 캐릭터 저장을 N회 INSERT → 1회(`unnest`)로, 댓글 작성 후 본문 전체 재조회 제거
+- 미래시 로직 `lib/futureSight.js` 분리, `Intl.DateTimeFormat` 재사용
+- 인증 확인 공통화(`getSessionUser`/`requireSessionUser`), async 라우트 오류를 JSON 오류 처리기로 일원화
+- 중복 함수·죽은 코드 제거, CSS 요소별 `[hidden]` 보정 규칙 11개를 전역 규칙 1개로 통합
+- `npm test`(node:test 21개) 추가, `npm run dev` 는 `--watch`
 
 ### Ver 0.5.0.3 (2026-06-14)
 

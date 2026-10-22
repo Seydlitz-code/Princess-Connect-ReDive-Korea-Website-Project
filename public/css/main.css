@@ -30,6 +30,11 @@
   box-sizing: border-box;
 }
 
+/* hidden 속성은 클래스의 display 지정보다 항상 우선한다(요소별 [hidden] 보정 규칙을 대체) */
+[hidden] {
+  display: none !important;
+}
+
 html {
   font-size: 16px;
 }
@@ -371,11 +376,6 @@ body.is-mypage-route .header-mypage-title {
   height: 100%;
   object-fit: cover;
   display: block;
-}
-
-.user-avatar-img[hidden],
-.user-avatar-placeholder[hidden] {
-  display: none !important;
 }
 
 .user-avatar-placeholder {
@@ -728,10 +728,6 @@ body.is-mypage-route .header-mypage-title {
   min-height: 0;
 }
 
-.board-panel[hidden] {
-  display: none !important;
-}
-
 .board-panel--mypage {
   max-width: 1160px;
   margin: 0 auto;
@@ -914,11 +910,6 @@ body.is-mypage-route .mypage-shell {
   flex-direction: column;
   flex: 1;
   min-height: 0;
-}
-
-/* [hidden] + display:flex 클래스 충돌 방지: 한 번에 하나의 탭만 표시 */
-.mypage-tab-panel[hidden] {
-  display: none !important;
 }
 
 .mypage-owned-empty {
@@ -1280,11 +1271,6 @@ button.future-type-badge {
   font-size: 0.74rem;
   line-height: 1.35;
   color: #333;
-}
-
-.mypage-nav-group[hidden],
-.mypage-subnav[hidden] {
-  display: none !important;
 }
 
 .mypage-nav-group {
@@ -1665,10 +1651,6 @@ button.future-type-badge {
 }
 
 /* Modal */
-.modal-root[hidden] {
-  display: none !important;
-}
-
 .modal-root {
   position: fixed;
   inset: 0;
@@ -2072,8 +2054,7 @@ button.future-type-badge {
   text-align: center;
 }
 
-.signup-step1-alert:empty,
-.signup-step1-alert[hidden] {
+.signup-step1-alert:empty {
   display: none !important;
 }
 
@@ -2188,10 +2169,6 @@ button.future-type-badge {
   display: grid;
   place-items: center;
   padding: 16px;
-}
-
-.profile-crop-modal[hidden] {
-  display: none !important;
 }
 
 .profile-crop-backdrop {
@@ -2883,10 +2860,6 @@ button.future-type-badge {
 
 .modal-footer .btn-block {
   max-width: 280px;
-}
-
-.signup-footer-panel[hidden] {
-  display: none !important;
 }
 
 .signup-footer-panel {
@@ -4471,10 +4444,6 @@ td.clan-tactic-table__star-grade-cell {
   pointer-events: none;
 }
 
-.clan-tactic-table__star-grade-slot[hidden] {
-  display: none;
-}
-
 .clan-tactic-table__star-grade-dial {
   position: relative;
   display: block;
@@ -4624,10 +4593,6 @@ td.clan-tactic-table__rank-input-cell {
 
 .clan-tactic-table__rank-input-cell--active {
   pointer-events: auto;
-}
-
-.clan-tactic-table__rank-input-slot[hidden] {
-  display: none;
 }
 
 .clan-detail-body .clan-tactic-table-wrap {

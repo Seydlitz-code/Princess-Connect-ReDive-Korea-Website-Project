@@ -168,7 +168,7 @@
   let charactersCache = null;
   let selectedCharacterIds = new Set();
   let charactersLoadPromise = null;
-  let publicCfg = { recaptchaSiteKey: null };
+  let publicCfg = { recaptchaSiteKey: null, signupAvailable: true };
   let recaptchaWidgetId = null;
   let recaptchaApiPromise = null;
   let signupCaptchaId = '';
@@ -205,9 +205,9 @@
         typeof data.recaptchaSiteKey === 'string' && data.recaptchaSiteKey.trim()
           ? data.recaptchaSiteKey.trim()
           : null;
-      publicCfg = { recaptchaSiteKey: key };
+      publicCfg = { recaptchaSiteKey: key, signupAvailable: data.signupAvailable !== false };
     } catch {
-      publicCfg = { recaptchaSiteKey: null };
+      publicCfg = { recaptchaSiteKey: null, signupAvailable: true };
     }
     syncRecaptchaWrapVisibility();
   }
@@ -639,6 +639,10 @@
   async function openModal() {
     if (!modal) return;
     await refreshPublicRuntimeConfig();
+    if (!publicCfg.signupAvailable) {
+      window.alert('현재 회원가입이 일시 중단되었습니다. 관리자에게 문의해 주세요.');
+      return;
+    }
     if (loginModal && !loginModal.hidden) closeLoginModal();
     if (ownedCharactersModal && !ownedCharactersModal.hidden) closeOwnedCharactersModal();
     resetSignupFlow();
@@ -2244,6 +2248,7 @@
     sessionUserRole = 'guest';
     setAdminNavigationVisible(false);
     setHeaderActionsSlotMode(false);
+    showClanCommentForm();
     if (headerGuest) {
       headerGuest.hidden = false;
       headerGuest.removeAttribute('aria-hidden');
@@ -2278,6 +2283,8 @@
     mypageSessionUserId = user.id;
     sessionUserRole = user.role === 'admin' ? 'admin' : 'user';
     setAdminNavigationVisible(sessionUserRole === 'admin');
+    // 게시물 URL 로 바로 들어오면 세션 확인 전에 상세가 먼저 그려져 댓글 폼이 숨겨진 채 남는다.
+    showClanCommentForm();
 
     const imgSrc = typeof user.profileImage === 'string' ? user.profileImage : '';
     if (imgSrc && /^data:image\//.test(imgSrc)) {
@@ -2363,6 +2370,8 @@
       await syncFutureMainOwnedHighlights();
       loginForm.reset();
       closeLoginModal();
+    } catch {
+      showLoginFormError('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       loginSubmitBtn.disabled = false;
     }
@@ -2436,9 +2445,11 @@
       input.type = toText ? 'text' : 'password';
       btn.setAttribute('aria-pressed', toText ? 'true' : 'false');
       btn.setAttribute('aria-label', toText ? hideLabel : showLabel);
+      // 아이콘은 "누르면 할 동작": 가려진 상태 → 눈 뜸(표시), 보이는 상태 → 눈 감음(숨기기)
+      // SVG 요소에는 .hidden 프로퍼티가 없으므로 속성을 직접 바꾼다.
       if (eyeOpen && eyeShut) {
-        eyeOpen.hidden = !toText;
-        eyeShut.hidden = toText;
+        eyeOpen.toggleAttribute('hidden', toText);
+        eyeShut.toggleAttribute('hidden', !toText);
       }
     });
   }
@@ -2568,8 +2579,8 @@
 
   async function apiJson(url, options = {}) {
     const res = await fetch(url, {
-      headers: { 'Content-Type': 'application/json', ...options.headers },
       ...options,
+      headers: { 'Content-Type': 'application/json', ...options.headers },
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -2734,11 +2745,14 @@
     return `/api/characters/${encodeURIComponent(String(characterId))}/image`;
   }
 
+  /** 브라우저 캐시가 적용되는 정적 이미지 URL 을 우선 쓰고, 실패 시 API 로 한 번만 재시도한다. */
   function bindCharacterImage(img, character, { eager = false, deferSrc = false } = {}) {
     const apiUrl = getCharacterImageApiUrl(character?.id || '');
     const staticUrl = typeof character?.imageUrl === 'string' && character.imageUrl.length > 0
       ? character.imageUrl
       : '';
+    const primaryUrl = staticUrl || apiUrl;
+    const fallbackUrl = staticUrl ? apiUrl : '';
 
     img.alt = character?.name || '캐릭터';
     img.loading = eager ? 'eager' : 'lazy';
@@ -2746,20 +2760,19 @@
     img.classList.remove('character-thumb__img--missing');
 
     img.addEventListener('error', () => {
-      if (img.dataset.fallback !== 'static' && staticUrl) {
-        img.dataset.fallback = 'static';
-        img.src = staticUrl;
+      if (fallbackUrl && img.dataset.fallback !== 'used') {
+        img.dataset.fallback = 'used';
+        img.src = fallbackUrl;
         return;
       }
       img.classList.add('character-thumb__img--missing');
       img.removeAttribute('src');
     });
 
-    img.dataset.fallback = 'api';
     if (!deferSrc) {
-      img.src = apiUrl;
+      img.src = primaryUrl;
     }
-    return apiUrl;
+    return primaryUrl;
   }
 
   /**
@@ -3136,7 +3149,6 @@
   const clanCommentsList = document.getElementById('clan-comments-list');
   const clanCommentPagination = document.getElementById('clan-comment-pagination');
   const clanWriteOpenBtn = document.getElementById('clan-write-open');
-  const clanPostWrite = document.getElementById('clan-post-write');
   const clanWriteForm = document.getElementById('clan-write-form');
   const clanWriteBoardName = document.getElementById('clan-write-board-name');
   const clanWriteCategoryField = document.getElementById('clan-write-category-field');
@@ -3151,7 +3163,6 @@
   const clanWriteCancel = document.getElementById('clan-write-cancel');
   const clanWriteBack = document.getElementById('clan-write-back');
   const clanWriteError = document.getElementById('clan-write-error');
-  const clanWriteToolbar = document.getElementById('clan-write-toolbar');
   const clanWriteBtnImage = document.getElementById('clan-write-btn-image');
   const clanWriteBtnVideo = document.getElementById('clan-write-btn-video');
   const clanWriteBtnLink = document.getElementById('clan-write-btn-link');
@@ -3239,7 +3250,8 @@
       });
       if (freeBoardEmpty) freeBoardEmpty.hidden = data.posts.length > 0;
       if (freePostList) freePostList.hidden = data.posts.length === 0;
-      if (freeBoardBottomActions) freeBoardBottomActions.hidden = data.posts.length === 0;
+      // 검색 결과가 0건이어도 검색창은 남겨 검색어를 바꿀 수 있게 한다.
+      if (freeBoardBottomActions) freeBoardBottomActions.hidden = data.posts.length === 0 && !freeBoardSearchText;
     } catch (_) {}
   }
 
@@ -3342,11 +3354,6 @@
   let clanWriteNamed = '';
   let clanWriteCategory = 'none';
   let currentBoardContext = 'clan';
-  let currentPostBoardContext = 'clan';
-
-  function getCurrentBoardContext() {
-    return currentPostBoardContext;
-  }
 
   freeWriteOpenBtn?.addEventListener('click', () => {
     currentBoardContext = 'free';
@@ -3379,7 +3386,9 @@
     showClanPostDetailView(postId);
   }
 
+  /** 보고 있는 게시물의 게시판(서버 값)을 우선하고, 없으면 현재 메뉴 기준 */
   function getCurrentBoardContext() {
+    if (clanBoardCurrentPostData?.board) return clanBoardCurrentPostData.board === 'free' ? 'free' : 'clan';
     const activeNav = links.find((b) => b.classList.contains('is-active'));
     return activeNav?.dataset.board === 'free' ? 'free' : 'clan';
   }
@@ -3432,11 +3441,7 @@
         }
         clanBoardCurrentPostId = postId;
         clanBoardCurrentPostLiked = data.post.liked || false;
-        const post = data.post;
-        if (!post.year) post.year = '전체연도';
-        if (!post.month) post.month = '전체월';
-        if (!post.stage) post.stage = '전체단계';
-        renderClanPostDetail(post);
+        renderClanPostDetail(data.post);
       })
       .catch(() => {
         clanDetailContent.innerHTML = '<p style="text-align:center;color:var(--muted);padding:40px 0;">네트워크 오류가 발생했습니다.</p>';
@@ -3530,13 +3535,7 @@
         window.alert(data.error || '게시물을 불러오지 못했습니다.');
         return;
       }
-      const posts = data.posts.map(function (p) {
-        if (!p.year) p.year = '전체연도';
-        if (!p.month) p.month = '전체월';
-        if (!p.stage) p.stage = '전체단계';
-        return p;
-      });
-      renderClanPostList(posts, data.pagination);
+      renderClanPostList(data.posts, data.pagination);
       renderClanPagination(clanPagination, data.pagination, (page) => {
         clanBoardPage = page;
         loadClanBoardPosts();
@@ -3549,7 +3548,7 @@
       }
       const bottomActions = document.getElementById('clan-board-bottom-actions');
       if (bottomActions) {
-        bottomActions.hidden = data.posts.length === 0;
+        bottomActions.hidden = data.posts.length === 0 && !clanBoardSearchText;
       }
     } catch (e) {
       window.alert(e instanceof Error ? e.message : '네트워크 오류가 발생했습니다.');
@@ -3729,17 +3728,8 @@
     return updated - created > 60_000;
   }
 
-  async function openClanPostDetail(postId) {
-    currentPostBoardContext = getActiveBoardContext();
+  function openClanPostDetail(postId) {
     navigateToClanPost(postId);
-  }
-
-  function getActiveBoardContext() {
-    const activeNav = links.find((b) => b.classList.contains('is-active'));
-    const board = activeNav?.dataset.board;
-    if (board === 'free') return 'free';
-    if (CLAN_SUB_BOARDS.has(board)) return 'clan';
-    return 'clan';
   }
 
   function renderClanPostDetail(post) {
@@ -3748,7 +3738,7 @@
     clanBoardCurrentPostData = post;
 
     if (clanDetailBoardTitle) {
-      clanDetailBoardTitle.textContent = getClanBoardNameDisplay();
+      clanDetailBoardTitle.textContent = post.board === 'free' ? '자유 게시판' : getClanBoardNameDisplay();
     }
 
     const headerBlock = document.createElement('div');
@@ -3868,6 +3858,7 @@
       const res = await fetch(`/api/clan-board/posts/${encodeURIComponent(postId)}/comments?page=${page}&limit=20`);
       const data = await res.json().catch(() => ({}));
       if (!res.ok) return;
+      if (clanCommentCount && data.pagination) clanCommentCount.textContent = String(data.pagination.total);
 
       clanCommentsList.innerHTML = '';
       if (data.comments.length === 0) {
@@ -4033,7 +4024,6 @@
   /* 글쓰기 */
 
   let clanBoardPreviousSubBoard = 'clan-all';
-  const clanWritePanel = document.querySelector('[data-board-panel="clan-write"]');
 
   function getClanBoardNameDisplay() {
     const activeNav = links.find((b) => b.classList.contains('is-active'));
@@ -4057,6 +4047,7 @@
     }
     if (!post?.can_edit) return;
     clanBoardEditingPostId = post.id;
+    currentBoardContext = post.board === 'free' ? 'free' : 'clan';
     openClanWriteForm();
     clanWriteYear = post.year || '';
     clanWriteMonth = post.month || '';
@@ -4149,80 +4140,87 @@
     }
   }
 
+  const CLAN_WRITE_TITLE_MAX = 50;
+  /** 서버 본문 한도(1.8MB)와 같게 맞춘다. 이미지·동영상은 base64 로 본문에 들어간다. */
+  const CLAN_WRITE_CONTENT_MAX = 1_800_000;
+  const CLAN_WRITE_VIDEO_MAX_BYTES = 1_200_000;
+  const CLAN_WRITE_IMAGE_MAX_EDGE = 1600;
+  const CLAN_WRITE_IMAGE_RESIZE_OVER_BYTES = 400_000;
+  const TACTIC_THEME_COLORS = ['#F06292', '#8BC34A', '#FFEB3B', '#7B1FA2', '#03A9F4'];
+
   function execWriteCommand(command, value) {
     if (!clanWriteContent) return;
     clanWriteContent.focus();
     document.execCommand(command, false, value || null);
   }
 
-  function insertNodeAtCursor(node) {
-    if (!clanWriteContent || !node) return;
-    clanWriteContent.focus();
+  /** 선택 영역이 에디터 안에 있을 때만 그 위치를 돌려준다(제목 입력칸 등에 끼어들지 않도록). */
+  function getEditorRange() {
     const sel = window.getSelection();
-    if (sel.rangeCount) {
-      const range = sel.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(node);
-      range.setStartAfter(node);
-      range.setEndAfter(node);
-      sel.removeAllRanges();
-      sel.addRange(range);
-    } else {
-      clanWriteContent.appendChild(node);
-    }
+    if (!clanWriteContent || !sel || !sel.rangeCount) return null;
+    const range = sel.getRangeAt(0);
+    return clanWriteContent.contains(range.commonAncestorContainer) ? range : null;
   }
 
   function insertNodeAtCursor(node) {
     if (!clanWriteContent || !node) return;
+    // DocumentFragment 는 삽입 후 비므로 커서 기준점은 마지막 자식으로 잡는다.
+    const anchor = node.nodeType === Node.DOCUMENT_FRAGMENT_NODE ? node.lastChild : node;
+    const range = getEditorRange();
     clanWriteContent.focus();
-    const sel = window.getSelection();
-    if (sel.rangeCount) {
-      const range = sel.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(node);
-      range.setStartAfter(node);
-      range.setEndAfter(node);
+    if (!range) {
+      clanWriteContent.appendChild(node);
+      return;
+    }
+    range.deleteContents();
+    range.insertNode(node);
+    if (anchor && anchor.parentNode) {
+      range.setStartAfter(anchor);
+      range.collapse(true);
+      const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
-    } else {
-      clanWriteContent.appendChild(node);
     }
+  }
+
+  /**
+   * execCommand('fontSize') 는 1~7 단계만 지원해 8~72px 선택이 모두 7(48px)로 저장되던 문제를 고친다.
+   * 7 단계로 감싼 뒤 새로 생긴 <font size="7"> 만 px 단위 span 으로 바꾼다.
+   */
+  function applyWriteFontSize(px) {
+    if (!clanWriteContent) return;
+    const range = getEditorRange();
+    clanWriteContent.focus();
+    if (!range) return;
+    if (range.collapsed) {
+      // 선택이 없으면 이후 입력될 글자를 담을 span 을 만들어 커서를 그 안에 둔다.
+      const span = document.createElement('span');
+      span.style.fontSize = `${px}px`;
+      const text = document.createTextNode('​');
+      span.appendChild(text);
+      range.insertNode(span);
+      range.setStart(text, 1);
+      range.collapse(true);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      return;
+    }
+    const existing = new Set(clanWriteContent.querySelectorAll('font[size="7"]'));
+    document.execCommand('styleWithCSS', false, false);
+    document.execCommand('fontSize', false, '7');
+    clanWriteContent.querySelectorAll('font[size="7"]').forEach((font) => {
+      if (existing.has(font)) return;
+      const span = document.createElement('span');
+      span.style.fontSize = `${px}px`;
+      while (font.firstChild) span.appendChild(font.firstChild);
+      font.replaceWith(span);
+    });
   }
 
   const TACTIC_STAR_GRADE_MIN = 1;
   const TACTIC_STAR_GRADE_MAX = 6;
   const TACTIC_STAR_GRADE_DEFAULT = 3;
-
-  function buildStarGradeIcons(grade) {
-    const wrap = document.createElement('span');
-    wrap.className = 'clan-tactic-table__star-grade-icons';
-    wrap.dataset.grade = String(grade);
-    wrap.setAttribute('aria-hidden', 'true');
-
-    const g = Math.min(TACTIC_STAR_GRADE_MAX, Math.max(TACTIC_STAR_GRADE_MIN, grade));
-    if (g <= 5) {
-      for (let i = 0; i < 5; i += 1) {
-        const star = document.createElement('span');
-        star.className = i < g
-          ? 'clan-tactic-table__sg-star clan-tactic-table__sg-star--filled'
-          : 'clan-tactic-table__sg-star clan-tactic-table__sg-star--empty';
-        star.textContent = '\u2605';
-        wrap.appendChild(star);
-      }
-    } else {
-      for (let i = 0; i < 5; i += 1) {
-        const star = document.createElement('span');
-        star.className = 'clan-tactic-table__sg-star clan-tactic-table__sg-star--filled';
-        star.textContent = '\u2605';
-        wrap.appendChild(star);
-      }
-      const pinkStar = document.createElement('span');
-      pinkStar.className = 'clan-tactic-table__sg-star clan-tactic-table__sg-star--pink';
-      pinkStar.textContent = '\u2605';
-      wrap.appendChild(pinkStar);
-    }
-    return wrap;
-  }
 
   function createStarGradeDial(initialGrade = TACTIC_STAR_GRADE_DEFAULT) {
     const dial = document.createElement('div');
@@ -4254,44 +4252,6 @@
     hiddenInput.value = String(grade);
     hiddenInput.contentEditable = 'false';
 
-    function closeMenu() {
-      menu.hidden = true;
-      trigger.setAttribute('aria-expanded', 'false');
-    }
-
-    function openMenu() {
-      menu.hidden = false;
-      trigger.setAttribute('aria-expanded', 'true');
-    }
-
-    function setGrade(nextGrade) {
-      grade = Math.min(TACTIC_STAR_GRADE_MAX, Math.max(TACTIC_STAR_GRADE_MIN, nextGrade));
-      hiddenInput.value = String(grade);
-      trigger.setAttribute('aria-label', `${grade}\uC131 \uC120\uD0DD`);
-      const currentLabel = trigger.querySelector('.clan-tactic-table__star-grade-label');
-      if (currentLabel) currentLabel.textContent = `${grade}\uC131`;
-      menu.querySelectorAll('.clan-tactic-table__star-grade-option').forEach((btn) => {
-        btn.classList.toggle('is-selected', Number(btn.dataset.grade) === grade);
-      });
-      closeMenu();
-    }
-
-    function renderTriggerLabel() {
-      const existing = trigger.querySelector('.clan-tactic-table__star-grade-label');
-      if (existing) existing.textContent = `${grade}\uC131`;
-      else if (trigger.contains(chevron)) {
-        const label = document.createElement('span');
-        label.className = 'clan-tactic-table__star-grade-label';
-        label.textContent = `${grade}\uC131`;
-        trigger.insertBefore(label, chevron);
-      } else {
-        const label = document.createElement('span');
-        label.className = 'clan-tactic-table__star-grade-label';
-        label.textContent = `${grade}\uC131`;
-        trigger.appendChild(label);
-      }
-    }
-
     for (let g = TACTIC_STAR_GRADE_MIN; g <= TACTIC_STAR_GRADE_MAX; g += 1) {
       const item = document.createElement('li');
       item.className = 'clan-tactic-table__star-grade-item';
@@ -4308,44 +4268,59 @@
       numSpan.className = 'clan-tactic-table__star-grade-number';
       numSpan.textContent = String(g);
       option.appendChild(numSpan);
-      option.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setGrade(g);
-        option.setAttribute('aria-selected', 'true');
-        menu.querySelectorAll('.clan-tactic-table__star-grade-option').forEach((btn) => {
-          btn.setAttribute('aria-selected', btn === option ? 'true' : 'false');
-        });
-      });
 
       item.appendChild(option);
       menu.appendChild(item);
     }
 
-    trigger.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (menu.hidden) openMenu();
-      else closeMenu();
-    });
-
+    // \uC5F4\uAE30/\uC120\uD0DD\uC740 \uC5D0\uB514\uD130\uC758 \uC704\uC784 click \uD578\uB4E4\uB7EC\uAC00 \uCC98\uB9AC\uD55C\uB2E4(\uC800\uC7A5 \uD6C4 \uC218\uC815 \uBAA8\uB4DC\uB85C \uB2E4\uC2DC \uBD88\uB7EC\uC640\uB3C4 \uB3D9\uC791).
     dial.addEventListener('mousedown', (e) => {
       e.stopPropagation();
     });
 
-    const onDocumentClick = (e) => {
-      if (!dial.contains(e.target)) closeMenu();
-    };
-    document.addEventListener('click', onDocumentClick);
-    dial._starGradeDocCleanup = () => document.removeEventListener('click', onDocumentClick);
-
+    const label = document.createElement('span');
+    label.className = 'clan-tactic-table__star-grade-label';
+    label.textContent = `${grade}\uC131`;
+    trigger.appendChild(label);
     trigger.appendChild(chevron);
-    renderTriggerLabel();
     dial.appendChild(trigger);
     dial.appendChild(menu);
     dial.appendChild(hiddenInput);
     return dial;
   }
+
+  function setStarDialMenuOpen(dial, open) {
+    const menu = dial?.querySelector('.clan-tactic-table__star-grade-menu');
+    const trigger = dial?.querySelector('.clan-tactic-table__star-grade-trigger');
+    if (!menu) return;
+    menu.hidden = !open;
+    trigger?.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  function setStarDialGrade(dial, nextGrade) {
+    if (!dial) return;
+    const grade = Math.min(TACTIC_STAR_GRADE_MAX, Math.max(TACTIC_STAR_GRADE_MIN, nextGrade));
+    const hiddenInput = dial.querySelector('.clan-tactic-table__star-grade-value');
+    if (hiddenInput) hiddenInput.value = String(grade);
+    const trigger = dial.querySelector('.clan-tactic-table__star-grade-trigger');
+    trigger?.setAttribute('aria-label', `${grade}\uC131 \uC120\uD0DD`);
+    const label = dial.querySelector('.clan-tactic-table__star-grade-label');
+    if (label) label.textContent = `${grade}\uC131`;
+    dial.querySelectorAll('.clan-tactic-table__star-grade-option').forEach((btn) => {
+      const on = Number(btn.dataset.grade) === grade;
+      btn.classList.toggle('is-selected', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    setStarDialMenuOpen(dial, false);
+  }
+
+  /** \uB2E4\uC774\uC5BC \uBC14\uAE65\uC744 \uB204\uB974\uBA74 \uC5F4\uB9B0 \uC131\uAE09 \uBA54\uB274\uB97C \uB2EB\uB294\uB2E4(\uBB38\uC11C \uC804\uCCB4\uC5D0 \uB9AC\uC2A4\uB108 \uD558\uB098). */
+  document.addEventListener('click', (e) => {
+    document.querySelectorAll('.clan-tactic-table__star-grade-menu:not([hidden])').forEach((menu) => {
+      const dial = menu.closest('.clan-tactic-table__star-grade-dial');
+      if (dial && !dial.contains(e.target)) setStarDialMenuOpen(dial, false);
+    });
+  });
 
   function getTacticStarGradeCell(charCell) {
     const slot = charCell?.dataset?.tacticSlot;
@@ -4381,9 +4356,6 @@
 
     const slot = gradeCell.querySelector('.clan-tactic-table__star-grade-slot');
     if (slot) {
-      slot.querySelectorAll('.clan-tactic-table__star-grade-dial').forEach((dial) => {
-        if (typeof dial._starGradeDocCleanup === 'function') dial._starGradeDocCleanup();
-      });
       slot.innerHTML = '';
       slot.hidden = true;
     }
@@ -4406,10 +4378,6 @@
     input.autocomplete = 'off';
     input.spellcheck = false;
     input.maxLength = 12;
-    input.addEventListener('input', () => {
-      const sanitized = input.value.replace(/[^0-9+\-]/g, '');
-      if (input.value !== sanitized) input.value = sanitized;
-    });
     input.addEventListener('mousedown', (e) => {
       e.stopPropagation();
     });
@@ -4496,46 +4464,7 @@
       e.stopPropagation();
     }
 
-    function clampAndApply(isBlur) {
-      const minDigits = minInput.value.replace(/[^0-9]/g, '').slice(0, 1);
-      const secDigits = secInput.value.replace(/[^0-9]/g, '').slice(0, 2);
-      let min = minDigits === '' ? 0 : parseInt(minDigits, 10);
-      let sec = secDigits === '' ? 0 : parseInt(secDigits, 10);
-      if (Number.isNaN(min)) min = 0;
-      if (Number.isNaN(sec)) sec = 0;
-
-      if (min > 1) min = 1;
-      if (min === 1) {
-        sec = Math.min(sec, 30);
-      } else {
-        sec = Math.min(sec, 59);
-      }
-
-      const total = min * 60 + sec;
-      if (total > TACTIC_TIME_MAX_TOTAL_SEC) {
-        min = 1;
-        sec = 30;
-      }
-
-      if (isBlur && minDigits === '' && secDigits !== '') {
-        minInput.value = '0';
-      } else if (minDigits !== '') {
-        minInput.value = String(min);
-      } else {
-        minInput.value = '';
-      }
-
-      if (secDigits !== '') {
-        secInput.value = String(sec);
-      } else {
-        secInput.value = '';
-      }
-    }
-
-    minInput.addEventListener('input', () => clampAndApply(false));
-    secInput.addEventListener('input', () => clampAndApply(false));
-    minInput.addEventListener('blur', () => clampAndApply(true));
-    secInput.addEventListener('blur', () => clampAndApply(true));
+    // \uAC12 \uBCF4\uC815(\uCD5C\uB300 1:30)\uC740 \uC5D0\uB514\uD130\uC758 \uC704\uC784 input/focusout \uD578\uB4E4\uB7EC\uAC00 \uCC98\uB9AC\uD55C\uB2E4.
     [minInput, secInput, wrap].forEach((el) => {
       el.addEventListener('mousedown', stopEditBubble);
       el.addEventListener('click', stopEditBubble);
@@ -4547,8 +4476,40 @@
     return wrap;
   }
 
-  function isEffectivelyEmptyEditable(el) {
-    return (el.textContent || '').replace(/\u200B/g, '').trim() === '';
+  /**
+   * 분:초 입력 쌍을 0:00~1:30 범위로 보정한다(텍틱 표·이월타 팝업 공용).
+   * fillMinuteZero 가 true 면 초만 입력된 경우 분을 0 으로 채운다.
+   */
+  function clampMinSecInputs(minInput, secInput, fillMinuteZero) {
+    if (!minInput || !secInput) return;
+    const minDigits = minInput.value.replace(/[^0-9]/g, '').slice(0, 1);
+    const secDigits = secInput.value.replace(/[^0-9]/g, '').slice(0, 2);
+    let min = minDigits === '' ? 0 : parseInt(minDigits, 10);
+    let sec = secDigits === '' ? 0 : parseInt(secDigits, 10);
+    if (Number.isNaN(min)) min = 0;
+    if (Number.isNaN(sec)) sec = 0;
+
+    if (min > 1) min = 1;
+    sec = Math.min(sec, min === 1 ? 30 : 59);
+    if (min * 60 + sec > TACTIC_TIME_MAX_TOTAL_SEC) {
+      min = 1;
+      sec = 30;
+    }
+
+    if (fillMinuteZero && minDigits === '' && secDigits !== '') {
+      minInput.value = '0';
+    } else {
+      minInput.value = minDigits !== '' ? String(min) : '';
+    }
+    secInput.value = secDigits !== '' ? String(sec) : '';
+  }
+
+  function clampTacticTimeInput(wrap, isBlur) {
+    clampMinSecInputs(
+      wrap?.querySelector('.clan-tactic-table__time-min'),
+      wrap?.querySelector('.clan-tactic-table__time-sec'),
+      isBlur
+    );
   }
 
   function createTacticDropdown(onLabel, offLabel) {
@@ -4581,43 +4542,6 @@
         }
       }
     }
-  }
-
-  function bindTacticAutoCell(cell) {
-    function stopEditBubble(e) {
-      e.stopPropagation();
-    }
-
-    cell.addEventListener('mousedown', stopEditBubble);
-    cell.addEventListener('click', stopEditBubble);
-
-    cell.addEventListener('focus', () => {
-      if (!isEffectivelyEmptyEditable(cell)) return;
-
-      let editRoot = cell.querySelector('.clan-tactic-table__auto-cell-edit');
-      const firstChild = cell.firstElementChild;
-      if (!editRoot && firstChild?.tagName === 'DIV' && isEffectivelyEmptyEditable(firstChild)) {
-        firstChild.classList.add('clan-tactic-table__auto-cell-edit');
-        editRoot = firstChild;
-      }
-      if (!editRoot) {
-        cell.textContent = '';
-        editRoot = document.createElement('div');
-        editRoot.className = 'clan-tactic-table__auto-cell-edit';
-        editRoot.appendChild(document.createElement('br'));
-        cell.appendChild(editRoot);
-      }
-
-      requestAnimationFrame(() => {
-        const sel = window.getSelection();
-        if (!sel || !editRoot) return;
-        const range = document.createRange();
-        range.selectNodeContents(editRoot);
-        range.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      });
-    });
   }
 
   function createTacticInputRow() {
@@ -4674,15 +4598,8 @@
 
     const tbody = document.createElement('tbody');
 
-    const THEME_COLORS = ['#F06292', '#8BC34A', '#FFEB3B', '#7B1FA2', '#03A9F4'];
-    let currentTheme = 1;
-
-    function applyTheme(themeRow, themeNum) {
-      currentTheme = themeNum;
-      if (themeRow) {
-        themeRow.style.background = THEME_COLORS[themeNum - 1];
-      }
-    }
+    // 표 안의 버튼·입력 동작은 모두 에디터(clanWriteContent)의 위임 핸들러가 처리한다.
+    // 저장된 HTML 을 수정 모드로 다시 불러온 표도 같은 경로로 동작하게 하기 위함.
 
     // 0행: 테마 선택
     const themeRow = document.createElement('tr');
@@ -4704,25 +4621,17 @@
       themeSelect.appendChild(opt);
     }
     themeSelect.value = '1';
-    themeSelect.addEventListener('change', () => {
-      applyTheme(themeRow, Number(themeSelect.value));
-    });
 
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
     deleteBtn.className = 'clan-tactic-table__delete-btn';
     deleteBtn.textContent = '\uC0AD\uC81C';
-    deleteBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      wrap.remove();
-    });
 
     themeInner.appendChild(themeSelect);
     themeInner.appendChild(deleteBtn);
     themeCell.appendChild(themeInner);
     themeRow.appendChild(themeCell);
-    applyTheme(themeRow, 1);
+    themeRow.style.background = TACTIC_THEME_COLORS[0];
     tbody.appendChild(themeRow);
 
     // 1행: 헤더 (보스 이미지 + 캐릭터 추가 × 5)
@@ -4741,10 +4650,6 @@
     dmgInput.placeholder = '\uD14D\uD2F1 \uB370\uBBF8\uC9C0\uB97C \uC785\uB825\uD558\uC138\uC694.';
     dmgInput.inputMode = 'numeric';
     dmgInput.autocomplete = 'off';
-    dmgInput.addEventListener('input', () => {
-      const sanitized = dmgInput.value.replace(/[^0-9+\-~]/g, '');
-      if (dmgInput.value !== sanitized) dmgInput.value = sanitized;
-    });
     dmgCell.appendChild(dmgInput);
     tr1.appendChild(dmgCell);
 
@@ -4752,20 +4657,7 @@
     const bossCell = document.createElement('td');
     bossCell.className = 'clan-tactic-table__grid-cell clan-tactic-table__grid-cell--head clan-tactic-table__boss-cell';
     bossCell.contentEditable = 'false';
-    const bossBtn = document.createElement('button');
-    bossBtn.type = 'button';
-    bossBtn.className = 'clan-tactic-table__boss-btn';
-    bossBtn.innerHTML = '<span class="clan-tactic-table__slot-label">\uBCF4\uC2A4 \uC774\uBBF8\uC9C0</span>';
-    bossBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const input = document.getElementById('clan-write-boss-image-input');
-      if (input) {
-        input._bossTargetCell = bossCell;
-        input.click();
-      }
-    });
-    bossCell.appendChild(bossBtn);
+    bossCell.appendChild(createBossImageButton());
     tr1.appendChild(bossCell);
 
     // 3-7열: 캐릭터 추가 × 5
@@ -4801,18 +4693,6 @@
     nameInput.placeholder = '\uBCF4\uC2A4\uBA85 \uC785\uB825';
     nameInput.maxLength = 8;
     nameInput.autocomplete = 'off';
-    nameInput.addEventListener('mousedown', (e) => {
-      const tbl = nameInput.closest('.clan-tactic-table');
-      if (!tbl?.querySelector('.clan-tactic-table__boss-cell .clan-tactic-table__boss-wrap')) {
-        e.preventDefault();
-      }
-    });
-    nameInput.addEventListener('focus', (e) => {
-      const tbl = nameInput.closest('.clan-tactic-table');
-      if (!tbl?.querySelector('.clan-tactic-table__boss-cell .clan-tactic-table__boss-wrap')) {
-        nameInput.blur();
-      }
-    });
     bossNameCell.appendChild(nameInput);
     tr2.appendChild(bossNameCell);
 
@@ -4911,34 +4791,11 @@
     addBtn.type = 'button';
     addBtn.className = 'clan-tactic-table__add-tactic-btn';
     addBtn.textContent = '+ \uD14D\uD2F1 \uCD94\uAC00';
-    addBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const newRow = createTacticInputRow();
-      tbody.insertBefore(newRow, tr6);
-      for (let slot = 1; slot <= 5; slot += 1) {
-        const headerCell = table.querySelector(`.clan-tactic-table__char-cell[data-tactic-slot="${slot}"]`);
-        if (headerCell) {
-          updateTacticDropdownVisibility(headerCell);
-        }
-      }
-    });
 
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'clan-tactic-table__delete-tactic-btn';
     delBtn.textContent = '\uD14D\uD2F1 \uC0AD\uC81C';
-    delBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const inputRows = table.querySelectorAll('.clan-tactic-table__input-row');
-      if (inputRows.length <= 1) {
-        window.alert('\uC0AD\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.');
-        return;
-      }
-      const lastRow = inputRows[inputRows.length - 1];
-      lastRow.remove();
-    });
 
     btnWrap.appendChild(addBtn);
     btnWrap.appendChild(delBtn);
@@ -4966,23 +4823,60 @@
     return wrap;
   }
 
-  function insertFileAtCursor(file, type) {
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(reader.error || new Error('파일을 읽을 수 없습니다.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /**
+   * 본문에 base64 로 들어가므로 큰 사진은 긴 변 1600px JPEG 로 줄인다.
+   * GIF(애니메이션)·작은 이미지는 원본 그대로 쓴다.
+   */
+  async function prepareImageDataUrl(file) {
+    const original = await readFileAsDataUrl(file);
+    if (file.type === 'image/gif' || file.size <= CLAN_WRITE_IMAGE_RESIZE_OVER_BYTES) return original;
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error('이미지를 불러올 수 없습니다.'));
+      img.src = original;
+    });
+    const scale = Math.min(1, CLAN_WRITE_IMAGE_MAX_EDGE / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const resized = canvas.toDataURL('image/jpeg', 0.85);
+    return resized.length < original.length ? resized : original;
+  }
+
+  async function insertFileAtCursor(file, type) {
     if (!clanWriteContent) return;
-    const reader = new FileReader();
-    reader.onload = () => {
+    try {
+      if (type === 'video' && file.size > CLAN_WRITE_VIDEO_MAX_BYTES) {
+        window.alert(`동영상은 ${(CLAN_WRITE_VIDEO_MAX_BYTES / 1_000_000).toFixed(1)}MB 이하만 첨부할 수 있습니다. 큰 영상은 웹 링크로 넣어 주세요.`);
+        return;
+      }
+      const src = type === 'video' ? await readFileAsDataUrl(file) : await prepareImageDataUrl(file);
       const el = document.createElement(type === 'video' ? 'video' : 'img');
-      el.src = reader.result;
+      el.src = src;
       if (type === 'video') el.setAttribute('controls', '');
       el.style.maxWidth = '100%';
-      const brBefore = document.createElement('br');
-      const brAfter = document.createElement('br');
       const frag = document.createDocumentFragment();
-      frag.appendChild(brBefore);
+      frag.appendChild(document.createElement('br'));
       frag.appendChild(el);
-      frag.appendChild(brAfter);
+      frag.appendChild(document.createElement('br'));
       insertNodeAtCursor(frag);
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : String(err));
+    }
   }
 
   clanWriteOpenBtn?.addEventListener('click', () => { currentBoardContext = 'clan'; openClanWriteForm(); });
@@ -4998,7 +4892,7 @@
   clanWriteTitle?.addEventListener('input', () => {
     if (!clanWriteTitleWarning) return;
     const len = [...clanWriteTitle.value].length;
-    if (len > 30) {
+    if (len > CLAN_WRITE_TITLE_MAX) {
       clanWriteTitleWarning.hidden = false;
       clanWriteTitle.style.borderColor = '#dc2626';
     } else {
@@ -5017,7 +4911,7 @@
 
   clanWriteImageInput?.addEventListener('change', () => {
     const file = clanWriteImageInput?.files?.[0];
-    if (file) insertFileAtCursor(file, 'image');
+    if (file) void insertFileAtCursor(file, 'image');
     if (clanWriteImageInput) clanWriteImageInput.value = '';
   });
 
@@ -5027,7 +4921,7 @@
 
   clanWriteVideoInput?.addEventListener('change', () => {
     const file = clanWriteVideoInput?.files?.[0];
-    if (file) insertFileAtCursor(file, 'video');
+    if (file) void insertFileAtCursor(file, 'video');
     if (clanWriteVideoInput) clanWriteVideoInput.value = '';
   });
 
@@ -5051,7 +4945,14 @@
     return Boolean(el?.closest?.('.clan-tactic-table__no-edit'));
   }
 
+  /** 입력칸·드롭다운에 대한 이벤트는 contentEditable 편집이 아니므로 차단 대상이 아니다. */
+  function isFormControlTarget(target) {
+    return target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement;
+  }
+
   function blockTacticNoEditInput(e) {
+    // RANK 입력칸에 포커스하면 문서 selection 이 상위 셀에 남아 타이핑이 전부 막히던 문제 방지
+    if (isFormControlTarget(e.target)) return;
     const sel = window.getSelection();
     if (!isInsideTacticNoEditCell(e.target) && !isInsideTacticNoEditCell(sel?.anchorNode)) return;
     e.preventDefault();
@@ -5105,81 +5006,115 @@
   clanWriteContent?.addEventListener('beforeinput', blockTacticNoEditInput);
   clanWriteContent?.addEventListener('paste', blockTacticNoEditInput);
   clanWriteContent?.addEventListener('keydown', (e) => {
+    if (isFormControlTarget(e.target)) return;
     const sel = window.getSelection();
     if (!isInsideTacticNoEditCell(sel?.anchorNode)) return;
     const blocked = e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter';
     if (blocked && !e.ctrlKey && !e.metaKey) e.preventDefault();
   });
 
-  // Delegated input validation for edit mode (handlers lost after innerHTML)
+  /*
+   * \uD14D\uD2F1 \uD45C\uC758 \uBAA8\uB4E0 \uB3D9\uC791\uC740 \uC5D0\uB514\uD130\uC5D0 \uC704\uC784\uD55C\uB2E4. \uC0C8\uB85C \uC0BD\uC785\uD55C \uD45C\uC640, \uC800\uC7A5\uB41C HTML \uC744 \uC218\uC815 \uBAA8\uB4DC\uB85C
+   * \uB2E4\uC2DC \uBD88\uB7EC\uC628 \uD45C(\uC694\uC18C\uBCC4 \uB9AC\uC2A4\uB108\uAC00 \uC5C6\uC74C)\uAC00 \uAC19\uC740 \uCF54\uB4DC\uB85C \uB3D9\uC791\uD55C\uB2E4.
+   */
+  function bossImageExists(table) {
+    return Boolean(table?.querySelector('.clan-tactic-table__boss-cell .clan-tactic-table__boss-wrap'));
+  }
+
   clanWriteContent?.addEventListener('input', (e) => {
-    if (e.target.classList.contains('clan-tactic-table__rank-input')) {
-      const sanitized = e.target.value.replace(/[^0-9+\-]/g, '');
-      if (e.target.value !== sanitized) e.target.value = sanitized;
-      return;
-    }
-    if (e.target.classList.contains('clan-tactic-table__damage-input')) {
-      var sanitized = e.target.value.replace(/[^0-9+\-~]/g, '');
-      if (e.target.value !== sanitized) e.target.value = sanitized;
-      return;
+    const t = e.target;
+    if (!(t instanceof HTMLInputElement)) return;
+    if (t.classList.contains('clan-tactic-table__rank-input')) {
+      const sanitized = t.value.replace(/[^0-9+\-]/g, '');
+      if (t.value !== sanitized) t.value = sanitized;
+    } else if (t.classList.contains('clan-tactic-table__damage-input')) {
+      const sanitized = t.value.replace(/[^0-9+\-~]/g, '');
+      if (t.value !== sanitized) t.value = sanitized;
+    } else if (t.classList.contains('clan-tactic-table__time-part')) {
+      clampTacticTimeInput(t.closest('.clan-tactic-table__time-input'), false);
     }
   });
 
-  // Delegated click handlers for edit mode (handlers lost after innerHTML)
+  clanWriteContent?.addEventListener('focusout', (e) => {
+    const t = e.target;
+    if (t instanceof HTMLInputElement && t.classList.contains('clan-tactic-table__time-part')) {
+      clampTacticTimeInput(t.closest('.clan-tactic-table__time-input'), true);
+    }
+  });
+
+  // \uBCF4\uC2A4 \uC774\uBBF8\uC9C0\uAC00 \uC5C6\uC73C\uBA74 \uBCF4\uC2A4\uBA85 \uC785\uB825\uC744 \uB9C9\uB294\uB2E4.
+  clanWriteContent?.addEventListener('focusin', (e) => {
+    const t = e.target;
+    if (t instanceof HTMLInputElement && t.classList.contains('clan-tactic-table__bossname-input')) {
+      if (!bossImageExists(t.closest('.clan-tactic-table'))) t.blur();
+    }
+  });
+
   clanWriteContent?.addEventListener('click', (e) => {
-    var delBtn = e.target.closest('.clan-tactic-table__boss-del');
-    if (delBtn) {
+    const target = e.target instanceof Element ? e.target : null;
+    if (!target) return;
+    const hit = (selector) => target.closest(selector);
+    let el;
+
+    if ((el = hit('.clan-tactic-table__star-grade-option'))) {
       e.preventDefault();
       e.stopPropagation();
-      var wrap = delBtn.closest('.clan-tactic-table__boss-wrap');
-      var cell = delBtn.closest('.clan-tactic-table__char-cell, .clan-tactic-table__boss-cell');
+      setStarDialGrade(el.closest('.clan-tactic-table__star-grade-dial'), Number(el.dataset.grade));
+      return;
+    }
+
+    if ((el = hit('.clan-tactic-table__star-grade-trigger'))) {
+      e.preventDefault();
+      e.stopPropagation();
+      const dial = el.closest('.clan-tactic-table__star-grade-dial');
+      const menu = dial?.querySelector('.clan-tactic-table__star-grade-menu');
+      setStarDialMenuOpen(dial, Boolean(menu?.hidden));
+      return;
+    }
+
+    if ((el = hit('.clan-tactic-table__boss-del'))) {
+      e.preventDefault();
+      e.stopPropagation();
+      const wrap = el.closest('.clan-tactic-table__boss-wrap');
+      const cell = el.closest('.clan-tactic-table__char-cell, .clan-tactic-table__boss-cell');
       if (!wrap || !cell) return;
       wrap.remove();
-      var table = cell.closest('.clan-tactic-table');
+      const table = cell.closest('.clan-tactic-table');
       if (cell.classList.contains('clan-tactic-table__boss-cell')) {
-        cell.appendChild(createBossImageButton(cell));
-        updateTacticDropdownVisibility(cell);
+        cell.appendChild(createBossImageButton());
       } else {
         hideTacticCharSlotExtras(cell);
-        var slot = cell.dataset.tacticSlot;
-        if (table && slot) {
-          var nameCell = table.querySelector('.clan-tactic-table__char-name-cell[data-tactic-slot="' + slot + '"]');
-          if (nameCell) {
-            var nameSpan = nameCell.querySelector('.clan-tactic-table__char-name-text');
-            if (nameSpan) nameSpan.innerHTML = '';
-          }
-        }
-        var newBtn = createCharImageButton(cell);
+        const slot = cell.dataset.tacticSlot;
+        const nameSpan = table?.querySelector(
+          `.clan-tactic-table__char-name-cell[data-tactic-slot="${slot}"] .clan-tactic-table__char-name-text`
+        );
+        if (nameSpan) nameSpan.innerHTML = '';
+        const newBtn = createCharImageButton(cell);
         if (newBtn) cell.appendChild(newBtn);
-        updateTacticDropdownVisibility(cell);
+      }
+      updateTacticDropdownVisibility(cell);
+      return;
+    }
+
+    if ((el = hit('.clan-tactic-table__add-tactic-btn'))) {
+      e.preventDefault();
+      e.stopPropagation();
+      const table = el.closest('.clan-tactic-table');
+      const tbody = table?.querySelector('tbody');
+      const addRow = el.closest('tr');
+      if (!table || !tbody || !addRow) return;
+      tbody.insertBefore(createTacticInputRow(), addRow);
+      for (let s = 1; s <= 5; s += 1) {
+        const headerCell = table.querySelector(`.clan-tactic-table__char-cell[data-tactic-slot="${s}"]`);
+        if (headerCell) updateTacticDropdownVisibility(headerCell);
       }
       return;
     }
 
-    var addBtn = e.target.closest('.clan-tactic-table__add-tactic-btn');
-    if (addBtn) {
+    if ((el = hit('.clan-tactic-table__delete-tactic-btn'))) {
       e.preventDefault();
       e.stopPropagation();
-      var tbl = addBtn.closest('.clan-tactic-table');
-      var tbody = tbl && tbl.querySelector('tbody');
-      var addRow = addBtn.closest('tr');
-      if (!tbl || !tbody || !addRow) return;
-      var newRow = createTacticInputRow();
-      tbody.insertBefore(newRow, addRow);
-      for (var s = 1; s <= 5; s += 1) {
-        var hc = tbl.querySelector('.clan-tactic-table__char-cell[data-tactic-slot="' + s + '"]');
-        if (hc) updateTacticDropdownVisibility(hc);
-      }
-      return;
-    }
-
-    var delTacticBtn = e.target.closest('.clan-tactic-table__delete-tactic-btn');
-    if (delTacticBtn) {
-      e.preventDefault();
-      e.stopPropagation();
-      var tbl2 = delTacticBtn.closest('.clan-tactic-table');
-      if (!tbl2) return;
-      var inputRows = tbl2.querySelectorAll('.clan-tactic-table__input-row');
+      const inputRows = el.closest('.clan-tactic-table')?.querySelectorAll('.clan-tactic-table__input-row') || [];
       if (inputRows.length <= 1) {
         window.alert('\uC0AD\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.');
         return;
@@ -5188,38 +5123,38 @@
       return;
     }
 
-    var bossBtn = e.target.closest('.clan-tactic-table__boss-btn');
-    if (bossBtn) {
+    if ((el = hit('.clan-tactic-table__delete-btn'))) {
       e.preventDefault();
       e.stopPropagation();
-      var bossCell = bossBtn.closest('.clan-tactic-table__boss-cell');
-      var fileInput = document.getElementById('clan-write-boss-image-input');
-      if (fileInput && bossCell) {
-        fileInput._bossTargetCell = bossCell;
-        fileInput.click();
+      el.closest('.clan-tactic-table-wrap')?.remove();
+      return;
+    }
+
+    if ((el = hit('.clan-tactic-table__boss-btn'))) {
+      e.preventDefault();
+      e.stopPropagation();
+      const bossCell = el.closest('.clan-tactic-table__boss-cell');
+      if (clanWriteBossImageInput && bossCell) {
+        clanWriteBossImageInput._bossTargetCell = bossCell;
+        clanWriteBossImageInput.click();
       }
       return;
     }
 
-    var charBtn = e.target.closest('.clan-tactic-table__char-btn');
-    if (charBtn) {
+    if ((el = hit('.clan-tactic-table__char-btn'))) {
       e.preventDefault();
       e.stopPropagation();
-      var charCell = charBtn.closest('.clan-tactic-table__char-cell');
+      const charCell = el.closest('.clan-tactic-table__char-cell');
       if (charCell) openTacticCharPopup(charCell);
-      return;
     }
   });
 
-  // Delegated change handler for theme select in edit mode
   clanWriteContent?.addEventListener('change', (e) => {
-    if (e.target.classList.contains('clan-tactic-table__theme-select')) {
-      var THEME_COLORS = ['#F06292', '#8BC34A', '#FFEB3B', '#7B1FA2', '#03A9F4'];
-      var themeRow = e.target.closest('.clan-tactic-table')?.querySelector('.clan-tactic-table__theme-row');
-      if (themeRow) {
-        themeRow.style.background = THEME_COLORS[Number(e.target.value) - 1];
-      }
-      return;
+    const t = e.target;
+    if (t instanceof HTMLSelectElement && t.classList.contains('clan-tactic-table__theme-select')) {
+      const themeRow = t.closest('.clan-tactic-table')?.querySelector('.clan-tactic-table__theme-row');
+      const color = TACTIC_THEME_COLORS[Number(t.value) - 1];
+      if (themeRow && color) themeRow.style.background = color;
     }
   });
 
@@ -5267,7 +5202,8 @@
   });
 
   clanWriteFontsize?.addEventListener('change', () => {
-    execWriteCommand('fontSize', clanWriteFontsize.value);
+    const px = Number(clanWriteFontsize.value);
+    if (Number.isFinite(px) && px > 0) applyWriteFontSize(px);
   });
 
   clanWriteBtnBold?.addEventListener('click', () => { execWriteCommand('bold'); });
@@ -5283,21 +5219,25 @@
 
     const title = (clanWriteTitle?.value || '').trim();
 
+    // innerHTML 직렬화에는 현재 값이 아니라 속성(value·selected)이 남으므로 속성에 반영한다.
+    // (option.selected 는 속성을 바꾸지 않아 저장 후 Auto/SET 선택이 초기값으로 돌아가던 문제)
     if (clanWriteContent) {
-      clanWriteContent.querySelectorAll('input, textarea').forEach(function (el) {
+      clanWriteContent.querySelectorAll('input').forEach(function (el) {
         el.setAttribute('value', el.value);
       });
       clanWriteContent.querySelectorAll('select').forEach(function (el) {
         for (let i = 0; i < el.options.length; i += 1) {
-          el.options[i].selected = (el.options[i].value === el.value);
+          el.options[i].defaultSelected = (el.options[i].value === el.value);
         }
       });
     }
 
     const htmlContent = clanWriteContent?.innerHTML || '';
-    const textContent = (clanWriteContent?.textContent || '').trim();
+    const textContent = (clanWriteContent?.textContent || '').replace(/​/g, '').trim();
+    const hasMedia = Boolean(clanWriteContent?.querySelector('img, video, table'));
+    const isFreeBoard = currentBoardContext === 'free';
 
-    if (!clanWriteYear || !clanWriteMonth || !clanWriteStage || !clanWriteNamed) {
+    if (!isFreeBoard && (!clanWriteYear || !clanWriteMonth || !clanWriteStage || !clanWriteNamed)) {
       if (clanWriteError) { clanWriteError.textContent = '게시물 구분을 모두 선택해주세요.'; clanWriteError.hidden = false; }
       clanWriteSubmit.disabled = false;
       return;
@@ -5311,18 +5251,28 @@
     }
 
     const titleLen = [...title].length;
-    if (titleLen > 50) {
-      if (clanWriteError) { clanWriteError.textContent = '게시물 제목은 50자 이내로만 작성 가능합니다.'; clanWriteError.hidden = false; }
+    if (titleLen > CLAN_WRITE_TITLE_MAX) {
+      if (clanWriteError) { clanWriteError.textContent = `게시물 제목은 ${CLAN_WRITE_TITLE_MAX}자 이내로만 작성 가능합니다.`; clanWriteError.hidden = false; }
       if (clanWriteTitleWarning) clanWriteTitleWarning.hidden = false;
       clanWriteSubmit.disabled = false;
       clanWriteTitle?.focus();
       return;
     }
 
-    if (!textContent) {
+    if (!textContent && !hasMedia) {
       if (clanWriteError) { clanWriteError.textContent = '내용을 입력해 주세요.'; clanWriteError.hidden = false; }
       clanWriteSubmit.disabled = false;
       clanWriteContent?.focus();
+      return;
+    }
+
+    if (htmlContent.length > CLAN_WRITE_CONTENT_MAX) {
+      const mb = (htmlContent.length / 1_000_000).toFixed(1);
+      if (clanWriteError) {
+        clanWriteError.textContent = `본문 용량(${mb}MB)이 너무 큽니다. 이미지·동영상을 줄여 1.8MB 이하로 맞춰 주세요.`;
+        clanWriteError.hidden = false;
+      }
+      clanWriteSubmit.disabled = false;
       return;
     }
 
@@ -5338,7 +5288,15 @@
         method: editingId ? 'PATCH' : 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content: htmlContent, year: clanWriteYear, month: clanWriteMonth, stage: clanWriteStage, named: clanWriteNamed, category: clanWriteCategory, sub_board: writeSubBoard, board: currentBoardContext }),
+        body: JSON.stringify({
+          title,
+          content: htmlContent,
+          board: isFreeBoard ? 'free' : 'clan',
+          sub_board: writeSubBoard,
+          ...(isFreeBoard
+            ? {}
+            : { year: clanWriteYear, month: clanWriteMonth, stage: clanWriteStage, named: clanWriteNamed, category: clanWriteCategory }),
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -5353,7 +5311,7 @@
       const postId = editingId || data.id;
       resetClanWriteEditingState();
       closeClanWriteForm();
-      await openClanPostDetail(postId);
+      openClanPostDetail(postId);
     } catch (err) {
       if (clanWriteError) { clanWriteError.textContent = err instanceof Error ? err.message : '네트워크 오류가 발생했습니다.'; clanWriteError.hidden = false; }
     } finally {
@@ -5400,25 +5358,14 @@
         return;
       }
       resetClanCommentForm();
+      // 댓글 목록 응답의 total 로 개수도 갱신된다(본문 전체를 다시 받지 않음).
       await loadClanBoardComments(clanBoardCurrentPostId, 1);
-      await refreshClanPostCommentCount();
     } catch (err) {
       if (clanCommentError) { clanCommentError.textContent = err instanceof Error ? err.message : '네트워크 오류가 발생했습니다.'; clanCommentError.hidden = false; }
     } finally {
       if (clanCommentSubmit) clanCommentSubmit.disabled = false;
     }
   });
-
-  async function refreshClanPostCommentCount() {
-    if (!clanBoardCurrentPostId || !clanCommentCount) return;
-    try {
-      const res = await fetch(`/api/clan-board/posts/${encodeURIComponent(clanBoardCurrentPostId)}`, { credentials: 'include' });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.post) {
-        clanCommentCount.textContent = String(data.post.comment_count);
-      }
-    } catch (_) { /* ignore */ }
-  }
 
   clanWriteBossImageInput?.addEventListener('change', () => {
     const input = clanWriteBossImageInput;
@@ -5474,45 +5421,33 @@
         img.width = TACTIC_IMAGE_SIZE;
         img.height = TACTIC_IMAGE_SIZE;
 
-        const delBtn = document.createElement('button');
-        delBtn.type = 'button';
-        delBtn.className = 'clan-tactic-table__boss-del';
-        delBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
-        delBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          wrap.remove();
-          cell.appendChild(createBossImageButton(cell));
-          updateTacticDropdownVisibility(cell);
-        });
-
         wrap.appendChild(img);
-        wrap.appendChild(delBtn);
+        wrap.appendChild(createTacticImageDeleteButton());
         cell.appendChild(wrap);
         updateTacticDropdownVisibility(cell);
 
         delete input._bossTargetCell;
       } catch (err) {
         btn.remove();
-        cell.appendChild(createBossImageButton(cell));
+        cell.appendChild(createBossImageButton());
       }
     })();
   });
 
-  function createBossImageButton(cell) {
+  /** \uBCF4\uC2A4\u00B7\uCE90\uB9AD\uD130 \uC774\uBBF8\uC9C0 \uC0AD\uC81C(X) \uBC84\uD2BC. \uD074\uB9AD\uC740 \uC5D0\uB514\uD130 \uC704\uC784 \uD578\uB4E4\uB7EC\uAC00 \uCC98\uB9AC\uD55C\uB2E4. */
+  function createTacticImageDeleteButton() {
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'clan-tactic-table__boss-del';
+    delBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+    return delBtn;
+  }
+
+  function createBossImageButton() {
     const bossBtn = document.createElement('button');
     bossBtn.type = 'button';
     bossBtn.className = 'clan-tactic-table__boss-btn';
     bossBtn.innerHTML = '<span class="clan-tactic-table__slot-label">\uBCF4\uC2A4 \uC774\uBBF8\uC9C0</span>';
-    bossBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const input = document.getElementById('clan-write-boss-image-input');
-      if (input) {
-        input._bossTargetCell = cell;
-        input.click();
-      }
-    });
     return bossBtn;
   }
 
@@ -5601,8 +5536,10 @@
   });
   tacticCharPopupSearchBtn?.addEventListener('click', filterTacticCharPicker);
 
-  function formatTacticCharName(name) {
+  /** 캐릭터명을 6자 단위로 줄바꿈한 HTML(이름은 이스케이프). */
+  function formatTacticCharNameHtml(name) {
     if (!name) return '';
+    name = escapeHtml(name);
     var parenIdx = name.indexOf('(');
     var beforeParen = parenIdx !== -1 ? name.slice(0, parenIdx) : name;
     var afterParen = parenIdx !== -1 ? name.slice(parenIdx) : '';
@@ -5650,38 +5587,14 @@
       wrap.className = 'clan-tactic-table__boss-wrap';
 
       const img = document.createElement('img');
-      const imgApi = bindCharacterImage(img, c, { eager: true, deferSrc: true });
+      const imgSrc = bindCharacterImage(img, c, { eager: true, deferSrc: true });
       img.className = 'clan-tactic-table__boss-img';
       img.width = TACTIC_IMAGE_SIZE;
       img.height = TACTIC_IMAGE_SIZE;
 
-      const delBtn = document.createElement('button');
-      delBtn.type = 'button';
-      delBtn.className = 'clan-tactic-table__boss-del';
-      delBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
-      delBtn.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-        wrap.remove();
-        hideTacticCharSlotExtras(cell);
-        // Clear character name
-        const slot = cell.dataset.tacticSlot;
-        const table = cell.closest('.clan-tactic-table');
-        if (table && slot) {
-          const nameCell = table.querySelector(`.clan-tactic-table__char-name-cell[data-tactic-slot="${slot}"]`);
-          if (nameCell) {
-            const nameSpan = nameCell.querySelector('.clan-tactic-table__char-name-text');
-            if (nameSpan) nameSpan.innerHTML = '';
-          }
-        }
-        const newBtn = createCharImageButton(cell);
-        if (newBtn) cell.appendChild(newBtn);
-        updateTacticDropdownVisibility(cell);
-      });
-
       wrap.appendChild(img);
-      img.src = imgApi;
-      wrap.appendChild(delBtn);
+      img.src = imgSrc;
+      wrap.appendChild(createTacticImageDeleteButton());
       cell.appendChild(wrap);
       updateTacticDropdownVisibility(cell);
 
@@ -5692,7 +5605,7 @@
         const nameCell = table.querySelector(`.clan-tactic-table__char-name-cell[data-tactic-slot="${slot}"]`);
         if (nameCell) {
           const nameSpan = nameCell.querySelector('.clan-tactic-table__char-name-text');
-          if (nameSpan) nameSpan.innerHTML = formatTacticCharName(c.name || '');
+          if (nameSpan) nameSpan.innerHTML = formatTacticCharNameHtml(c.name || '');
         }
       }
 
@@ -5709,11 +5622,6 @@
     charBtn.type = 'button';
     charBtn.className = 'clan-tactic-table__char-btn';
     charBtn.innerHTML = '<span class="clan-tactic-table__slot-label">\uCE90\uB9AD\uD130 \uCD94\uAC00</span>';
-    charBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      openTacticCharPopup(cell);
-    });
     return charBtn;
   }
 
@@ -5724,13 +5632,6 @@
     var m = Math.floor(totalSec / 60);
     var s = totalSec % 60;
     return m + ':' + (s < 10 ? '0' : '') + s;
-  }
-
-  function parseTimeToTotalSec(timeStr) {
-    var parts = timeStr.split(':');
-    var min = parseInt(parts[0], 10) || 0;
-    var sec = parseInt(parts[1], 10) || 0;
-    return min * 60 + sec;
   }
 
   function parseTacticTableRows(table) {
@@ -5826,7 +5727,7 @@
     parts.push('<tbody>');
 
     var themeColor = header.themeBg || '#F06292';
-    parts.push('<tr class="clan-tactic-table__theme-row" style="background:' + themeColor + '">');
+    parts.push('<tr class="clan-tactic-table__theme-row" style="background:' + escapeAttr(themeColor) + '">');
     parts.push('<td colspan="8">');
     parts.push('<div class="clan-tactic-table__theme-inner" style="justify-content:center">');
     parts.push('<span style="font-weight:700;font-size:0.85rem">이월타 택틱 (' + formatSecondsToMMSS(carryoverTotalSec) + ')</span>');
@@ -6002,40 +5903,7 @@
   }
 
   function validateCarryoverTimeInput() {
-    if (!carryoverTimeInputMin || !carryoverTimeInputSec) return;
-    var minRaw = carryoverTimeInputMin.value.replace(/[^0-9]/g, '').slice(0, 1);
-    var secRaw = carryoverTimeInputSec.value.replace(/[^0-9]/g, '').slice(0, 2);
-    var minNum = minRaw === '' ? 0 : parseInt(minRaw, 10);
-    var secNum = secRaw === '' ? 0 : parseInt(secRaw, 10);
-    if (Number.isNaN(minNum)) minNum = 0;
-    if (Number.isNaN(secNum)) secNum = 0;
-
-    if (minNum > 1) minNum = 1;
-    if (minNum === 1) {
-      secNum = Math.min(secNum, 30);
-    } else {
-      secNum = Math.min(secNum, 59);
-    }
-
-    var total = minNum * 60 + secNum;
-    if (total > 90) {
-      minNum = 1;
-      secNum = 30;
-    }
-
-    if (minRaw === '' && secRaw !== '') {
-      carryoverTimeInputMin.value = '0';
-    } else if (minRaw !== '') {
-      carryoverTimeInputMin.value = String(minNum);
-    } else {
-      carryoverTimeInputMin.value = '';
-    }
-
-    if (secRaw !== '') {
-      carryoverTimeInputSec.value = String(secNum);
-    } else {
-      carryoverTimeInputSec.value = '';
-    }
+    clampMinSecInputs(carryoverTimeInputMin, carryoverTimeInputSec, true);
   }
 
   carryoverTimeInputMin?.addEventListener('input', function () { validateCarryoverTimeInput(); });
